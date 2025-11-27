@@ -1,0 +1,736 @@
+/* styles/global.css */
+@import url("./utils.css");
+
+/* ==================== Fonts ==================== */
+@font-face {
+    font-family: 'DINBold';
+    src: url('../assets/fonts/DINNextLTArabic-Bold-4.ttf') format('truetype');
+    font-weight: bold;
+    font-style: normal;
+}
+
+@font-face {
+    font-family: 'DINLight';
+    src: url('../assets/fonts/DINNEXTLTARABIC-LIGHT-2-2.ttf') format('truetype');
+    font-weight: lighter;
+    font-style: italic;
+}
+
+@font-face {
+    font-family: 'DINRegular';
+    src: url('../assets/fonts/DINNextLTArabic-Regular-4.ttf') format('truetype');
+    font-weight: normal;
+    font-style: normal;
+}
+
+/* ==================== Global Styles ==================== */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: "DINRegular", sans-serif;
+}
+
+:root {
+    --primary-color: #ff6303;
+    --white: #fff;
+    --gray: #f5f5f5;
+    --gray2: #fefefe;
+    --black1: #222;
+    --black2: #999;
+}
+
+body {
+    min-height: 100vh;
+    overflow-x: hidden;
+}
+
+select, select option {
+  font-family: "DINRegular", sans-serif;
+}
+
+.container {
+    position: relative;
+    width: 100%;
+}
+
+/* ==================== Navigation ==================== */
+.navigation {
+    position: fixed;
+    width: 300px;
+    height: 100%;
+    background: var(--primary-color);
+    border-left: 10px solid var(--primary-color);
+    transition: 0.5s;
+    overflow: hidden;
+}
+
+.navigation.active {
+    width: 80px;
+}
+
+.navigation ul {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    list-style: none;
+}
+
+.navigation ul li a {
+    position: relative;
+    width: 100%;
+    list-style: none;
+    border-top-left-radius: 30px;
+    border-bottom-left-radius: 30px;
+}
+
+.navigation ul li:hover a,
+.navigation ul li.hovered a {
+    background-color: var(--white);
+    color: var(--primary-color);
+}
+
+.navigation ul li:first-child {
+    margin-bottom: 40px;
+    margin-left: 20px;
+    padding-left: 20px;
+    pointer-events: none;
+    background-color: var(--white);
+    border-top-left-radius: 0;
+    border-bottom-left-radius: 10px;
+}
+
+.navigation ul li:first-child img {
+    width: 60px;
+    height: 50px;
+}
+
+.navigation ul li:first-child a::after {
+    content: "";
+    position: absolute;
+    bottom: -50px;
+    right: 0;
+    width: 50px;
+    height: 50px;
+    border-radius: 9999px;
+    box-shadow: 35px -35px 0 10px var(--white);
+    pointer-events: none;
+}
+
+.navigation ul li:first-child a .title {
+    color: var(--black2);
+    font-size: 0.8rem;
+}
+
+.navigation ul li a {
+    position: relative;
+    display: flex;
+    align-items: center;
+    width: 100%;
+    text-decoration: none;
+    color: var(--white);
+}
+
+.navigation ul li:hover a {
+    color: var(--primary-color);
+}
+
+.navigation ul li a .icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 60px;
+    height: 60px;
+    font-size: 1.75rem;
+}
+
+.navigation ul li a .icon i {
+    font-size: 1.75rem;
+}
+
+.navigation ul li a .title {
+    display: flex;
+    align-items: center;
+    padding: 0 10px;
+    height: 100%;
+    white-space: nowrap;
+    font-size: 1.1rem;
+    font-weight: 600;
+}
+
+/* Curve effect for hovered navigation items */
+.navigation ul li:hover a::before,
+.navigation ul li.hovered a::before {
+    content: "";
+    position: absolute;
+    top: -50px;
+    right: 0;
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    box-shadow: 35px 35px 0 10px var(--white);
+    pointer-events: none;
+}
+
+.navigation ul li:hover a::after,
+.navigation ul li.hovered a::after {
+    content: "";
+    position: absolute;
+    bottom: -50px;
+    right: 0;
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    box-shadow: 35px -35px 0 10px var(--white);
+    pointer-events: none;
+}
+
+/* Active state adjustments */
+.navigation.active ul li:first-child {
+    margin-left: 0;
+    padding-left: 0;
+    text-align: center;
+}
+
+.navigation.active ul li:first-child img {
+    width: 45px;
+    height: 40px;
+    margin: 0 auto;
+}
+
+/* ==================== Forms Statistics Section ==================== */
+.forms-statistics-section {
+    background: var(--white);
+    border-radius: 8px;
+    padding: 20px;
+    margin-bottom: 30px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.forms-statistics-section .section-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+}
+
+.forms-statistics-section h2 {
+    color: var(--black1);
+    font-size: 1.5rem;
+    font-family: 'DINBold', sans-serif;
+}
+
+.view-all-link {
+    color: var(--primary-color);
+    text-decoration: none;
+    font-size: 14px;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    transition: 0.3s;
+}
+
+.view-all-link:hover {
+    opacity: 0.8;
+}
+
+.forms-table-container {
+    overflow-x: auto;
+}
+
+.forms-statistics-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.forms-statistics-table thead {
+    background-color: #f8f9fa;
+}
+
+.forms-statistics-table th,
+.forms-statistics-table td {
+    padding: 12px;
+    text-align: right;
+    border-bottom: 1px solid #e9ecef;
+}
+
+.forms-statistics-table th {
+    font-weight: 600;
+    color: #495057;
+    font-size: 14px;
+}
+
+.forms-statistics-table tbody tr {
+    transition: background-color 0.2s;
+}
+
+.forms-statistics-table tbody tr:hover {
+    background-color: #f8f9fa;
+}
+
+.form-title-cell {
+    font-weight: 500;
+    color: var(--black1);
+}
+
+.type-badge, .target-badge {
+    display: inline-block;
+    padding: 4px 10px;
+    border-radius: 12px;
+    font-size: 12px;
+    background-color: #e9ecef;
+    color: #495057;
+}
+
+.status-badge {
+    display: inline-block;
+    padding: 4px 10px;
+    border-radius: 12px;
+    font-size: 12px;
+    font-weight: 500;
+}
+
+.status-published {
+    background-color: #d4edda;
+    color: #155724;
+}
+
+.status-draft {
+    background-color: #fff3cd;
+    color: #856404;
+}
+
+.response-count {
+    font-weight: 600;
+    font-size: 16px;
+}
+
+.has-responses {
+    color: #28a745;
+}
+
+.no-responses {
+    color: #6c757d;
+}
+
+.no-data {
+    color: #999;
+    font-size: 12px;
+}
+
+.no-data-cell {
+    text-align: center;
+    color: #999;
+    padding: 30px;
+}
+
+.navigation.active ul li:first-child .title {
+    display: none;
+}
+
+.navigation.active ul li:first-child a::after {
+    display: none;
+}
+
+
+/* ==================== Main Content ==================== */
+.main {
+    position: absolute;
+    left: 300px;
+    width: calc(100% - 300px);
+    min-height: 100vh;
+    background: var(--white);
+    transition: 0.5s;
+}
+
+.main.active {
+    left: 80px;
+    width: calc(100% - 80px);
+}
+
+
+/* ==================== Top Bar ==================== */
+.top-bar {
+    width: 100%;
+    height: fit-content;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0 20px;
+}
+
+.toggle-button {
+    position: relative;
+    width: 40px;
+    height: 40px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-size: 2.5rem;
+    cursor: pointer;
+}
+
+.user-info {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px;
+    font-family: 'DINRegular';
+    font-size: 16px;
+    color: var(--black1);
+    flex-direction: row-reverse;
+}
+
+.user-profile {
+    position: relative;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    overflow: hidden;
+    cursor: pointer;
+}
+
+.user-profile img {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: fill;
+}
+
+/* Back Button Styling */
+.back-button {
+    display: flex;
+    flex-direction: row-reverse;
+    align-items: center;
+    gap: 8px;
+    padding: 10px;
+    transform: translateX(-20px) translateY(16px);
+    background-color: var(--gray);
+    border-radius: 8px;
+    cursor: pointer;
+    width: fit-content;
+    transition: background-color color 0.5s;
+}
+
+.back-button:hover {
+    background-color: var(--primary-color);
+    color: var(--white);
+}
+
+.back-button:hove img {
+    filter: invert(1);
+}
+
+.back-button img {
+    width: 20px;
+    height: 20px;
+}
+
+.back-button span {
+    font-family: 'DINBold';
+    font-size: 16px;
+    color: var(--black);
+}
+
+
+/* ==================== Semester Info ==================== */
+.semester-info {
+    width: fit-content;
+    padding: 16px 50px;
+    margin: 25px 12px;
+    cursor: pointer;
+    background: var(--white);
+    border-radius: 35px;
+    box-shadow: 0 7px 25px rgba(0, 0, 0, 0.08);
+}
+
+.semester-info span {
+    font-family: "DINBold";
+    font-size: 24px;
+}
+
+/* ======================== cards ====================== */
+
+.statistics-cards {
+    position: relative;
+    width: 100%;
+    display: grid;
+    padding: 10px 12px;
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    gap: 30px;
+}
+
+.statistics-cards .card {
+    position: relative;
+    background: var(--white);
+    border-radius: 10px;
+    padding: 30px;
+    display: flex;
+    justify-content: space-between;
+    cursor: pointer;
+    box-shadow: 0 7px 25px rgba(0, 0, 0, 0.08);
+    border-left: 6px solid var(--primary-color);
+}
+
+.statistics-cards .card .numbers {
+    position: relative;
+    font-weight: 800;
+    font-size: 2.5rem;
+    color: var(--primary-color);
+}
+
+.statistics-cards .card .numbers span {
+    color: var(--black2);
+    font-size: 1.1rem;
+    padding-left: 4px;
+}
+
+.statistics-cards .card .card-name {
+    color: var(--black1);
+    font-size: 1.2rem;
+    font-weight: 700;
+    margin-top: 5px;
+    margin-left: auto;
+}
+
+.statistics-cards .card .icon-box {
+    font-size: 3.5rem;
+    color: var(--black1);
+}
+
+.statistics-cards .card:hover {
+    background: var(--primary-color);
+}
+
+.statistics-cards .card:hover .numbers,
+.statistics-cards .card:hover .card-name,
+.statistics-cards .card:hover .icon-box {
+    color: var(--white);
+}
+
+.statistics-cards .card .icon-box img {
+    width: 40px;
+    height: 40px;
+    filter: brightness(0.8);
+}
+
+.statistics-cards .card:hover .icon-box img {
+    filter: brightness(1);
+}
+
+/* ==================== Charts Section ==================== */
+.charts-section {
+    position: relative;
+    width: 100%;
+    padding: 20px;
+    display: grid;
+    grid-template-columns: 1fr 2fr;
+    gap: 30px;
+}
+
+.chart-title {
+    display: flex;
+  justify-content: end;
+    align-items: center;
+    font-family: 'DINBold';
+    font-size: 24px;
+    color: var(--black1);
+    margin-bottom: 20px;
+}
+
+.charts-section .chart {
+    position: relative;
+    background: var(--white);
+    padding: 20px;
+    width: 100%;
+    box-shadow: 0 7px 25px rgba(0, 0, 0, 0.08);
+    border-radius: 10px;
+    border-left: 6px solid var(--primary-color);
+}
+
+.line-chart {
+    direction: rtl;
+}
+
+.chart-selection {
+    margin-left: auto;
+    display: flex;
+    gap: 10px;
+    align-items: center;
+}
+
+.chart-selection select {
+    padding: 10px;
+    border: 1px solid var(--gray);
+    background: #e6e6e6;
+    color: var(--black);
+    border-radius: 9999px;
+    font-family: 'DINRegular', sans-serif;
+    font-size: 16px;
+    cursor: pointer;
+}
+
+.loader {
+    display: flex;
+    justify-content: center;
+    padding: 20px;
+    width: 100%;
+}
+
+.bar {
+    display: inline-block;
+    width: 3px;
+    height: 20px;
+    background-color: var(--primary-color);
+    border-radius: 10px;
+    animation: scale-up4 1s linear infinite;
+    margin: 0 2px;
+}
+
+.bar:nth-child(2) {
+    height: 35px;
+    animation-delay: .25s;
+}
+
+.bar:nth-child(3) {
+    animation-delay: .5s;
+}
+
+@keyframes scale-up4 {
+    20% {
+        transform: scaleY(1.5);
+    }
+    40% {
+        transform: scaleY(1);
+    }
+}
+/* ========================== Responsive Design ========================== */
+
+@media (max-width: 991px) {
+    .navigation {
+        left: -300px;
+    }
+
+    .navigation.active {
+        width: 300px;
+        left: 0;
+    }
+
+    .main {
+        width: 100%;
+        left: 0;
+    }
+
+    .main.active {
+        left: 300px;
+    }
+
+    .statistics-cards {
+        grid-template-columns: repeat(2, 1fr);
+    }
+
+    .charts-section {
+        grid-template-columns: 1fr;
+        height: auto;
+    }
+}
+
+@media (max-width: 768px) {
+    .semester-info {
+        padding: 18px 24px;
+    }
+    
+    .semester-info span {
+        font-size: 16px;
+    }
+
+    .toggle-button i {
+        font-size: 2rem;
+    }
+
+    .charts-section .chart {
+        width: 100%;
+    }
+    
+    .chart-selection {
+        width: 100%;
+        flex-direction: column;
+        gap: 10px;
+    }
+    .chart-selection select {
+        width: 100%;
+    }
+
+    canvas {
+        width: 100%;
+        height: 100%;
+    }
+}
+
+@media (max-width: 480px) {
+    .statistics-cards {
+        grid-template-columns: repeat(1,1fr);
+    }
+
+    .cardHeader h2 {
+        font-size: 20px;
+    }
+
+    .user {
+        min-width: 400px;
+    }
+
+    .navigation {
+        width: 100%;
+        left: -100%;
+        z-index: 1000;
+    }
+
+    .navigation.active {
+        width: 100%;
+        left: 0;
+    }
+
+    .toggle-button {
+        z-index: 99999;
+    }
+
+    .main.active .toggle-button {
+        color: #fff;
+        position: fixed;
+        right: 0;
+        left: initial;
+    }
+
+    .semester-info {
+        padding: 18px 25px;
+    }
+    
+    .semester-info span {
+        font-size: 14px;
+    }
+    
+    .main.active .toggle-button i {
+        margin-top: -16px;
+        color: var(--black1);
+    }
+
+    .statistics-cards .card .icon-box {
+        font-size: 2.5rem;
+        color: var(--black1);
+    }
+
+    .charts-section {
+        display: flex;
+        flex-direction: column;
+        width: 100%;
+    }
+
+    .charts-section .chart {
+        width: 100%;
+    }
+
+}

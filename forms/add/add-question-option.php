@@ -1,0 +1,39 @@
+<?php
+session_start();
+include '../../config/DbConnection.php';
+
+// Use POST data instead of JSON input
+$questionId = $_POST['questionId'];
+$newOption = $_POST['option'];
+
+// Validate input
+if (empty($questionId) || empty($newOption)) {
+    http_response_code(400);
+    echo json_encode(['status' => 'error', 'message' => 'Missing parameters']);
+    exit();
+}
+
+// Get existing options
+$stmt = $con->prepare("SELECT Choices FROM Question WHERE ID = ?");
+$stmt->bind_param("i", $questionId);
+$stmt->execute();
+$result = $stmt->get_result()->fetch_assoc();
+
+// Handle NULL database values
+$currentChoices = $result['Choices'] ?? '[]'; // Fallback to empty array
+$options = json_decode($currentChoices, true) ?: [];
+
+// Add new option
+$options[] = $newOption;
+
+// Update database
+$updateStmt = $con->prepare("UPDATE Question SET Choices = ? WHERE ID = ?");
+$jsonOptions = json_encode($options);
+$updateStmt->bind_param("si", $jsonOptions, $questionId);
+
+if ($updateStmt->execute()) {
+    echo json_encode(['status' => 'success']);
+} else {
+    http_response_code(500);
+    echo json_encode(['status' => 'error', 'message' => $con->error]);
+}

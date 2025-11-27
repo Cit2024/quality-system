@@ -1,0 +1,1352 @@
+@import url("./global.css");
+
+.forms-page-container {
+    display: flex;
+    flex-direction: column;
+    padding: 0 20px;
+    gap: 2px;
+}
+
+.welcome-message {
+    font-family: 'DINBold';
+    color: #333;
+    font-size: 24px;
+    padding:30px 20px;
+    margin-left: auto;
+}
+
+.forms-content {
+    background-color: var(--gray2);
+    font-family: 'DINRegular';
+    display: flex;
+    flex-direction: column;
+    align-items: center; /* Center horizontally */
+    gap: 20px; /* Add spacing between child elements */
+    padding: 20px; /* Add padding for better spacing */
+    border-radius: 16px;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+    text-align: center;
+    margin-bottom: 50px;
+}
+
+/* Center only .add-form-button */
+.add-form-button-container {
+    display: flex;
+    justify-content: center; /* Center horizontally */
+    align-items: center; /* Center vertically */
+    width: 50%;
+    margin: 20px 0; /* Add spacing */
+}
+
+.add-form-button {
+    background-color: var(--gray2);
+    padding: 10px;
+    display: flex;
+    flex-direction: column;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+    text-align: center;
+    width: 50%;
+    cursor: pointer;
+    background-color: var(--primary-color);
+    border-radius: 9999px;
+    margin: 10px 4px;
+    justify-content: center;
+    transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.add-form-button-text {
+    font-family: 'DINBold';
+    color: #fff;
+    font-size: 18px;
+}
+
+/* Grid Layout for Cards Container */
+.forms-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr); /* 3 columns for large screens */
+    gap: 18px;
+    width: 100%;
+    direction: rtl;
+}
+
+/* Card Design Improvements */
+.form-card {
+    background-color: #fff;
+    border-radius: 8px;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+    padding: 20px;
+    text-align: right;
+    cursor: pointer;
+    border-right: var(--primary-color) solid 4px;
+    transition: transform 0.2s, box-shadow 0.2s;
+    position: relative; /* For badge positioning */
+}
+
+.form-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+}
+
+.form-card p {
+    font-family: 'DINRegular';
+    color: #666;
+    font-size: 14px;
+    margin-bottom: 15px;
+}
+
+.form-card .form-details {
+    width: 100%;
+    display: flex;
+    flex-direction: row;
+    justify-content: space-between;
+    padding: auto 4px;
+    margin-bottom: 10px;
+}
+
+
+.evaluate-evaluated-container {
+    display: flex;
+    gap: 8px; /* Increased gap for better spacing */
+    align-items: center;
+    margin-top: 10px; /* Add some space above the container */
+}
+
+.evaluate-evaluated-container .evaluate,
+.evaluate-evaluated-container .evaluated {
+    border-radius: 999px;
+    background: var(--primary-color);
+    color: var(--white);
+    font-family: "DINBold";
+    font-size: 14px;
+    flex-wrap: nowrap;
+    padding: 6px 12px; /* Slightly larger padding for better readability */
+    align-items: center;
+    display: flex;
+    gap: 6px; /* Space between icon and text */
+    transition: background-color 0.2s, transform 0.2s;
+}
+
+.evaluate-evaluated-container .evaluate {
+    background-color: var(--primary-color)
+}
+
+.evaluate-evaluated-container .evaluated {
+    color: var(--black);
+    background: transparent;
+    border: 2px solid var(--primary-color);
+}
+
+.evaluate-evaluated-container .evaluate:hover,
+.evaluate-evaluated-container .evaluated:hover {
+    transform: translateY(-2px); /* Slight lift on hover */
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1); /* Subtle shadow on hover */
+}
+
+.evaluate-evaluated-container img {
+    width: 16px;
+    height: 16px;
+}
+
+.evaluate-evaluated-container .evaluate img {
+    filter: brightness(0) invert(1); /* Make icons white */
+}
+
+/* Status Badge and Text */
+.form-card .form-status-badge {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    font-family: 'DINRegular';
+    font-size: 16px;
+    color: #666;
+    font-style: italic;
+}
+
+.form-card .form-status-badge img {
+    width: 24px;
+    height: 24px;
+}
+
+.form-card .form-title {
+    font-family: 'DINBold';
+    color: #333;
+    font-size: 20px;
+}
+.form-card .form-title {
+    display: flex;
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: center; /* Align items vertically */
+}
+
+.form-card .form-title span {
+    font-family: 'DINBold';
+    color: #333;
+    font-size: 20px;
+    cursor: pointer;
+}
+
+.form-card .form-title span:hover {
+    color: #4444ee;
+    text-decoration: underline;
+}
+
+.form-card .form-title .form-id {
+    font-family: 'DINRegular';
+    color: #666;
+    font-size: 16px;
+}
+
+/* Card Actions (Delete Button) */
+.form-actions {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    margin-top: 24px;
+    gap: 8px;
+}
+
+.form-actions button {
+    display: flex;
+    align-items: center;
+    padding: 8px 16px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-family: 'DINBold';
+    font-size: 14px;
+    gap: 8px;
+    border: #ff4d4d solid 2px;
+    transition: all 0.7s;
+}
+
+.form-actions button img {
+    width: 20px;
+    height: 20px;
+}
+
+/* Evaluation Link Section */
+.evaluation-link-section {
+    background-color: #f8f9fa;
+    border: 1px solid #dee2e6;
+    border-radius: 6px;
+    padding: 15px;
+    margin: 15px 0;
+}
+
+.evaluation-link-section .link-label {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 10px;
+    color: #495057;
+    font-weight: 600;
+}
+
+.evaluation-link-section .link-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 15px;
+}
+
+.evaluation-link-section .link-header h3 {
+    margin: 0;
+    color: #333;
+    font-size: 1.1rem;
+}
+
+.link-container {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+}
+
+.evaluation-link,
+.evaluation-link-input {
+    flex: 1;
+    padding: 8px 12px;
+    border: 1px solid #ced4da;
+    border-radius: 4px;
+    background-color: white;
+    font-size: 13px;
+    color: #495057;
+    direction: ltr;
+    text-align: left;
+}
+
+.copy-link-btn {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    padding: 8px 15px;
+    background-color: var(--primary-color);
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: background-color 0.3s;
+    font-size: 14px;
+}
+
+.copy-link-btn:hover {
+    background-color: #e55a00;
+}
+
+.copy-link-btn.copied {
+    background-color: #28a745;
+}
+
+.link-note {
+    margin-top: 10px;
+    font-size: 12px;
+    color: #6c757d;
+    display: flex;
+    align-items: flex-start;
+    gap: 5px;
+}
+
+.link-note i {
+    margin-top: 2px;
+}
+
+/* Editable Field Styles */
+.editable,
+.editable-section,
+.editable-question,
+.editable-note {
+    position: relative;
+    cursor: pointer;
+    transition: background-color 0.2s, color 0.2s;
+    padding: 2px 4px;
+    border-radius: 3px;
+}
+
+.editable:hover,
+.editable-section:hover,
+.editable-question:hover,
+.editable-note:hover {
+    background-color: #f0f0f0;
+    outline: 1px dashed #ccc;
+}
+
+/* Add edit icon on hover */
+.editable:hover::after,
+.editable-section:hover::after,
+.editable-question:hover::after {
+    content: "\270E"; /* Pencil icon */
+    position: absolute;
+    right: -20px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--primary-color);
+    font-size: 12px;
+}
+
+/* Input styles for inline editing */
+.editable input[type="text"],
+.editable-section input[type="text"],
+.editable-question input[type="text"] {
+    width: 100%;
+    padding: 4px 8px;
+    border: 2px solid var(--primary-color);
+    border-radius: 3px;
+    font-family: inherit;
+    font-size: inherit;
+    background-color: #fff;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.editable-input {
+    width: 100%;
+    min-height: 100px;
+    padding: 8px;
+    border: 2px solid var(--primary-color);
+    border-radius: 3px;
+    font-family: inherit;
+    font-size: inherit;
+    resize: vertical;
+    background-color: #fff;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+/* Add tooltip for editable fields */
+.editable:hover::before,
+.editable-section:hover::before,
+.editable-question:hover::before {
+    content: "انقر للتحرير";
+    position: absolute;
+    top: -25px;
+    right: 0;
+    background-color: #333;
+    color: white;
+    padding: 3px 8px;
+    border-radius: 3px;
+    font-size: 11px;
+    white-space: nowrap;
+    z-index: 1000;
+    opacity: 0;
+    animation: fadeIn 0.3s ease-in-out forwards;
+    animation-delay: 0.5s;
+}
+
+@keyframes fadeIn {
+    to {
+        opacity: 1;
+    }
+}
+
+.form-actions button.delete-form-button {
+    background-color: white;
+    color: #ff4d4d;
+}
+
+.form-actions button.delete-form-button:hover {
+    background-color: #ff1a1a;
+    border:none;
+    color:white;
+}
+
+.form-actions button.delete-form-button:hover img {
+    display: none;
+}
+
+.form-actions button.download-form-button {
+    background: var(--primary-color);
+    color: var(--white);
+    border: none;
+    border-radius: 8px;
+}
+
+/* ======================= pdf loading spinner =====================*/
+
+.pdf-loading-spinner {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 50px;
+    height: 50px;
+    border: 5px solid #f3f3f3;
+    border-top: 5px solid #3498db;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+    z-index: 9999;
+}
+
+@keyframes spin {
+    0% { transform: translate(-50%, -50%) rotate(0deg); }
+    100% { transform: translate(-50%, -50%) rotate(360deg); }
+}
+
+/* ======================= pdf loading spinner =====================*/
+
+/* ====================== View Form ======================== */
+.view-container {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    padding: 20px;
+    direction: rtl;
+}
+
+/* Back Button Styling */
+.back-button {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    transform: translateX(2px) translateY(-10px);
+    gap: 8px;
+    padding: 10px;
+    background-color: #f4f4f4;
+    border-radius: 8px;
+    cursor: pointer;
+    width: fit-content;
+    transition: background-color 0.2s;
+}
+
+.back-button:hover {
+    background-color: #e0e0e0;
+}
+
+.back-button img {
+    width: 20px;
+    height: 20px;
+}
+
+.back-button span {
+    font-family: 'DINBold';
+    font-size: 16px;
+    color: #333;
+}
+
+.view-container .form-details {
+    display: flex;
+    flex-direction: column;
+    gap: 10px; /* Space between elements */
+    padding: 20px;
+    background-color: #fff;
+    border-radius: 8px;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+    border-right: var(--primary-color) solid 4px;
+}
+
+.form-row-active-button {
+    width: 100%;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 10px;
+}
+
+.control-buttons {
+    display: flex;
+    align-items: center; /* Vertically center items */
+    column-gap: 20px; /* Space between elements */
+}
+
+.form-status-row {
+    display: flex;
+    align-items: center;
+    column-gap: 10px;
+    padding-left: 16px;
+}
+
+.form-status-row:last-child {
+    border: none;
+}
+
+.form-status-row img {
+    width: 20px;
+    height: 20px;
+}
+
+.form-status-row span {
+    font-family: 'DINBold';
+    font-size: 16px;
+    color: #333;
+}
+
+select {
+  width: 100%;
+  border:none;
+  outline: none;
+  font-family: 'DINBold';
+  padding:8px;
+  font-size: 18px;
+  border-radius:10px;
+}
+
+.download-form-button {
+    display: flex;
+    background: var(--primary-color);
+    color: var(--white);
+    border: none;
+    padding: 8px 16px;
+    border-radius: 8px;
+    gap: 4px;
+    font-size: 16px;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.view-container h1 {
+    width: 100%;
+    display: flex;
+    flex-direction: row;
+    justify-content: space-between;
+}
+
+.view-container h1 p {
+    font-family: 'DINBold';
+    color: #333;
+    font-size: 28px;
+    text-align: center;
+
+}
+
+.view-container h1 span {
+    font-family: 'DINRegular';
+    color: #666;
+    font-size: 18px;
+}
+
+/* Form Status Styling */
+.form-status,
+.form-type,
+.form-target {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-family: 'DINBold';
+    font-style: italic;
+    font-size: 18px;
+    color: #444;
+}
+
+.form-status img,
+.form-type img,
+.form-target img {
+    width: 20px;
+    height: 20px;
+}
+
+/* Custom Flip Switch Styles */
+.switch {
+    --switch-width: 46px;
+    --switch-height: 24px;
+    --switch-bg: rgb(131, 131, 131);
+    --switch-checked-bg: rgb(0, 218, 80);
+    --switch-offset: calc((var(--switch-height) - var(--circle-diameter)) / 2);
+    --switch-transition: all 0.3s cubic-bezier(0.27, 0.2, 0.25, 1.51);
+    --circle-diameter: 18px;
+    --circle-bg: #fff;
+    --circle-shadow: 1px 1px 2px rgba(146, 146, 146, 0.45);
+    --circle-checked-shadow: -1px 1px 2px rgba(163, 163, 163, 0.45);
+    --circle-transition: var(--switch-transition);
+    --icon-cross-size: 4px;
+    --icon-checkmark-size: 10px;
+}
+
+.switch input {
+    display: none;
+}
+
+.switch .slider {
+    width: var(--switch-width);
+    height: var(--switch-height);
+    background: var(--switch-bg);
+    border-radius: 999px;
+    display: flex;
+    align-items: center;
+    position: relative;
+    transition: var(--switch-transition);
+    cursor: pointer;
+}
+
+.switch .circle {
+    width: var(--circle-diameter);
+    height: var(--circle-diameter);
+    background: var(--circle-bg);
+    border-radius: 50%;
+    box-shadow: var(--circle-shadow);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: var(--circle-transition);
+    position: absolute;
+    left: var(--switch-offset);
+}
+
+.switch .cross,
+.switch .o,
+.switch .minus,
+.switch .checkmark {
+    width: 85%;
+    height: 85%;
+    transition: var(--switch-transition);
+    position: absolute;
+}
+
+.switch .cross,
+.switch .minus {
+    opacity: 1;
+}
+
+.switch .cross {
+    scale: 0.7;
+}
+
+
+.switch .checkmark,
+.switch .o {
+    opacity: 0;
+}
+
+.switch .checkmark {
+    scale: 0.9;
+    color: var(--switch-checked-bg);
+}
+
+/* Switch Checked State */
+.switch input:checked + .slider {
+    background: var(--switch-checked-bg);
+}
+
+.switch input:checked + .slider .circle {
+    left: calc(100% - var(--circle-diameter) - var(--switch-offset));
+    box-shadow: var(--circle-checked-shadow);
+}
+
+.switch input:checked + .slider .cross ,
+.switch input:checked + .slider .minus {
+    opacity: 0;
+}
+
+.switch input:checked + .slider .checkmark ,
+.switch input:checked + .slider .o {
+    opacity: 1;
+}
+
+/* Custom Flip Switch Styles for Form Type */
+.switch.form-type {
+    --switch-checked-bg: #2196F3; /* Blue for form type */
+}
+
+.switch.form-type .checkmark {
+    content: url("../assets/icons/chalkboard.svg"); /* Icon for teacher evaluation */
+}
+
+/* Custom Flip Switch Styles for Form Target */
+.switch.form-target {
+    --switch-checked-bg: #4CAF50; /* Green for form target */
+}
+
+.switch.form-target .checkmark {
+    content: url("../assets/icons/graduation-cap.svg"); /* Icon for student target */
+}
+
+.form-note {
+    display: flex;
+    flex-direction: column;
+    gap: 10px; /* Space between elements */
+    padding: 20px;
+    background-color: #fff;
+    border-radius: 8px;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+    border-right: var(--primary-color) solid 4px;
+}
+
+.form-note span {
+    font-style: italic;
+}
+
+.editable-note {
+    font-family: "DINRegular";
+    font-size: 18px;
+    cursor: pointer;
+    white-space: pre-wrap;
+}
+.add-note-button {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: #f4f4f4;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 1.1rem;
+    padding: 4px 6px;
+    transition: all .3s ease;
+}
+
+.add-note-button img {
+    cursor: pointer;
+    width: 24px;
+    height: 24px;
+    transition: transform 0.2s;
+  }
+  
+.add-note-button:hover {
+    background: var(--gray2);
+    padding: 6px 8px;
+}
+
+.section {
+    padding: 10px;
+    background-color: #fff;
+    border-radius: 8px;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+    margin-bottom: 20px;
+    border-top: var(--primary-color) solid 4px;
+}
+
+/* Section Header Styling */
+.section-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px;
+    border-radius: 8px;
+    cursor: pointer;
+    margin-bottom: 10px;
+}
+
+.section-header h2 {
+    margin: 0;
+    font-family: 'DINBold';
+    color: #333;
+    font-size: 18px;
+    flex-grow: 1; /* Allow title to take up remaining space */
+}
+
+.section-header input {
+    flex-grow: 1; /* Take up remaining space */
+    width: 90%; /* Full width */
+    padding: 5px;
+    font-family: 'DINRegular';
+    font-size: 18px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    margin-right: 10px; /* Add spacing between input and chevron */
+}
+
+.section-header .copy-plus {
+    margin-left: 10px; /* Add spacing between title and button */
+}
+
+.copy-plus img {
+    width: 30px;
+    height: 30px;
+    object-fit: fill;
+}
+
+.section-header .chevron {
+    flex-shrink: 0; /* Prevent the chevron from shrinking */
+}
+
+.section-header .chevron img {
+    width: 24px;
+    height: 24px;
+}
+
+/* Add Section Button Styling */
+.add-section-button {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 20px;
+    background-color: #f4f4f4;
+    border-radius: 8px;
+    cursor: pointer;
+    margin: 10px 0;
+    transform: translateY(-10px);
+    transition: background-color 0.2s;
+}
+
+.add-section-button:hover {
+    background-color: #fff;
+}
+
+.add-section-button img {
+    width: 24px;
+    height: 24px;
+}
+
+.add-section-button span {
+    font-family: 'DINBold';
+    font-size: 24px;
+    color: #333;
+}
+
+/* Delete Section Button Styling */
+.delete-section {
+    cursor: pointer;
+    background-color: #eee;
+    border-radius: 8px;
+    padding: 8px;
+    margin-left: 10px;
+}
+
+.delete-section img {
+    width: 20px;
+    height: 20px;
+}
+
+/* Editable Fields */
+.editable {
+    display: grid;
+    width: 95%;
+    cursor: pointer;
+    grid-template-columns: masonry;
+}
+
+.editable input {
+    width: 100%;
+    padding: 5px;
+    font-family: 'DINRegular';
+    font-size: 16px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+}
+
+.editable-input {
+    width: 100%;
+    padding: 8px;
+    font-size: 16px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+}
+
+/* Questions Container */
+.questions-container {
+    display: block; /* Make it visible by default */
+    margin-bottom: 10px;
+}
+
+/* Question Styling */
+.question {
+    display: flex;
+    flex-direction: column; /* Stack children vertically */
+    width: 100%; /* Full width */
+    padding: 16px 8px;
+    border-bottom: 1px solid #ccc;
+}
+
+.question:last-child {
+    border-bottom: none;
+}
+
+/* Question Title and (?) Mark Row */
+.question-title-row {
+    display: flex;
+    justify-content: space-between; /* Align title and (?) mark horizontally */
+    align-items: center; /* Vertically center items */
+    width: 100%; /* Full width */
+    padding: 8px 0;
+}
+
+
+/* Question Title */
+.question-title-row p {
+    margin: 0;
+    font-family: 'DINBold';
+    color: #444;
+    font-size: 16px;
+    flex-grow: 1; /* Allow title to take up remaining space */
+}
+
+/* (?) Mark Styling */
+.question-title-row span {
+    background-color: #eee;
+    border-radius: 4px;
+    padding: 2px 6px;
+    font-size: 16px;
+    color: #222;
+    font-family: 'DINBold';
+    flex-shrink: 0; /* Prevent the (?) mark from shrinking */
+    margin-left: 10px; /* Add spacing between title and (?) mark */
+}
+
+/* Question Input Field */
+.question-title-row input {
+    flex-grow: 1; /* Take up remaining space */
+    width: 90%; /* Full width */
+    padding: 5px;
+    font-family: 'DINRegular';
+    font-size: 16px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    margin-right: 10px; /* Add spacing between input and (?) mark */
+}
+
+/* Delete Question Button Styling */
+.delete-question {
+    cursor: pointer;
+    background-color: #eee;
+    border-radius: 8px;
+    padding: 8px 4px;
+    margin-left: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.delete-question img {
+    width: 16px;
+    height: 16px;
+}
+
+/* Question Type Styling */
+.question-type {
+    display: flex;
+    align-items: center;
+    gap: 5px; /* Space between icon and text */
+    margin-top: 6px; /* Space between question title row and type */
+    font-family: 'DINRegular';
+    font-weight: 600;
+    font-size: 14px;
+    color: #444;
+    background-color: #ccc;
+    border-radius: 9999px;
+    padding: 4px 10px;
+    margin-right: 8px;
+    width: fit-content;
+    cursor: pointer;
+}
+
+.question-type img {
+    width: 14px;
+    height: 14px;
+}
+
+/* True/False Question Type Styling */
+.question-type.true-false {
+    background-color: #4caf50; /* Green background for true/false */
+    color: white;
+}
+
+.question-type.true-false img {
+    filter: brightness(0) invert(1); /* Make the icon white */
+}
+
+/* Option patterns */
+.options-section {
+  margin-top: 1rem;
+  padding: 1rem;
+  background: #f5f5f5;
+  border-radius: 8px;
+}
+
+.option-item {
+  display: flex;
+  gap: 0.5rem;
+  margin-top: 10px;
+  align-items: center;
+  border-right: .2rem var(--primary-color) solid;
+  padding: 4px 8px;
+  border-radius: 4px;
+  padding-right: 12px;
+}
+
+.option-value {
+  font-size: 1.1rem;
+  font-family: "DINBold";
+}
+
+.remove-option {
+  border: none;
+  color: red;
+  font-size: 1rem;
+  padding: 2px 6px;
+  border-radius: 0.2rem;
+}
+
+.add-option {
+  margin-top: 0.5rem;
+  background: var(--primary-color);
+  color: white;
+  border: none;
+  padding: 6px 8px;
+  border-radius: 10px;
+  display: flex;
+  gap: 8px;
+  font-size: 14px;
+  font-family: 'DINBold';
+  align-items: center;
+  margin-right: 10px;
+}
+
+.question-options {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.option-tag {
+  background: #e0e0e0;
+  padding: 0.3rem 0.8rem;
+  border-radius: 20px;
+  font-size: 0.9em;
+}
+
+
+.type-select-modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+    opacity: 0;
+    visibility: hidden;
+    transition: all 0.3s ease;
+}
+
+.type-select-modal.active {
+    opacity: 1;
+    visibility: visible;
+}
+
+.modal-content {
+    background: white;
+    padding: 2rem;
+    border-radius: 12px;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+    width: 90%;
+    max-width: 500px;
+    transform: translateY(-20px);
+    transition: transform 0.3s ease;
+}
+
+.type-select-modal.active .modal-content {
+    transform: translateY(0);
+}
+
+/* Window titles */
+.modal-content h3 {
+    font-family: 'DINBold';
+    color: #333;
+    margin-bottom: 1.5rem;
+    text-align: center;
+}
+
+/* Type options */
+.type-option {
+    display: flex;
+    align-items: center;
+    padding: 1rem;
+    margin: 0.5rem 0;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    border: 2px solid transparent;
+}
+
+.type-option:hover {
+    background: #f8f8f8;
+    border-color: var(--primary-color);
+}
+
+.type-option img {
+    width: 24px;
+    height: 24px;
+    margin-left: 12px;
+}
+
+.type-option span {
+    font-family: 'DINRegular';
+    font-size: 16px;
+    color: #444;
+}
+
+/* ====================== Create Form =========================== */
+.create-container {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    padding: 20px;
+    direction: rtl;
+}
+
+/* Form Details Styling */
+.create-container .form-details {
+    background-color: #fff;
+    border-radius: 8px;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+    padding: 20px;
+    border-right: var(--primary-color) solid 4px;
+}
+
+.create-container .form-details h1 {
+    font-family: 'DINBold';
+    color: #333;
+    font-size: 24px;
+    margin-bottom: 20px;
+}
+
+.create-container .form-details .input-group {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin-bottom: 20px;
+}
+
+.create-container .form-details .input-group label {
+    font-family: 'DINRegular';
+    font-size: 16px;
+    color: #333;
+}
+
+.create-container .form-details .input-group input {
+    width: 100%;
+    padding: 10px;
+    box-sizing: border-box;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    font-family: 'DINRegular';
+    font-size: 14px;
+}
+
+.create-container .form-details button {
+    width: 100%;
+    padding: 10px;
+    background-color: var(--primary-color);
+    color: white;
+    border: none;
+    border-radius: 999px;
+    cursor: pointer;
+    font-family: 'DINBold';
+    font-size: 16px;
+}
+
+.create-container .form-details button:hover {
+    background-color: #ff6e60;
+}
+
+/* Error Message Styling */
+.error-message {
+    background-color: #ffebee;
+    color: #c62828;
+    padding: 10px;
+    border-radius: 4px;
+    margin-bottom: 20px;
+    font-family: 'DINRegular';
+    font-size: 14px;
+}
+.no-forms {
+    display: flex;
+    width: 100%;
+    column-gap: 8px;
+    align-items: center;
+    justify-content: center;
+    direction: rtl;
+}
+
+.no-forms img {
+    width: 30px;
+    height: 30px;
+    filter: opacity(0.6);
+}
+
+.no-forms p {
+    font-weight: 800;
+    color: #444;
+    font-size: 18px;
+}
+
+@media (max-width: 1280px) {
+    .forms-grid {
+        grid-template-columns: 1fr; /* 1 column for small screens */
+    }
+}
+/* Responsive Adjustments */
+@media (max-width: 768px) {    
+    .forms-grid {
+        grid-template-columns: 2fr; /* 2 column for small screens */
+    }
+
+    .add-form-button {
+        width: 100%; /* Full width for small screens */
+    }
+
+    .add-form-button .add-form-button-text {
+        font-size: 16px; /* Even smaller font size for button */
+    }
+
+    .form-status-row {
+        flex-direction: column;
+        row-gap: 8px;
+    }
+
+    .add-section-button span {
+        font-size: 20px; /* Smaller font size for button */
+    }
+
+    .add-form-button-container {
+        width: 100%;
+    }
+
+}
+
+@media (max-width: 480px) {
+    .forms-grid {
+        grid-template-columns: 1fr; /* 1 column for small screens */
+    }
+    
+    .form-card {
+        width: 100%; /* 1 card per row on small screens */
+    }
+
+    .add-section-button span {
+        font-size: 16px; /* Smaller font size for button */
+    }
+
+    .evaluate-evaluated-container {
+        flex-direction: column; /* Stack items vertically on small screens */
+        gap: 4px; /* Reduce gap for stacked items */
+    }
+
+    .evaluate-evaluated-container .evaluate,
+    .evaluate-evaluated-container .evaluated {
+        width: 100%; /* Full width for stacked items */
+        justify-content: center; /* Center text and icons */
+    }
+
+    .form-actions {
+        width: 100%;
+        flex-direction: column;
+        align-items: center;
+    }
+
+    .form-actions button {
+        width: 100%;
+        border-radius: 8px;
+    }
+
+    .form-details .editable {
+        font-size: 1.2rem;
+    }
+
+    .form-row-active-button {
+        flex-direction: column;
+        row-gap: 20px; /* Space between elements */
+    }
+
+    .form-row-active-button .download-form-button {
+        width: 100%;
+    }
+    
+    .modal-content {
+        padding: 1rem;
+    }
+    
+    .type-option {
+        padding: 0.75rem;
+    }
+}
+
+/* PDF-specific styles */
+@media print {
+    
+    /* Force RTL for main content */
+    body, .form-note, .question-title {
+        direction: rtl !important;
+        text-align: right !important;
+    }
+    
+    .form-status-row {
+        border: none;
+    }
+    
+    .form-details h1 {
+        font-size: 24pt;
+        margin-bottom: 15px;
+    }
+    
+    .section {
+        page-break-inside: avoid;
+        margin-bottom: 20px;
+    }
+    
+    .question {
+        margin: 10px 0;
+        padding: 10px;
+        border: 1px solid #eee;
+        border-radius: 5px;
+    }
+    .english-text {
+        display: block !important;
+        direction: ltr !important;
+        text-align: left !important;
+        font-size: 0.85em !important;
+        color: #666 !important;
+        margin-top: 5px !important;
+        padding-right: 10px !important;
+        font-family: 'DINLight', sans-serif !important;
+        line-height: 1.4 !important;
+    }
+}

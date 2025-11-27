@@ -1,0 +1,29 @@
+/* Hide non-printable elements */
+[data-printthis-ignore] {
+    display: none !important;
+}
+
+/* Print header styling */
+.print-header {
+    text-align: center;
+    margin-bottom: 20px;
+    padding-bottom: 10px;
+    border-bottom: 2px solid #333;
+}
+
+/* General print styles */
+@media print {
+    body {
+        background: white !important;
+        color: black !important;
+        font-size: 12pt;
+    }
+    
+    .section-header {
+        page-break-after: avoid;
+    }
+    
+    .question {
+        page-break-inside: avoid;
+    }
+}

@@ -1,0 +1,27 @@
+.p-4 {padding: 4px; }
+.p-6 {padding: 6px; }
+.p-8 {padding: 8px; }
+.p-10 {padding: 10px; }
+.p-12 {padding: 12px; }
+.p-14 {padding: 14px; }
+.p-16 {padding: 16px; }
+.p-18 {padding: 18px; }
+.p-20 { padding: 20px; }
+
+.mr-auto { margin-right: auto; }
+.ml-auto { margin-left: auto; }
+.mt-10 { margin-top: 10px; }
+.mb-10 { margin-bottom: 10px;}
+.mt-20 { margin-top: 20px; }
+.mb-20 { margin-bottom: 20px;}
+
+.gap-8 { gap: 8px; }
+.gap-10 { gap: 10px; }
+.gap-12 { gap: 12px; }
+.gap-14 { gap: 14px; }
+.gap-16 { gap: 16px; }
+.gap-18 { gap: 18px; }
+.gap-20 { gap: 20px; }
+
+.items-center { align-items: center; }
+.justify-center { justify-content: center; }

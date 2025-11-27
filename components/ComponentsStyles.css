@@ -1,0 +1,98 @@
+@font-face {
+    font-family: 'DINBold';
+    src: url('.././assets/fonts/DINNextLTArabic-Bold-4.ttf') format('truetype');
+    font-weight: bold;
+    font-style: normal;
+}
+
+@font-face {
+    font-family: 'DINLight';
+    src: url('.././assets/fonts/DINNEXTLTARABIC-LIGHT-2-2.ttf') format('truetype');
+    font-weight: lighter;
+    font-style: italic;
+}
+
+@font-face {
+    font-family: 'DINRegular';
+    src: url('.././assets/fonts/DINNextLTArabic-Regular-4.ttf') format('truetype');
+    font-weight: normal;
+    font-style: normal;
+}
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+body {
+    direction: rtl;
+}
+/* Fixed Header */
+.fixed-header {
+    position: static;
+    width: 100%;
+    top:0;
+    margin-top: 20px;
+    background-color: transparent;
+    color: black;
+    display: flex;
+    justify-content: space-between;
+    flex-direction: row;
+    align-items: center;
+    z-index: 1000;
+}
+
+
+.fixed-header .title {
+    font-family: 'DINBold', sans-serif;
+    font-size: 1.5rem;
+}
+
+/* Fixed Footer */
+.fixed-footer {
+    position: fixed; /* Change from absolute to fixed */
+    width: 100%;
+    bottom: 0; 
+    background-color: #333;
+    color: white;
+    text-align: center;
+    padding: 10px 0;
+    z-index: 1000;
+}
+
+.fixed-footer p {
+    margin: 0;
+    font-family: 'DINRegular', sans-serif;
+}
+
+
+.separator {
+    width: 90%; /* Width of the separator */
+    height: 4px; /* Height of the separator */
+    background-color: #ff6303; /* Background color */
+    border-radius: 9999px; /* Rounded corners to make it pill-shaped */
+    margin: 40px auto 20px auto; /* Center the separator and add vertical spacing */
+}
+
+/* Adjust body padding to avoid content overlap */
+body {
+    padding-top: 70px; /* Space for fixed header */
+    padding-bottom: 50px; /* Space for fixed footer */
+}
+
+@media (max-width: 768px) {
+    .fixed-footer p {
+        font-size: 12px;
+    }
+    .fixed-header .title {
+        font-size: 1.2rem;
+    }
+    .fixed-header {
+        margin-top: 5px;
+    }
+}
+
+@media print {
+    footer {
+        display: none;
+    }
+}

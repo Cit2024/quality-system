@@ -1,0 +1,32 @@
+
+/* ==================== Fonts ==================== */
+@font-face {
+    font-family: 'DINBold';
+    src: url('../../../../.././assets/fonts/DINNextLTArabic-Bold-4.ttf') format('truetype');
+    font-weight: bold;
+    font-style: normal;
+}
+
+@font-face {
+    font-family: 'DINLight';
+    src: url('../../../../.././assets/fonts/DINNEXTLTARABIC-LIGHT-2-2.ttf') format('truetype');
+    font-weight: lighter;
+    font-style: italic;
+}
+
+@font-face {
+    font-family: 'DINRegular';
+    src: url('../../../../.././assets/fonts/DINNextLTArabic-Regular-4.ttf') format('truetype');
+    font-weight: normal;
+    font-style: normal;
+}
+
+
+body {
+  font-family: 'DINRegular', sans-serif;
+  margin: 10px;
+}
+
+h3, .teacher-details h3 {
+  font-family: 'DINBold', sans-serif;
+}

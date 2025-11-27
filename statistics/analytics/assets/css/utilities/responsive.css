@@ -1,0 +1,78 @@
+@media (max-width: 1024px) {
+  .grid-container {
+    grid-template-columns: 1fr;
+  }
+  
+  .chart-container {
+    padding: var(--space-sm);
+  }
+}
+
+@media (max-width: 991px) {
+  .analytics-card {
+        display: flex;
+        flex-direction: column;
+    }
+    .selfie-photo {
+        width: 80px;
+        height: 100px;
+    }
+    .grid-4to3 {
+      grid-template-columns: 1fr 1fr;
+    }
+}
+
+@media (max-width: 768px) {
+  .container {
+    padding: 10px;
+  }
+  
+  .flex-container {
+    flex-direction: column;
+  }
+  
+  .responsive-hide {
+    display: none !important;
+  }
+  
+  .grid-2col {
+    grid-template-columns: 1fr;
+  }
+  
+  .control-group {
+    flex-direction: column;
+    gap: var(--space-sm);
+  }
+  
+  .analytics-card {
+        grid-template-columns: 1fr;
+        gap: 10px;
+    }
+  
+  .teacher-info {
+    flex-direction: column;
+  }
+  
+  .selection-fields {
+    flex-direction: column;
+  }
+  
+    .grid-4to3 {
+        display: flex;
+        flex-direction: column;
+    }
+  
+}
+
+@media (max-width: 480px) {
+    
+    .selfie-photo {
+        width: 60px;
+        height: 80px;
+    }
+    
+    .selfie-photo img {
+        width: 40px;
+        height: 40px;
+    }
+}

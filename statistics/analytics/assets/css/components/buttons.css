@@ -1,0 +1,63 @@
+.primary-button {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 5px;
+    border: none;
+    padding: 10px 15px;
+    background-color: var(--primary-color);
+    color: var(--white);
+    border-radius: 9999px;
+    font-family: 'DINRegular', sans-serif;
+    cursor: pointer;
+    transition: background-color 0.5s;
+}
+
+.primary-button:hover {
+  background-color: #ff9c1a;
+}
+
+.primary-button img {
+    width: 20px;
+    height: 20px;
+}
+
+.primary-button span {
+    text-wrap: nowrap;
+    white-space: nowrap;
+}
+
+/* Back Button Styling */
+.back-button {
+    display: flex;
+    flex-direction: row-reverse;
+    align-items: center;
+    gap: 8px;
+    padding: 10px;
+    transform: translateX(-20px) translateY(16px);
+    background-color: var(--gray);
+    border-radius: 8px;
+    cursor: pointer;
+    width: fit-content;
+    font-family: 'DINRegular';
+    transition: background-color color 0.5s;
+}
+
+.back-button:hover {
+    background-color: var(--primary-color);
+    color: var(--white);
+}
+
+.back-button:hove img {
+    filter: invert(1);
+}
+
+.back-button span {
+    font-family: 'DINBold';
+    font-size: 16px;
+    color: var(--black);
+}
+.back-button img {
+    width: 20px;
+    height: 20px;
+}

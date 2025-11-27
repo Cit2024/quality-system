@@ -1,0 +1,159 @@
+@font-face {
+    font-family: 'DINBold';
+    src: url('.././assets/fonts/DINNextLTArabic-Bold-4.ttf') format('truetype');
+    font-weight: bold;
+    font-style: normal;
+}
+
+@font-face {
+    font-family: 'DINLight';
+    src: url('.././assets/fonts/DINNEXTLTARABIC-LIGHT-2-2.ttf') format('truetype');
+    font-weight: lighter;
+    font-style: italic;
+}
+
+@font-face {
+    font-family: 'DINRegular';
+    src: url('.././assets/fonts/DINNextLTArabic-Regular-4.ttf') format('truetype');
+    font-weight: normal;
+    font-style: normal;
+}
+
+body {
+    background-color: #f4f4f4;
+    height: 100vh;
+    margin: 0;
+    font-family: 'DINRegular', sans-serif;
+}
+
+.root {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    width: 100%;
+    height: 100%;
+    margin: 0;
+}
+
+.login-container {
+    background-color: #fff;
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    border-radius: 8px;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+    text-align: center;
+    width: 100%;
+    max-width: 400px;
+    border-top : 6px solid #ff6303;
+    margin: 20px; /* Add margin for small screens */
+}
+
+.login-container h2 {
+    margin-bottom: 20px;
+    font-family: 'DINBold';
+    color: #333;
+    font-size: 24px; /* Default font size */
+}
+
+.form {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.input-group {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+    text-align: right;
+}
+
+.input-group label {
+    font-family: 'DINRegular';
+    font-size: 14px;
+    color: #333;
+}
+
+.input-group input {
+    width: 100%;
+    padding: 10px;
+    box-sizing: border-box;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    font-family: 'DINRegular';
+    font-size: 14px;
+}
+
+.form button {
+    width: 100%;
+    padding: 10px;
+    background-color: #ff6303;
+    color: white;
+    border: none;
+    border-radius: 999px;
+    cursor: pointer;
+    font-family: 'DINBold';
+    font-size: 16px;
+}
+
+.form button:hover {
+    background-color: #ff6e60;
+}
+
+/* Responsive Adjustments */
+@media (max-width: 768px) {
+    .cards-container {
+        grid-template-columns: repeat(2, 1fr); /* 2 columns for medium screens */
+    }
+    .login-container {
+        padding: 15px; /* Reduce padding for small screens */
+        margin: 10px; /* Reduce margin for small screens */
+    }
+
+    .login-container h2 {
+        font-size: 20px; /* Smaller font size for small screens */
+    }
+
+    .input-group label {
+        font-size: 12px; /* Smaller font size for labels */
+    }
+
+    .input-group input {
+        padding: 8px; /* Smaller padding for inputs */
+        font-size: 12px; /* Smaller font size for inputs */
+    }
+
+    button {
+        padding: 8px; /* Smaller padding for button */
+        font-size: 14px; /* Smaller font size for button */
+    }
+
+}
+
+@media (max-width: 480px) {
+    .login-container {
+        padding: 10px; /* Further reduce padding */
+        margin: 5px; /* Further reduce margin */
+    }
+    
+    .login-container h2 {
+        font-size: 18px; /* Even smaller font size */
+    }
+    
+    .input-group label {
+        font-size: 11px; /* Even smaller font size for labels */
+    }
+    
+    .input-group input {
+        padding: 6px; /* Even smaller padding for inputs */
+        font-size: 11px; /* Even smaller font size for inputs */
+    }
+    
+    button {
+        padding: 6px; /* Even smaller padding for button */
+        font-size: 12px; /* Even smaller font size for button */
+    }
+}

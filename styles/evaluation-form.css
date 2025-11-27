@@ -1,0 +1,497 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+@font-face {
+    font-family: 'DINBold';
+    src: url('.././assets/fonts/DINNextLTArabic-Bold-4.ttf') format('truetype');
+    font-weight: bold;
+    font-style: normal;
+}
+
+@font-face {
+    font-family: 'DINLight';
+    src: url('.././assets/fonts/DINNEXTLTARABIC-LIGHT-2-2.ttf') format('truetype');
+    font-weight: lighter;
+    font-style: italic;
+}
+
+@font-face {
+    font-family: 'DINRegular';
+    src: url('.././assets/fonts/DINNextLTArabic-Regular-4.ttf') format('truetype');
+    font-weight: normal;
+    font-style: normal;
+}
+
+body {
+    background-color: #f4f4f4;
+    height: 100vh;
+    direction: rtl;
+    font-family: 'DINRegular', sans-serif;
+    justify-content: center;
+}
+
+header {
+    position: absolute;
+    width: 100%;
+    height: fit-content;
+    right: 0;
+    top: 0;
+    display: flex;
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: center;
+    padding: 24px 16px;
+}
+
+header img {
+    width: 200px;
+    height: 80px;
+    margin-left: 20px;
+}
+
+.header-title {
+    text-align: center;
+}
+
+.header-title p {
+    font-size: 18px;
+    font-weight: bold;
+    color: #000;
+    margin-right: 20px;
+}
+
+.container {
+    display: flex;
+    flex-direction: column;
+    padding: 20px;
+    direction: rtl;
+}
+
+.no-form-message {
+    text-align: center;
+    padding: 40px;
+    background: white;
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+    max-width: 600px;
+    margin: 0 auto;
+}
+
+.no-form-message img {
+    width: 100px;
+    height: 100px;
+    margin-bottom: 20px;
+    opacity: 0.7;
+}
+
+.no-form-message h2 {
+    color: #555;
+    margin-bottom: 10px;
+    font-family: 'DINBold';
+}
+
+.form-header {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    padding: 25px;
+    background-color: #fff;
+    border-radius: 10px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+    border-right: 5px solid #ff6303;
+    margin-bottom: 30px;
+}
+
+.course-info-container {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+    width: 100%;
+}
+
+.department-info {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 5px;
+}
+
+.department-info p {
+    font-family: 'DINBold';
+    font-size: 20px;
+    color: #333;
+    margin: 0;
+}
+
+.department-info span {
+    font-family: 'DINRegular';
+    font-size: 16px;
+    color: #666;
+}
+
+.course-details {
+    display: flex;
+    align-items: baseline;
+    gap: 10px;
+    font-family: 'DINRegular';
+    font-size: 18px;
+    color: #444;
+}
+
+.course-details p {
+    font-family: 'DINBold';
+    font-size: 20px;
+    color: #222;
+    margin: 0;
+}
+
+.course-details span {
+    font-family: 'DINRegular';
+    font-size: 16px;
+    color: #666;
+}
+
+.semester-info-container {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-top: 10px;
+}
+
+.semester-info, .academic-year {
+    display: flex;
+    gap: 8px;
+    font-family: 'DINRegular';
+    font-size: 16px;
+    color: #555;
+}
+
+.semester-info span, .academic-year span {
+    font-family: 'DINBold';
+    color: #333;
+}
+
+.GPA-teacher-name-container {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 30px;
+    margin-top: 15px;
+}
+
+.GPA-number, .teacher-name {
+    display: flex;
+    gap: 8px;
+    font-family: 'DINRegular';
+    font-size: 16px;
+    color: #555;
+    align-items: center;
+}
+
+.GPA-number span, .teacher-name span {
+    font-family: 'DINBold';
+    color: #333;
+    font-size: 18px;
+}
+
+/* Form Body */
+.form-body {
+    margin-top: 10px;
+}
+
+/* Form note styling with bilingual support */
+.form-note {
+    background-color: #fff;
+    padding: 15px;
+    border-radius: 8px;
+    border-right: 4px solid #ff6303;
+    margin-bottom: 20px;
+    unicode-bidi: plaintext;
+}
+
+.form-note p {
+    font-family: 'DINRegular';
+    color: #222;
+    font-size: 16px;
+    line-height: 1.5;
+    margin-right: 16px;
+    margin-top: 8px;
+}
+
+/* English text in notes */
+.form-note .english-text {
+    display: block;
+    direction: ltr;
+    text-align: left;
+    font-size: 1em;
+    color: #222;
+    margin-top: 8px;
+    padding-right: 10px;
+    font-family: 'DINRegular', sans-serif;
+    line-height: 1.4;
+}
+
+/* Form Section */
+.evaluation-section {
+    background-color: #fff;
+    padding: 20px;
+    border-radius: 8px;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+    margin-bottom: 20px;
+    border-top: #ff6303 solid 4px;
+}
+
+.section-title {
+    font-family: 'DINBold';
+    font-size: 20px;
+    color: #333;
+    margin-bottom: 10px;
+}
+
+/* Question Styling */
+.evaluation-question {
+    border-bottom: 2px solid #ccc;
+    padding: 20px;
+}
+
+.evaluation-question:last-child {
+    border-bottom: none;
+}
+
+/* Question Title and (?) Mark Row */
+.question-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    width: 100%;
+    padding: 8px;
+    border: #333 dashed 1px;
+    border-radius: 8px;
+    margin: 10px 0;
+}
+
+/* Question Title */
+.question-header p {
+    margin: 0;
+    font-family: 'DINRegular';
+    color: #222;
+    font-size: 16px;
+    flex-grow: 1;
+}
+
+/* (?) Mark Styling */
+.question-header span {
+    background-color: #eee;
+    border-radius: 4px;
+    padding: 2px 6px;
+    font-size: 16px;
+    color: #222;
+    font-family: 'DINBold';
+    flex-shrink: 0;
+    margin-left: 10px;
+}
+
+/* Bilingual text styling */
+.question-title {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.question-title .english-text {
+    direction: ltr;
+    text-align: left;
+    font-size: 1em;
+    color: #222;
+    margin-top: 4px;
+    font-family: 'DINRegular', sans-serif;
+}
+
+.submit-button {
+    display: block;
+    width: 200px;
+    margin: 30px auto;
+    padding: 12px 24px;
+    background-color: #ff6303;
+    color: white;
+    border: none;
+    border-radius: 8px;
+    font-family: 'DINBold', sans-serif;
+    font-size: 18px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 8px rgba(255, 99, 3, 0.2);
+    text-align: center;
+}
+
+.submit-button:hover {
+    background-color: #e55600;
+    transform: translateY(-2px);
+    box-shadow: 0 6px 12px rgba(255, 99, 3, 0.3);
+}
+
+.submit-button:active {
+    transform: translateY(0);
+    box-shadow: 0 2px 4px rgba(255, 99, 3, 0.3);
+}
+
+.submit-button:focus {
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(255, 99, 3, 0.4);
+}
+
+/* Disabled state */
+.submit-button:disabled {
+    background-color: #cccccc;
+    cursor: not-allowed;
+    box-shadow: none;
+    transform: none;
+}
+
+/* evaluation-thankyou */
+.message-box {
+    text-align: center;
+    background: white;
+    padding: 40px;
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    border-top: 6px solid #ff6303;
+    max-width: 500px;
+    margin: 50px auto;
+}
+
+.message-box img {
+    margin-bottom: 20px;
+}
+
+.message-box h1 {
+    margin-bottom: 15px;
+}
+
+.message-box p {
+    color: #555;
+    font-size: 18px;
+    margin-bottom: 25px;
+}
+
+/* Responsive Adjustments */
+@media (max-width: 768px) {
+    header img {
+        width: 150px;
+        height: 60px;
+    }
+    
+    .no-form-message {
+        padding: 30px 20px;
+    }
+    
+    .no-form-message img {
+        width: 80px;
+        height: 80px;
+    }
+
+    .header-title p {
+        font-size: 16px;
+    }
+    
+    .form-header {
+        padding: 20px;
+        gap: 15px;
+    }
+
+    .form-header h1 p {
+        font-size: 18px;
+    }
+
+    .form-header h1 span {
+        font-size: 16px;
+    }
+
+    .form-header p {
+        font-size: 16px;
+    }
+    
+    .department-info p {
+        font-size: 18px;
+    }
+    
+    .course-details {
+        font-size: 16px;
+    }
+    
+    .course-details p {
+        font-size: 18px;
+    }
+    
+    .GPA-teacher-name-container {
+        flex-direction: column;
+        gap: 15px;
+    }
+
+    .evaluation-question {
+        padding: 12px;
+    }
+
+    .question-header {
+        padding: 8px;
+    }
+    
+    .submit-button {
+        width: 180px;
+        padding: 10px 20px;
+        font-size: 16px;
+    }
+}
+
+@media (max-width: 480px) {
+    .form-header {
+        padding: 15px;
+    }
+    
+    .department-info p {
+        font-size: 16px;
+    }
+    
+    .course-details {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 5px;
+    }
+    
+    .semester-info, .academic-year {
+        font-size: 14px;
+    }
+    
+    .GPA-number, .teacher-name {
+        font-size: 14px;
+    }
+    
+    .GPA-number span, .teacher-name span {
+        font-size: 16px;
+    }
+    .evaluation-question {
+        padding: 8px;
+    }
+
+    .question-header {
+        padding: 4px;
+    }
+
+    .question-header p {
+        font-size: 14px;
+    }
+
+    .question-header span {
+        font-size: small;
+    }
+    
+    .submit-button {
+        width: 100%;
+        max-width: 160px;
+        padding: 8px 16px;
+        font-size: 15px;
+        margin: 20px auto;
+    }
+}

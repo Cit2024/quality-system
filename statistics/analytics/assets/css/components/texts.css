@@ -1,0 +1,25 @@
+.primary-title {
+    font-family: 'DINBold', sans-serif;
+    font-size: 24px;
+    color: var(--black);
+}
+
+.base-title {
+    font-family: 'DINRegular', sans-serif;
+    font-size: 18px;
+    color: var(--black);
+}
+
+.small-side-text {
+    font-family: 'DINBold', sans-serif;
+    font-size: 14px;
+    color: var(--black2);
+    margin-right: 8px;
+}
+
+.question-title {
+    font-family: 'DINRegular', sans-serif;
+    color: #2c3e50;
+    margin-bottom: 1.2rem;
+    font-size: 1.2rem;
+}
