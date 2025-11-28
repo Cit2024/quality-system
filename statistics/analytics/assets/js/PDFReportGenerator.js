@@ -59,6 +59,20 @@
     return Number.isFinite(n) ? n : 0;
   }
 
+  function roundDecimal(num, places = 2) {
+    const val = safeNum(num);
+    return Math.round(val * Math.pow(10, places)) / Math.pow(10, places);
+  }
+
+  function reverseArabicWords(text) {
+    if (!text) return text;
+    const str = String(text);
+    if (!hasArabicText(str)) return str;
+    // Reverse word order for Arabic text
+    const words = str.split(' ');
+    return words.reverse().join(' ');
+  }
+
   function hasArabicText(s) {
     if (!s) return false;
     return /[\u0600-\u06FF\u0750-\u077F]/.test(String(s));
@@ -67,7 +81,9 @@
   // create a text node that applies RTL/LTR and alignment automatically for Arabic
   function makeTextNode(value, extra = {}) {
     const v = (value === null || value === undefined) ? '' : String(value);
-    const node = { text: v };
+    // Reverse Arabic word order for proper display
+    const displayText = hasArabicText(v) ? reverseArabicWords(v) : v;
+    const node = { text: displayText };
     if (hasArabicText(v)) {
       node.direction = 'rtl';
       node.alignment = 'right';
@@ -78,7 +94,7 @@
 
   function percent(value, total) {
     if (!total) return 0;
-    return Math.round((safeNum(value) / total) * 100);
+    return roundDecimal((safeNum(value) / total) * 100, 2);
   }
 
   function progressBarCanvas(width, height, fraction, bgColor = '#e9f2fb', fgColor = '#d97757') {
@@ -248,7 +264,7 @@
 
     const summary = [];
     if (showAverage) {
-      const avg = safeNum(q.average);
+      const avg = roundDecimal(q.average, 2);
       const max = safeNum(q.max_score) || '';
       const frac = (max && max > 0) ? Math.min(1, avg / max) : Math.min(1, avg / (totalParticipants || 1));
       summary.push({
@@ -366,7 +382,7 @@
     const body = [header];
     questions.forEach((q,i)=> body.push([ 
       makeTextNode(`Q${i+1} ${ (q.english || q.arabic || '').toString().slice(0,60) }`), 
-      makeTextNode(q.average ?? ''), 
+      makeTextNode(q.average !== undefined && q.average !== null ? roundDecimal(q.average, 2) : ''), 
       makeTextNode(q.n_participants ?? numParticipants ?? '')
     ]));
     return { 

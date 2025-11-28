@@ -584,36 +584,43 @@ class StatisticsHandler {
             'semester' => $item['semester_no']
         ]);
     
+        $courseName = htmlspecialchars($item['course_name']);
+        $courseCode = htmlspecialchars($item['course_code']);
+        $teacherName = htmlspecialchars($item['teacher_name']);
+        $semesterName = htmlspecialchars($item['semester_name']);
+        $evaluations = htmlspecialchars($item['evaluations']);
+        $totalStudents = htmlspecialchars($item['total_students']);
+
         return <<<HTML
         <div class="card" data-semester="{$item['semester_no']}">
             <div class="card-content-course">
                 <div class="info-course">
                       <a href="./statistics/router.php?{$queryParams}" class="course-title">
-                        {$item['course_name']}
-                        <span>{$item['course_code']}</span>
+                        {$courseName}
+                        <span>{$courseCode}</span>
                     </a>
                     
                     <div class="teacher">
                         <span>مدرس المقرر:</span>
-                        <h4>{$item['teacher_name']}</h4>
+                        <h4>{$teacherName}</h4>
                     </div>
                     
                     <div class="semester">
                         <span>الفصل الدراسي:</span>
-                        {$item['semester_name']}
+                        {$semesterName}
                     </div>
                 </div>
     
                 <div class="container-number-evaluation">
-                    <canvas id="chart-number-evaluation-{$item['course_code']}" 
-                            data-evaluations="{$item['evaluations']}" 
-                            data-total-students="{$item['total_students']}"></canvas>
+                    <canvas id="chart-number-evaluation-{$courseCode}" 
+                            data-evaluations="{$evaluations}" 
+                            data-total-students="{$totalStudents}"></canvas>
                     
                     <div class="number-evaluation">
                         عدد التقييمات
-                        <span class="primary">{$item['evaluations']}</span>
+                        <span class="primary">{$evaluations}</span>
                         من أصل
-                        <span>{$item['total_students']}</span>
+                        <span>{$totalStudents}</span>
                     </div>
                 </div>
             </div>
@@ -631,39 +638,47 @@ HTML;
             'course_code' => $item['course_code']
         ]);
         
+        $teacherName = htmlspecialchars($item['teacher_name']);
+        $courseName = htmlspecialchars($item['course_name']);
+        $courseCode = htmlspecialchars($item['course_code']);
+        $semesterName = htmlspecialchars($item['semester_name']);
+        $evaluations = htmlspecialchars($item['evaluations']);
+        $totalStudents = htmlspecialchars($item['total_students']);
+        $teacherPhoto = htmlspecialchars($item['teacher_photo']);
+
         return <<<HTML
             <div class="card" data-semester="{$item['semester_no']}">
                 <div class="card-content-teacher">
                     <div class="teacher-photo">
-                        <img src="{$item['teacher_photo']}" alt="صورة المدرس">
+                        <img src="{$teacherPhoto}" alt="صورة المدرس">
                     </div>
         
                     <div class="card-info-teacher-course">
                         <h3>
                             <a href="./statistics/router.php?{$queryParams}">
-                                {$item['teacher_name']}
+                                {$teacherName}
                             </a>
                         </h3>
                         <p>
-                            {$item['course_name']}
-                            <span>{$item['course_code']}</span>
+                            {$courseName}
+                            <span>{$courseCode}</span>
                         </p>
                         <h4>
                             الفصل الدراسي
-                            <span class="primary">{$item['semester_name']}</span>
+                            <span class="primary">{$semesterName}</span>
                         </h4>
                     </div>
         
                     <div class="container-number-evaluation">
-                        <canvas id="chart-number-evaluation-{$item['teacher_id']}-{$item['course_code']}" 
-                                data-evaluations="{$item['evaluations']}" 
-                                data-total-students="{$item['total_students']}"></canvas>
+                        <canvas id="chart-number-evaluation-{$item['teacher_id']}-{$courseCode}" 
+                                data-evaluations="{$evaluations}" 
+                                data-total-students="{$totalStudents}"></canvas>
                         
                         <div class="number-evaluation">
                             التقييمات
-                            <span class="primary">{$item['evaluations']}</span>
+                            <span class="primary">{$evaluations}</span>
                             من أصل
-                            <span>{$item['total_students']}</span>
+                            <span>{$totalStudents}</span>
                         </div>
                     </div>
                 </div>
@@ -679,23 +694,27 @@ HTML;
                 'type' => 'program_evaluation',
             ]);
             
+            $timePeriod = htmlspecialchars($item['time_period']);
+            $startDate = htmlspecialchars($item['start_date']);
+            $evaluations = htmlspecialchars($item['evaluations']);
+
             return <<<HTML
             <div class="card">
                 <div class="card-content-course">
                     <div class="info-course">
                         <a href="./statistics/router.php?{$queryParams}">
                             <h3 class="program-title">
-                                الفترة: {$item['time_period']}
+                                الفترة: {$timePeriod}
                             </h3>
                         </a>
                         <div class="meta-item">
                             <img src="./assets/icons/calendar.svg" alt="التاريخ">
-                            بداية: {$item['start_date']}
+                            بداية: {$startDate}
                         </div>
                     </div>
                     <div class="container-number-evaluation">
                         <div class="number-evaluation">
-                            <span class="primary">{$item['evaluations']}</span>
+                            <span class="primary">{$evaluations}</span>
                             تقييمات
                         </div>
                     </div>
@@ -709,17 +728,20 @@ HTML;
                 'semester' => $item['semester_no']
             ]);
             
+            $semesterName = htmlspecialchars($item['semester_name']);
+            $evaluations = htmlspecialchars($item['evaluations']);
+
             return <<<HTML
             <div class="card" data-semester="{$item['semester_no']}">
                 <div class="card-content-course">
                     <div class="info-course">
                         <a href="./statistics/router.php?{$queryParams}" class="program-title">
-                            {$item['semester_name']}
+                            {$semesterName}
                         </a>
                     </div>
                     <div class="container-number-evaluation">
                         <div class="number-evaluation">
-                            <span class="primary">{$item['evaluations']}</span>
+                            <span class="primary">{$evaluations}</span>
                             طالب مشارك
                         </div>
                     </div>
@@ -735,6 +757,10 @@ HTML;
             'type' => 'facility_evaluation',
             'semester' => $item['semester_no']
         ]);
+        
+        $semesterName = htmlspecialchars($item['semester_name']);
+        $evaluations = htmlspecialchars($item['evaluations']);
+
         return <<<HTML
         <div class="card" data-semester="{$item['semester_no']}">
             <div class="card-content-course">
@@ -745,13 +771,13 @@ HTML;
                     <div class="facility-meta">
                         <div class="semester">
                             <img src="./assets/icons/calendar.svg" alt="الفصل">
-                            {$item['semester_name']}
+                            {$semesterName}
                         </div>
                     </div>
                 </div>
                 <div class="container-number-evaluation">
                     <div class="number-evaluation">
-                        <span class="primary">{$item['evaluations']}</span>
+                        <span class="primary">{$evaluations}</span>
                         تقييمات
                     </div>
                 </div>

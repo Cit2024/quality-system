@@ -237,28 +237,34 @@ class TeacherStatisticsHandler
             'semester' => $semester['semester_no']
         ]);
 
+        $courseName = htmlspecialchars($course['course_name']);
+        $courseCode = htmlspecialchars($course['course_code']);
+        $semesterName = htmlspecialchars($semester['semester_name']);
+        $evaluations = htmlspecialchars($course['evaluations']);
+        $totalStudents = htmlspecialchars($course['total_students']);
+
         return <<<HTML
     <div class="card" data-semester="{$semester['semester_no']}">
         <div class="card-content-course">
             <div class="info-course">
                 <a href="./statistics/router.php?{$queryParams}" class="course-title">
-                    {$course['course_name']}
-                    <span>{$course['course_code']}</span>
+                    {$courseName}
+                    <span>{$courseCode}</span>
                 </a>
                 <div class="semester">
                     <span>الفصل الدراسي:</span>
-                    {$semester['semester_name']}
+                    {$semesterName}
                 </div>
             </div>
             <div class="container-number-evaluation">
-                <canvas id="chart-course-{$course['course_code']}-{$semester['semester_no']}" 
-                        data-evaluations="{$course['evaluations']}" 
-                        data-total-students="{$course['total_students']}"></canvas>
+                <canvas id="chart-course-{$courseCode}-{$semester['semester_no']}" 
+                        data-evaluations="{$evaluations}" 
+                        data-total-students="{$totalStudents}"></canvas>
                 <div class="number-evaluation">
                     عدد التقييمات
-                    <span class="primary">{$course['evaluations']}</span>
+                    <span class="primary">{$evaluations}</span>
                     من أصل
-                    <span>{$course['total_students']}</span>
+                    <span>{$totalStudents}</span>
                 </div>
             </div>
         </div>
@@ -276,32 +282,38 @@ HTML;
             'teacher_id' => $this->teacherId
         ]);
 
+        $courseName = htmlspecialchars($course['course_name']);
+        $courseCode = htmlspecialchars($course['course_code']);
+        $semesterName = htmlspecialchars($semester['semester_name']);
+        $evaluations = htmlspecialchars($course['evaluations']);
+        $totalStudents = htmlspecialchars($course['total_students']);
+
         return <<<HTML
 <div class="card" data-semester="{$semester['semester_no']}">
     <div class="card-content-teacher">
         <div class="card-info-teacher-course">
             <h3>
                 <a href="./statistics/router.php?{$queryParams}">
-                    تقييمي في المقرر {$course['course_name']}           
+                    تقييمي في المقرر {$courseName}           
                 </a>
             </h3>
             <p>
-                <span>{$course['course_code']}</span>
+                <span>{$courseCode}</span>
             </p>
             <h4>
                 الفصل الدراسي
-                <span class="primary">{$semester['semester_name']}</span>
+                <span class="primary">{$semesterName}</span>
             </h4>
         </div>
         <div class="container-number-evaluation">
-            <canvas id="chart-teacher-{$this->teacherId}-{$course['course_code']}" 
-                    data-evaluations="{$course['evaluations']}" 
-                    data-total-students="{$course['total_students']}"></canvas>
+            <canvas id="chart-teacher-{$this->teacherId}-{$courseCode}" 
+                    data-evaluations="{$evaluations}" 
+                    data-total-students="{$totalStudents}"></canvas>
             <div class="number-evaluation">
                 التقييمات
-                <span class="primary">{$course['evaluations']}</span>
+                <span class="primary">{$evaluations}</span>
                 من أصل
-                <span>{$course['total_students']}</span>
+                <span>{$totalStudents}</span>
             </div>
         </div>
     </div>
