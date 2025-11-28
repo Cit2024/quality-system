@@ -14,24 +14,30 @@
     box-shadow: 0 7px 25px rgba(0, 0, 0, 0.08);
     border-left: 6px solid var(--primary-color);
     margin: 20px;
+    direction: rtl;
 }
+
 .table-title {
     display: flex;
     justify-content: center;
     margin-bottom: 20px;
 }
+
 table {
     width: 100%;
     border-collapse: collapse;
 }
 
-table th, tr {
+table th,
+tr {
     padding: 12px;
     text-align: left;
+    text-align: center;
     border-bottom: 2px solid var(--gray);
 }
 
-table th, table td {
+table th,
+table td {
     padding: 12px;
 }
 
@@ -43,13 +49,18 @@ table tr:last-child {
     border-bottom: none;
 }
 
-.username-container, .password-container, .name-container {
+.username-container,
+.password-container,
+.name-container {
     display: flex;
     align-items: center;
+    justify-content: center;
     gap: 10px;
 }
 
-.username, .password-input, .name {
+.username,
+.password-input,
+.name {
     font-size: 18px;
 }
 
@@ -60,13 +71,15 @@ table tr:last-child {
     width: 100px;
 }
 
-.copy-button, .toggle-password {
+.copy-button,
+.toggle-password {
     background: none;
     border: none;
     cursor: pointer;
 }
 
-.copy-button img, .toggle-password img {
+.copy-button img,
+.toggle-password img {
     width: 20px;
     height: 20px;
 }
@@ -94,7 +107,8 @@ table tr:last-child {
     cursor: not-allowed;
 }
 
-.admin-table th:nth-child(3), .admin-table td:nth-child(3) {
+.admin-table th:nth-child(3),
+.admin-table td:nth-child(3) {
     width: 60%;
 }
 
@@ -338,7 +352,8 @@ table tr:last-child {
     background-color: #e65a00;
 }
 
-.success-message, .error-message {
+.success-message,
+.error-message {
     padding: 10px;
     border-radius: 4px;
     margin-bottom: 20px;
@@ -400,11 +415,11 @@ table tr:last-child {
         margin: 15px;
         padding: 15px;
     }
-    
+
     .form-container {
         width: 85%;
     }
-    
+
     .permissions-container label {
         font-size: 14px;
     }
@@ -421,75 +436,78 @@ table tr:last-child {
         margin: 10px;
         padding: 10px;
     }
-    
+
     .table-container {
         border-left-width: 4px;
     }
-    
+
     table {
         min-width: 700px;
     }
-    
-    table th, table td {
+
+    table th,
+    table td {
         padding: 8px 10px;
     }
-    
-    .username, .password-input {
+
+    .username,
+    .password-input {
         font-size: 16px;
     }
-    
+
     .permissions-container {
         flex-direction: column;
         gap: 8px;
         align-items: flex-start;
     }
-    
-    table th:nth-child(3), table td:nth-child(3) {
+
+    table th:nth-child(3),
+    table td:nth-child(3) {
         width: auto;
     }
-    
+
     .add-admin-button-container {
         margin: 15px;
     }
-    
+
     .add-admin-button {
         padding: 8px 16px;
     }
-    
+
     .add-admin-button-text {
         font-size: 16px;
     }
-    
+
     .add-admin-button img {
         width: 24px;
         height: 24px;
     }
-    
+
     .form-container {
         width: 90%;
         padding: 15px;
     }
-    
+
     .container-input {
         flex-direction: column;
         gap: 15px;
     }
-    
+
     .group-input {
         width: 100%;
     }
-    
+
     .username-input input,
     .password-input-container input {
         width: 100%;
     }
-    
+
     .permissions-container {
         flex-wrap: wrap;
         flex-direction: row;
         gap: 10px;
     }
-    
+
     .permissions-container label {
         white-space: nowrap;
     }
@@ -503,57 +521,60 @@ table tr:last-child {
     .table-container {
         border-left-width: 4px;
     }
-    
+
     .permissions-container label {
         font-size: 14px;
         gap: 6px;
     }
 
-    .username-container, .password-container, .name-container {
+    .username-container,
+    .password-container,
+    .name-container {
         gap: 6px;
     }
-    
-    .copy-button img, .toggle-password img {
+
+    .copy-button img,
+    .toggle-password img {
         width: 18px;
         height: 18px;
     }
-    
+
     .password-input {
         width: 80px;
     }
-    
+
     .form-container {
         width: 95%;
         padding: 12px;
     }
-    
+
     .form-container h1 {
         font-size: 20px;
     }
-    
+
     .username-input span,
     .username-input input,
     .password-input-container input {
         font-size: 16px;
     }
-    
+
     .permissions-group label {
         font-size: 14px;
     }
-    
+
     .submit-button {
         padding: 8px 16px;
         font-size: 14px;
     }
-    
+
     .no-permission {
         margin-top: 40%;
     }
-    
+
     .no-permission p {
         font-size: 18px;
     }
-    
+
     .no-permission a {
         font-size: 16px;
     }
@@ -564,11 +585,11 @@ table tr:last-child {
         flex-direction: column;
         gap: 8px;
     }
-    
+
     .container-input {
         gap: 12px;
     }
-    
+
     .back-button {
         margin-right: 10px;
         padding: 6px 10px;
