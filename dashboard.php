@@ -45,8 +45,25 @@ foreach (FORM_TYPES as $typeKey => $formType) {
     ];
 }
 
-// Get statistics data
+// Get enhanced statistics data
 $stats = fetchData($con, "SELECT COUNT(ID) AS total_forms FROM Form")[0] ?? ['total_forms' => 0];
+
+// Get published vs draft forms count
+$published_forms = fetchData($con, "SELECT COUNT(ID) AS count FROM Form WHERE FormStatus = 'published'")[0]['count'] ?? 0;
+$draft_forms = fetchData($con, "SELECT COUNT(ID) AS count FROM Form WHERE FormStatus = 'draft'")[0]['count'] ?? 0;
+
+// Get forms with at least one participation
+$forms_with_participation = fetchData($con, "
+    SELECT COUNT(DISTINCT CONCAT(f.FormType, '-', f.FormTarget)) AS count
+    FROM Form f
+    INNER JOIN EvaluationResponses er ON 
+        er.FormType = f.FormType AND 
+        er.FormTarget = f.FormTarget
+    WHERE f.FormStatus = 'published'
+")[0]['count'] ?? 0;
+
+// Calculate participation rate for published forms
+$participation_rate = $published_forms > 0 ? round(($forms_with_participation / $published_forms) * 100, 2) : 0;
 
 // Get form-specific statistics
 $formStatistics = fetchData($con, "
@@ -64,7 +81,7 @@ $formStatistics = fetchData($con, "
         er.FormTarget = f.FormTarget AND
         er.Semester = ?
     GROUP BY f.ID, f.Title, f.FormStatus, f.FormType, f.FormTarget
-    ORDER BY f.FormStatus DESC, response_count DESC
+    ORDER BY f.ID DESC
     LIMIT 10
 ", [$semester['ZamanNo']]);
 
@@ -169,14 +186,41 @@ $statisticsCards = [
     ],
 ];
 
+// Enhanced statistics cards for detailed view
+$enhancedStatisticsCards = [
+    [
+        "name" => "النماذج المنشورة",
+        "statistics" => $published_forms,
+        "icon" => "fa-solid fa-check-circle",
+        "color" => "#28a745",
+        "link" => "./forms.php?filter=published"
+    ],
+    [
+        "name" => "النماذج المسودة",
+        "statistics" => $draft_forms,
+        "icon" => "fa-solid fa-file-alt",
+        "color" => "#ffc107",
+        "link" => "./forms.php?filter=draft"
+    ],
+    [
+        "name" => "النماذج مع مشاركة",
+        "statistics" => $forms_with_participation,
+        "icon" => "fa-solid fa-users",
+        "color" => "#17a2b8",
+        "link" => null
+    ],
+    [
+        "name" => "معدل المشاركة",
+        "statistics" => $participation_rate . " %",
+        "icon" => "fa-solid fa-chart-line",
+        "color" => "#d97757",
+        "link" => null
+    ],
+];
+
 ?>
 
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <title>لوحة التحكم</title>
-</head>
-<body>
+
     <div class="main">
         <div class="top-bar">
             <div class="toggle-button">
@@ -206,6 +250,31 @@ $statisticsCards = [
                     </div>
                 </div>
             <?php endforeach; ?>
+        </div>
+
+        <!-- Enhanced Statistics Section -->
+        <div class="enhanced-statistics-section">
+            <div class="section-header">
+                <h2>تفاصيل النماذج</h2>
+            </div>
+            <div class="statistics-cards">
+                <?php foreach ($enhancedStatisticsCards as $card): ?>
+                    <div class="enhanced-card" 
+                         <?php if ($card['link']): ?>onclick="window.location.href='<?php echo htmlspecialchars($card['link']); ?>'" style="cursor: pointer;"<?php endif; ?>>
+                        <div class="card-content">
+                            <div class="numbers" style="color: <?php echo htmlspecialchars($card['color']); ?>;">
+                                <?php echo htmlspecialchars($card['statistics']); ?>
+                            </div>
+                            <div class="card-name">
+                                <?php echo htmlspecialchars($card['name']); ?>
+                            </div>
+                        </div>
+                        <div class="icon-box" style="background: <?php echo htmlspecialchars($card['color']); ?>20;">
+                            <i class="<?php echo htmlspecialchars($card['icon']); ?>" style="color: <?php echo htmlspecialchars($card['color']); ?>;"></i>
+                        </div>
+                    </div>
+                <?php endforeach; ?>
+            </div>
         </div>
 
         <!-- Forms Statistics Section -->
@@ -310,9 +379,5 @@ $statisticsCards = [
         </div>
     </div>
     
-    <?php include './components/footer.php'; ?>
-    
-
     <script src="./scripts/dashbord.js"></script>
-</body>
-</html>
+    <?php include './components/footer.php'; ?>
