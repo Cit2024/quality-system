@@ -11,7 +11,7 @@ if (!$isAdmin && !$isTeacher) {
 }
 
 // Include the database connection
-include 'config/dbConnectionCit.php';
+include __DIR__ . '/../config/dbConnectionCit.php';
 
 // Get current semester with proper error handling
 $sql = "SELECT ZamanNo, ZamanName FROM `zaman` WHERE ZamanNo = (SELECT MAX(ZamanNo) FROM zaman)";
@@ -58,7 +58,7 @@ function executePreparedStatement($con, $query, $param)
 <body>
     <div class="container">
         <?php if ($isAdmin) : ?>
-            <?php include 'navigation.php'; ?>
+            <?php include __DIR__ . '/navigation.php'; ?>
         <?php else : ?>
-            <?php include 'teacher_navigation.php'; ?>
+            <?php include __DIR__ . '/teacher_navigation.php'; ?>
         <?php endif; ?>
