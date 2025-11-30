@@ -1,56 +1,40 @@
 <?php
 // forms/form_constants.php
+// This file loads form types and targets from the database and defines them as constants
 
-define('FORM_TYPES', [
-    'course_evaluation' => [
-        'name' => 'تقييم مقرر',
-        'icon' => './assets/icons/book-bookmark-solid.svg',
-        'allowed_targets' => ['student', 'teacher', 'alumni']
-    ],
-    'teacher_evaluation' => [
-        'name' => 'تقييم مدرس',
-        'icon' => './assets/icons/person-chalkboard-solid.svg',
-        'allowed_targets' => ['student', 'admin']
-    ],
-    'program_evaluation' => [
-        'name' => 'تقييم برنامج',
-        'icon' => './assets/icons/layer-group-solid.svg',
-        'allowed_targets' => ['student', 'alumni', 'employer']
-    ],
-    'facility_evaluation' => [
-        'name' => 'تقييم مؤسسة',
-        'icon' => './assets/icons/building-solid.svg',
-        'allowed_targets' => ['student', 'teacher']
-    ],
-    'leaders_evaluation' => [
-        'name' => 'تقييم قيادات',
-        'icon' => './assets/icons/user-tie-solid.svg',
-        'allowed_targets' => ['teacher']
-    ]
-]);
+require_once __DIR__ . '/../config/DbConnection.php';
+require_once __DIR__ . '/../helpers/FormTypes.php';
 
-define('FORM_TARGETS', [
-    'student' => [
-        'name' => 'طالب',
-        'icon' => './assets/icons/graduation-cap-solid.svg'
-    ],
-    'teacher' => [
-        'name' => 'مدرس',
-        'icon' => './assets/icons/chalkboard-user-solid.svg'
-    ],
-    'admin' => [
-        'name' => 'إداري',
-        'icon' => './assets/icons/user-tie-solid.svg'
-    ],
-    'alumni' => [
-        'name' => 'خريج',
-        'icon' => './assets/icons/user-graduate-solid.svg'
-    ],
-    'employer' => [
-        'name' => 'موظف',
-        'icon' => './assets/icons/briefcase-solid.svg'
-    ]
-]);
+$fetchedFormTypes = isset($con) ? FormTypes::getFormTypes($con) : [];
+$fetchedFormTargets = isset($con) ? FormTypes::getFormTargets($con) : [];
+
+// Add database IDs to the arrays
+foreach ($fetchedFormTypes as $slug => &$type) {
+    // Fetch the ID from database
+    $stmt = $con->prepare("SELECT ID FROM FormTypes WHERE Slug = ?");
+    $stmt->bind_param('s', $slug);
+    $stmt->execute();
+    $result = $stmt->get_result();
+    if ($row = $result->fetch_assoc()) {
+        $type['id'] = $row['ID'];
+    }
+    $stmt->close();
+}
+
+foreach ($fetchedFormTargets as $slug => &$target) {
+    // Fetch the ID from database
+    $stmt = $con->prepare("SELECT ID FROM EvaluatorTypes WHERE Slug = ?");
+    $stmt->bind_param('s', $slug);
+    $stmt->execute();
+    $result = $stmt->get_result();
+    if ($row = $result->fetch_assoc()) {
+        $target['id'] = $row['ID'];
+    }
+    $stmt->close();
+}
+
+define('FORM_TYPES', $fetchedFormTypes);
+define('FORM_TARGETS', $fetchedFormTargets);
 
 define('TYPE_QUESTION',[
     'true_false' => [
@@ -70,4 +54,3 @@ define('TYPE_QUESTION',[
         'icon' => './assets/icons/quote.svg'
     ]
 ]);
-

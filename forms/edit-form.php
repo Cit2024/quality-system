@@ -14,6 +14,276 @@ include '.././config/DbConnection.php';
 
 include 'form_constants.php'; 
 
+// Handle API Requests (POST)
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
+    header('Content-Type: application/json');
+    $response = ['success' => false, 'message' => 'Invalid action'];
+    
+    try {
+        $action = $_POST['action'];
+        
+        // --- Type Management ---
+        if ($action === 'create_type') {
+            $category = $_POST['category'] ?? '';
+            $name = trim($_POST['name'] ?? '');
+            $slug = trim($_POST['slug'] ?? '');
+            $icon = trim($_POST['icon'] ?? '');
+            
+            if (empty($name) || empty($slug) || empty($icon)) {
+                throw new Exception('جميع الحقول مطلوبة');
+            }
+            
+            $table = $category === 'target' ? 'EvaluatorTypes' : 'FormTypes';
+            
+            // Check slug
+            $stmt = $con->prepare("SELECT ID FROM $table WHERE Slug = ?");
+            $stmt->bind_param('s', $slug);
+            $stmt->execute();
+            if ($stmt->get_result()->num_rows > 0) throw new Exception('المعرف موجود بالفعل');
+            $stmt->close();
+            
+            // Insert
+            $stmt = $con->prepare("INSERT INTO $table (Name, Slug, Icon) VALUES (?, ?, ?)");
+            $stmt->bind_param('sss', $name, $slug, $icon);
+            if (!$stmt->execute()) throw new Exception('فشل الإضافة');
+            $newId = $con->insert_id;
+            $stmt->close();
+            
+            // For FormTypes, handle allowed targets
+            if ($category !== 'target' && !empty($_POST['allowed_targets'])) {
+                $stmt = $con->prepare("INSERT INTO FormType_EvaluatorType (FormTypeID, EvaluatorTypeID) VALUES (?, ?)");
+                foreach ($_POST['allowed_targets'] as $evalId) {
+                    $stmt->bind_param('ii', $newId, $evalId);
+                    $stmt->execute();
+                }
+                $stmt->close();
+            }
+            
+            $response = ['success' => true, 'message' => 'تم الإضافة بنجاح'];
+            
+        } elseif ($action === 'delete_type') {
+            $input = json_decode(file_get_contents('php://input'), true);
+            $id = intval($input['id'] ?? 0);
+            $category = $input['category'] ?? ''; // 'target' or 'type'
+            
+            if ($id <= 0) throw new Exception('معرف غير صحيح');
+            
+            $table = $category === 'target' ? 'EvaluatorTypes' : 'FormTypes';
+            $col = $category === 'target' ? 'EvaluatorTypeID' : 'FormTypeID';
+            
+            // Check usage
+            $stmt = $con->prepare("SELECT COUNT(*) as count FROM Form WHERE $col = ?");
+            $stmt->bind_param('i', $id);
+            $stmt->execute();
+            $count = $stmt->get_result()->fetch_assoc()['count'];
+            $stmt->close();
+            
+            if ($count > 0) throw new Exception("لا يمكن الحذف لأنه مستخدم في $count نموذج");
+            
+            // Delete relationships first if needed (FormType_EvaluatorType)
+            if ($category !== 'target') {
+                $stmt = $con->prepare("DELETE FROM FormType_EvaluatorType WHERE FormTypeID = ?");
+                $stmt->bind_param('i', $id);
+                $stmt->execute();
+                $stmt->close();
+            } else {
+                 $stmt = $con->prepare("DELETE FROM FormType_EvaluatorType WHERE EvaluatorTypeID = ?");
+                $stmt->bind_param('i', $id);
+                $stmt->execute();
+                $stmt->close();
+            }
+            
+            $stmt = $con->prepare("DELETE FROM $table WHERE ID = ?");
+            $stmt->bind_param('i', $id);
+            if (!$stmt->execute()) throw new Exception('فشل الحذف');
+            $stmt->close();
+            
+            $response = ['success' => true, 'message' => 'تم الحذف بنجاح'];
+            
+        } 
+        // --- Form Settings (Password) ---
+        elseif ($action === 'update_password') {
+            $formId = intval($_POST['form_id']);
+            $password = trim($_POST['password'] ?? '');
+            
+            // If password is empty, set to NULL (remove password)
+            $sql = "UPDATE Form SET password = ? WHERE ID = ?";
+            $val = empty($password) ? null : $password;
+            
+            $stmt = $con->prepare($sql);
+            $stmt->bind_param('si', $val, $formId);
+            if (!$stmt->execute()) throw new Exception('فشل تحديث كلمة المرور');
+            $stmt->close();
+            
+            $response = ['success' => true, 'message' => 'تم تحديث كلمة المرور'];
+        }
+        // --- Registration Fields ---
+        elseif ($action === 'add_field') {
+            $formId = intval($_POST['form_id']);
+            $label = trim($_POST['label']);
+            $type = $_POST['type'];
+            $required = isset($_POST['required']) ? 1 : 0;
+            
+            $stmt = $con->prepare("INSERT INTO FormAccessFields (FormID, Label, FieldType, IsRequired) VALUES (?, ?, ?, ?)");
+            $stmt->bind_param('issi', $formId, $label, $type, $required);
+            if (!$stmt->execute()) throw new Exception('فشل إضافة الحقل');
+            $stmt->close();
+            
+            $response = ['success' => true, 'message' => 'تم إضافة الحقل'];
+        }
+        elseif ($action === 'delete_field') {
+            $fieldId = intval($_POST['field_id']);
+            $stmt = $con->prepare("DELETE FROM FormAccessFields WHERE ID = ?");
+            $stmt->bind_param('i', $fieldId);
+            if (!$stmt->execute()) throw new Exception('فشل حذف الحقل');
+            $stmt->close();
+            
+            $response = ['success' => true, 'message' => 'تم حذف الحقل'];
+        }
+        
+    } catch (Exception $e) {
+        $response = ['success' => false, 'message' => $e->getMessage()];
+    }
+    
+    echo json_encode($response);
+    exit();
+} 
+
+// Handle API Requests (POST)
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
+    header('Content-Type: application/json');
+    $response = ['success' => false, 'message' => 'Invalid action'];
+    
+    try {
+        $action = $_POST['action'];
+        
+        // --- Type Management ---
+        if ($action === 'create_type') {
+            $category = $_POST['category'] ?? '';
+            $name = trim($_POST['name'] ?? '');
+            $slug = trim($_POST['slug'] ?? '');
+            $icon = trim($_POST['icon'] ?? '');
+            
+            if (empty($name) || empty($slug) || empty($icon)) {
+                throw new Exception('جميع الحقول مطلوبة');
+            }
+            
+            $table = $category === 'target' ? 'EvaluatorTypes' : 'FormTypes';
+            
+            // Check slug
+            $stmt = $con->prepare("SELECT ID FROM $table WHERE Slug = ?");
+            $stmt->bind_param('s', $slug);
+            $stmt->execute();
+            if ($stmt->get_result()->num_rows > 0) throw new Exception('المعرف موجود بالفعل');
+            $stmt->close();
+            
+            // Insert
+            $stmt = $con->prepare("INSERT INTO $table (Name, Slug, Icon) VALUES (?, ?, ?)");
+            $stmt->bind_param('sss', $name, $slug, $icon);
+            if (!$stmt->execute()) throw new Exception('فشل الإضافة');
+            $newId = $con->insert_id;
+            $stmt->close();
+            
+            // For FormTypes, handle allowed targets
+            if ($category !== 'target' && !empty($_POST['allowed_targets'])) {
+                $stmt = $con->prepare("INSERT INTO FormType_EvaluatorType (FormTypeID, EvaluatorTypeID) VALUES (?, ?)");
+                foreach ($_POST['allowed_targets'] as $evalId) {
+                    $stmt->bind_param('ii', $newId, $evalId);
+                    $stmt->execute();
+                }
+                $stmt->close();
+            }
+            
+            $response = ['success' => true, 'message' => 'تم الإضافة بنجاح'];
+            
+        } elseif ($action === 'delete_type') {
+            $input = json_decode(file_get_contents('php://input'), true);
+            $id = intval($input['id'] ?? 0);
+            $category = $input['category'] ?? ''; // 'target' or 'type'
+            
+            if ($id <= 0) throw new Exception('معرف غير صحيح');
+            
+            $table = $category === 'target' ? 'EvaluatorTypes' : 'FormTypes';
+            $col = $category === 'target' ? 'EvaluatorTypeID' : 'FormTypeID';
+            
+            // Check usage
+            $stmt = $con->prepare("SELECT COUNT(*) as count FROM Form WHERE $col = ?");
+            $stmt->bind_param('i', $id);
+            $stmt->execute();
+            $count = $stmt->get_result()->fetch_assoc()['count'];
+            $stmt->close();
+            
+            if ($count > 0) throw new Exception("لا يمكن الحذف لأنه مستخدم في $count نموذج");
+            
+            // Delete relationships first if needed (FormType_EvaluatorType)
+            if ($category !== 'target') {
+                $stmt = $con->prepare("DELETE FROM FormType_EvaluatorType WHERE FormTypeID = ?");
+                $stmt->bind_param('i', $id);
+                $stmt->execute();
+                $stmt->close();
+            } else {
+                 $stmt = $con->prepare("DELETE FROM FormType_EvaluatorType WHERE EvaluatorTypeID = ?");
+                $stmt->bind_param('i', $id);
+                $stmt->execute();
+                $stmt->close();
+            }
+            
+            $stmt = $con->prepare("DELETE FROM $table WHERE ID = ?");
+            $stmt->bind_param('i', $id);
+            if (!$stmt->execute()) throw new Exception('فشل الحذف');
+            $stmt->close();
+            
+            $response = ['success' => true, 'message' => 'تم الحذف بنجاح'];
+            
+        } 
+        // --- Form Settings (Password) ---
+        elseif ($action === 'update_password') {
+            $formId = intval($_POST['form_id']);
+            $password = trim($_POST['password'] ?? '');
+            
+            // If password is empty, set to NULL (remove password)
+            $sql = "UPDATE Form SET password = ? WHERE ID = ?";
+            $val = empty($password) ? null : $password;
+            
+            $stmt = $con->prepare($sql);
+            $stmt->bind_param('si', $val, $formId);
+            if (!$stmt->execute()) throw new Exception('فشل تحديث كلمة المرور');
+            $stmt->close();
+            
+            $response = ['success' => true, 'message' => 'تم تحديث كلمة المرور'];
+        }
+        // --- Registration Fields ---
+        elseif ($action === 'add_field') {
+            $formId = intval($_POST['form_id']);
+            $label = trim($_POST['label']);
+            $type = $_POST['type'];
+            $required = isset($_POST['required']) ? 1 : 0;
+            
+            $stmt = $con->prepare("INSERT INTO FormAccessFields (FormID, Label, FieldType, IsRequired) VALUES (?, ?, ?, ?)");
+            $stmt->bind_param('issi', $formId, $label, $type, $required);
+            if (!$stmt->execute()) throw new Exception('فشل إضافة الحقل');
+            $stmt->close();
+            
+            $response = ['success' => true, 'message' => 'تم إضافة الحقل'];
+        }
+        elseif ($action === 'delete_field') {
+            $fieldId = intval($_POST['field_id']);
+            $stmt = $con->prepare("DELETE FROM FormAccessFields WHERE ID = ?");
+            $stmt->bind_param('i', $fieldId);
+            if (!$stmt->execute()) throw new Exception('فشل حذف الحقل');
+            $stmt->close();
+            
+            $response = ['success' => true, 'message' => 'تم حذف الحقل'];
+        }
+        
+    } catch (Exception $e) {
+        $response = ['success' => false, 'message' => $e->getMessage()];
+    }
+    
+    echo json_encode($response);
+    exit();
+} 
+
 
 // Get the form ID from the URL
 $formId = $_GET['id'];
@@ -29,6 +299,10 @@ $form = $stmt->get_result()->fetch_assoc();
 
 $sections_query = "SELECT * FROM Section WHERE IDForm = $formId";
 $sections_result = mysqli_query($con, $sections_query);
+
+// Fetch Access Fields
+$fields_query = "SELECT * FROM FormAccessFields WHERE FormID = $formId ORDER BY OrderIndex ASC";
+$fields_result = mysqli_query($con, $fields_query);
 
 if (!$sections_result) {
     die("Database error: " . mysqli_error($con));
@@ -101,33 +375,92 @@ if (!$sections_result) {
                     <!-- Form Target Control -->
                     <div class="form-status-row">
                         <span>المُقيِّم : </span>
-                       <div class="form-target-dropdown">
-                          <select id="form-target-select">
-                            <?php foreach (FORM_TARGETS as $key => $target): ?>
-                              <option value="<?= $key ?>" 
-                                      <?= $key === $form['FormTarget'] ? 'selected' : '' ?>>
-                                <img src="../<?= $target['icon'] ?>" alt="<?= $key ?>"/>
-                                <?= $target['name'] ?>
-                              </option>
-                            <?php endforeach; ?>
-                          </select>
+                        <div class="custom-select-wrapper" id="target-select-wrapper">
+                            <div class="custom-select-trigger" onclick="toggleCustomSelect('target')">
+                                <span id="target-selected-text"><?= FORM_TARGETS[$form['FormTarget']]['name'] ?? 'اختر' ?></span>
+                                <i class="fa-solid fa-chevron-down"></i>
+                            </div>
+                            <div class="custom-select-options" id="target-options">
+                                <?php foreach (FORM_TARGETS as $key => $target): ?>
+                                    <div class="custom-option <?= $key === $form['FormTarget'] ? 'selected' : '' ?>" data-value="<?= $key ?>" data-db-id="<?= $target['id'] ?>" onclick="selectOption('target', '<?= $key ?>', '<?= $target['name'] ?>', this)">
+                                        <span><?= $target['name'] ?></span>
+                                        <button type="button" class="btn-delete-option" onclick="event.stopPropagation(); deleteType('target', '<?= $target['id'] ?>', '<?= $key ?>')" title="حذف">
+                                            <i class="fa-solid fa-trash"></i>
+                                        </button>
+                                    </div>
+                                <?php endforeach; ?>
+                                <div class="custom-option-add" onclick="openTypeModal('target')">
+                                    <i class="fa-solid fa-plus"></i> إضافة جديد
+                                </div>
+                            </div>
+                            <input type="hidden" id="form-target-select" value="<?= $form['FormTarget'] ?>">
                         </div>
                     </div>
 
                     <!-- Form Type Control -->
                     <div class="form-status-row">
                         <span>نوع التقييم : </span>
-                        <div class="form-type-dropdown">
-                          <select id="form-type-select" data-current-type="<?= $form['FormType'] ?>">
-                            <?php foreach (FORM_TYPES as $key => $type): ?>
-                              <option value="<?= $key ?>" 
-                                      data-targets="<?= implode(',', $type['allowed_targets']) ?>"
-                                      <?= $key === $form['FormType'] ? 'selected' : '' ?>>
-                                <img src="../<?= $type['icon'] ?>" alt="<?= $key ?>"/>
-                                <?= $type['name'] ?>
-                              </option>
-                            <?php endforeach; ?>
-                          </select>
+                        <div class="custom-select-wrapper" id="type-select-wrapper">
+                            <div class="custom-select-trigger" onclick="toggleCustomSelect('type')">
+                                <span id="type-selected-text"><?= FORM_TYPES[$form['FormType']]['name'] ?? 'اختر' ?></span>
+                                <i class="fa-solid fa-chevron-down"></i>
+                            </div>
+                            <div class="custom-select-options" id="type-options">
+                                <?php foreach (FORM_TYPES as $key => $type): ?>
+                                    <div class="custom-option <?= $key === $form['FormType'] ? 'selected' : '' ?>" 
+                                         data-value="<?= $key ?>" 
+                                         data-db-id="<?= $type['id'] ?>" 
+                                         data-targets="<?= implode(',', $type['allowed_targets']) ?>"
+                                         onclick="selectOption('type', '<?= $key ?>', '<?= $type['name'] ?>', this)">
+                                        <span><?= $type['name'] ?></span>
+                                        <button type="button" class="btn-delete-option" onclick="event.stopPropagation(); deleteType('type', '<?= $type['id'] ?>', '<?= $key ?>')" title="حذف">
+                                            <i class="fa-solid fa-trash"></i>
+                                        </button>
+                                    </div>
+                                <?php endforeach; ?>
+                                <div class="custom-option-add" onclick="openTypeModal('type')">
+                                    <i class="fa-solid fa-plus"></i> إضافة جديد
+                                </div>
+                            </div>
+                            <input type="hidden" id="form-type-select" value="<?= $form['FormType'] ?>" data-current-type="<?= $form['FormType'] ?>">
+                        </div>
+                    </div>
+
+                    <!-- Form Password -->
+                    <div class="form-status-row">
+                        <span>كلمة المرور : </span>
+                        <div style="display: flex; gap: 5px; width: 100%;">
+                            <input type="password" id="form-password" value="<?= htmlspecialchars($form['password'] ?? '') ?>" placeholder="اتركه فارغاً للوصول العام" style="flex-grow: 1; padding: 5px; border: 1px solid #ddd; border-radius: 4px;">
+                            <button type="button" onclick="updatePassword()" style="background: #e3f2fd; color: #1976d2; border: none; padding: 5px 10px; border-radius: 4px; cursor: pointer;">حفظ</button>
+                        </div>
+                    </div>
+
+                    <!-- Registration Fields -->
+                    <div class="form-status-row" style="flex-direction: column; align-items: flex-start;">
+                        <div style="display: flex; justify-content: space-between; width: 100%; margin-bottom: 10px;">
+                            <span>بيانات التسجيل المطلوبة : </span>
+                            <button type="button" onclick="openFieldModal()" style="background: #e8f5e9; color: #2e7d32; border: none; padding: 5px 10px; border-radius: 4px; cursor: pointer; font-size: 12px;">
+                                <i class="fa-solid fa-plus"></i> إضافة حقل
+                            </button>
+                        </div>
+                        <div id="registration-fields-list" style="width: 100%; display: flex; flex-direction: column; gap: 5px;">
+                            <?php while($field = mysqli_fetch_assoc($fields_result)): ?>
+                                <div class="field-item" style="background: #f5f5f5; padding: 8px; border-radius: 4px; display: flex; justify-content: space-between; align-items: center; font-size: 13px;">
+                                    <div>
+                                        <strong><?= htmlspecialchars($field['Label']) ?></strong>
+                                        <span style="color: #666; font-size: 11px;">(<?= $field['FieldType'] ?>)</span>
+                                        <?php if($field['IsRequired']): ?>
+                                            <span style="color: red; font-size: 11px;">*مطلوب</span>
+                                        <?php endif; ?>
+                                    </div>
+                                    <button onclick="deleteField(<?= $field['ID'] ?>)" style="color: #c62828; background: none; border: none; cursor: pointer;">
+                                        <i class="fa-solid fa-trash"></i>
+                                    </button>
+                                </div>
+                            <?php endwhile; ?>
+                            <?php if(mysqli_num_rows($fields_result) == 0): ?>
+                                <div style="color: #999; font-size: 12px; text-align: center;">لا توجد حقول إضافية</div>
+                            <?php endif; ?>
                         </div>
                     </div>
 
@@ -291,6 +624,52 @@ if (!$sections_result) {
     </div>
     <?php include "../components/footer.html"; ?>
 
+    <!-- Type Management Modal -->
+    <div id="typeModal" class="modal" style="display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5);">
+        <div class="modal-content" style="background: white; margin: 10% auto; padding: 20px; border-radius: 8px; width: 90%; max-width: 400px; position: relative;">
+            <span class="close" onclick="closeTypeModal()" style="position: absolute; left: 15px; top: 10px; font-size: 24px; cursor: pointer;">&times;</span>
+            <h2 id="modalTitle" style="margin-bottom: 20px;">إضافة عنصر جديد</h2>
+            <form id="typeForm">
+                <input type="hidden" id="typeCategory" name="category"> <!-- 'target' or 'type' -->
+                
+                <div class="form-group" style="margin-bottom: 15px;">
+                    <label style="display: block; margin-bottom: 5px;">الاسم (بالعربية)</label>
+                    <input type="text" id="typeName" name="name" required style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px;">
+                </div>
+                
+                <div class="form-group" style="margin-bottom: 15px;">
+                    <label style="display: block; margin-bottom: 5px;">المعرف (Slug - إنجليزي)</label>
+                    <input type="text" id="typeSlug" name="slug" required placeholder="example_slug" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px;">
+                </div>
+
+                <div class="form-group" style="margin-bottom: 15px;">
+                    <label style="display: block; margin-bottom: 5px;">الأيقونة</label>
+                    <div class="icon-selector" style="display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px; max-height: 150px; overflow-y: auto; border: 1px solid #ddd; padding: 10px; border-radius: 4px;">
+                        <!-- Icons will be injected here -->
+                    </div>
+                    <input type="hidden" id="typeIcon" name="icon" required>
+                </div>
+
+                    <select name="type" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px;">
+                        <option value="text">نص (Text)</option>
+                        <option value="number">رقم (Number)</option>
+                        <option value="email">بريد إلكتروني (Email)</option>
+                        <option value="date">تاريخ (Date)</option>
+                    </select>
+                </div>
+
+                <div class="form-group" style="margin-bottom: 15px;">
+                    <label style="display: flex; align-items: center; gap: 10px;">
+                        <input type="checkbox" name="required" value="1">
+                        حقل إجباري
+                    </label>
+                </div>
+
+                <button type="submit" style="width: 100%; background: #4CAF50; color: white; border: none; padding: 10px; border-radius: 4px; cursor: pointer;">إضافة</button>
+            </form>
+        </div>
+    </div>
+
     <script src="https://cdnjs.cloudflare.com/ajax/libs/printThis/1.15.0/printThis.min.js"></script>
     <script src="../scripts/forms.js"></script>
     <script>
@@ -311,12 +690,295 @@ if (!$sections_result) {
         }, 2000);
     }
     </script>
-</body>
+    <script>
         const TYPE_QUESTION = <?php echo json_encode(TYPE_QUESTION); ?>;
     </script>
     
     <script src="../scripts/lib/utils.js"></script>
     <script src="../scripts/forms.js"></script>
+    <script>
+        // Type Management Logic
+        const iconsList = [
+            'assets/icons/college.png',
+            'assets/icons/user.svg',
+            'assets/icons/users.svg',
+            'assets/icons/star.svg',
+            'assets/icons/file-text.svg',
+            'assets/icons/clipboard.svg',
+            'assets/icons/check-circle.svg',
+            'assets/icons/calendar.svg'
+        ];
+
+        function openTypeModal(category) {
+            document.getElementById('typeCategory').value = category;
+            document.getElementById('modalTitle').textContent = category === 'target' ? 'إضافة مقيّم جديد' : 'إضافة نوع تقييم جديد';
+            document.getElementById('typeForm').reset();
+            
+            // Populate icons
+            const iconContainer = document.querySelector('.icon-selector');
+            iconContainer.innerHTML = '';
+            iconsList.forEach(icon => {
+                const div = document.createElement('div');
+                div.className = 'icon-option';
+                div.style.cursor = 'pointer';
+                div.style.padding = '5px';
+                div.style.textAlign = 'center';
+                div.style.border = '1px solid transparent';
+                div.innerHTML = `<img src="../${icon}" style="width: 24px; height: 24px;">`;
+                div.onclick = function() {
+                    document.querySelectorAll('.icon-option').forEach(el => el.style.borderColor = 'transparent');
+                    div.style.borderColor = '#2196F3';
+                    document.getElementById('typeIcon').value = icon;
+                };
+                iconContainer.appendChild(div);
+            });
+            
+            document.getElementById('typeModal').style.display = 'block';
+        }
+
+        function closeTypeModal() {
+            document.getElementById('typeModal').style.display = 'none';
+        }
+
+        document.getElementById('typeForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            const category = document.getElementById('typeCategory').value;
+            const formData = new FormData(this);
+            formData.append('action', 'create_type');
+            
+            fetch(window.location.href, {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    alert('تم الإضافة بنجاح');
+                    location.reload(); 
+                } else {
+                    alert('خطأ: ' + data.message);
+                }
+            })
+            .catch(err => alert('حدث خطأ في الاتصال'));
+        });
+
+        // Custom Select Logic
+        function toggleCustomSelect(type) {
+            const options = document.getElementById(type + '-options');
+            const isOpen = options.classList.contains('open');
+            
+            // Close all other selects
+            document.querySelectorAll('.custom-select-options').forEach(el => el.classList.remove('open'));
+            
+            if (!isOpen) {
+                options.classList.add('open');
+            }
+        }
+
+        function selectOption(type, value, name, element) {
+            // Update hidden input
+            const inputId = type === 'target' ? 'form-target-select' : 'form-type-select';
+            document.getElementById(inputId).value = value;
+            
+            // Update display text
+            document.getElementById(type + '-selected-text').textContent = name;
+            
+            // Update selected class
+            const wrapper = document.getElementById(type + '-select-wrapper');
+            wrapper.querySelectorAll('.custom-option').forEach(el => el.classList.remove('selected'));
+            element.classList.add('selected');
+            
+            // Close dropdown
+            document.getElementById(type + '-options').classList.remove('open');
+            
+            // Trigger change event if needed (for saving)
+            updateFormSetting(type === 'target' ? 'FormTarget' : 'FormType', value);
+        }
+
+        // Close selects when clicking outside
+        document.addEventListener('click', function(e) {
+            if (!e.target.closest('.custom-select-wrapper')) {
+                document.querySelectorAll('.custom-select-options').forEach(el => el.classList.remove('open'));
+            }
+        });
+
+        // Type Management Logic
+        const iconsList = [
+            'assets/icons/college.png',
+            'assets/icons/user.svg',
+            'assets/icons/users.svg',
+            'assets/icons/star.svg',
+            'assets/icons/file-text.svg',
+            'assets/icons/clipboard.svg',
+            'assets/icons/check-circle.svg',
+            'assets/icons/calendar.svg'
+        ];
+
+        function openTypeModal(category) {
+            document.getElementById('typeCategory').value = category;
+            document.getElementById('modalTitle').textContent = category === 'target' ? 'إضافة مقيّم جديد' : 'إضافة نوع تقييم جديد';
+            document.getElementById('typeForm').reset();
+            
+            // Populate icons
+            const iconContainer = document.querySelector('.icon-selector');
+            iconContainer.innerHTML = '';
+            iconsList.forEach(icon => {
+                const div = document.createElement('div');
+                div.className = 'icon-option';
+                div.style.cursor = 'pointer';
+                div.style.padding = '5px';
+                div.style.textAlign = 'center';
+                div.style.border = '1px solid transparent';
+                div.innerHTML = `<img src="../${icon}" style="width: 24px; height: 24px;">`;
+                div.onclick = function() {
+                    document.querySelectorAll('.icon-option').forEach(el => el.style.borderColor = 'transparent');
+                    div.style.borderColor = '#2196F3';
+                    document.getElementById('typeIcon').value = icon;
+                };
+                iconContainer.appendChild(div);
+            });
+            
+            document.getElementById('typeModal').style.display = 'block';
+        }
+
+        function closeTypeModal() {
+            document.getElementById('typeModal').style.display = 'none';
+        }
+
+        document.getElementById('typeForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            const category = document.getElementById('typeCategory').value;
+            const formData = new FormData(this);
+            formData.append('action', 'create_type');
+            
+            fetch(window.location.href, {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    alert('تم الإضافة بنجاح');
+                    location.reload(); 
+                } else {
+                    alert('خطأ: ' + data.message);
+                }
+            })
+            .catch(err => alert('حدث خطأ في الاتصال'));
+        });
+
+        function deleteType(category, id, slug) {
+            if (!id) {
+                alert('لا يمكن حذف هذا العنصر');
+                return;
+            }
+
+            if (!confirm('هل أنت متأكد من الحذف؟')) return;
+
+            fetch(window.location.href, {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({ 
+                    action: 'delete_type',
+                    id: id,
+                    category: category
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    alert('تم الحذف بنجاح');
+                    location.reload();
+                } else {
+                    alert('خطأ: ' + data.message);
+                }
+            });
+        }
+
+        // Password Update
+        function updatePassword() {
+            const password = document.getElementById('form-password').value;
+            const formData = new FormData();
+            formData.append('action', 'update_password');
+            formData.append('form_id', <?= $formId ?>);
+            formData.append('password', password);
+
+            fetch(window.location.href, {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    alert('تم حفظ كلمة المرور');
+                } else {
+                    alert('خطأ: ' + data.message);
+                }
+            })
+            .catch(err => alert('حدث خطأ'));
+        }
+
+        // Field Modal Logic
+        function openFieldModal() {
+            document.getElementById('fieldModal').style.display = 'block';
+            document.getElementById('new-field-label').value = '';
+            document.getElementById('new-field-type').value = 'text';
+            document.getElementById('new-field-required').checked = false;
+        }
+
+        function addField() {
+            const label = document.getElementById('new-field-label').value;
+            const type = document.getElementById('new-field-type').value;
+            const required = document.getElementById('new-field-required').checked ? 1 : 0;
+            
+            if (!label) {
+                alert('يرجى إدخال اسم الحقل');
+                return;
+            }
+
+            const formData = new FormData();
+            formData.append('action', 'add_field');
+            formData.append('form_id', <?= $formId ?>);
+            formData.append('label', label);
+            formData.append('type', type);
+            formData.append('required', required);
+            
+            fetch(window.location.href, {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    location.reload();
+                } else {
+                    alert('خطأ: ' + data.message);
+                }
+            });
+        }
+
+        // Delete Field
+        function deleteField(id) {
+            if(!confirm('حذف هذا الحقل؟')) return;
+            
+            const formData = new FormData();
+            formData.append('action', 'delete_field');
+            formData.append('field_id', id);
+
+            fetch(window.location.href, {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    location.reload();
+                } else {
+                    alert('خطأ: ' + data.message);
+                }
+            });
+        }
+    </script>
 
 </body>
 
