@@ -14,140 +14,49 @@ include '.././config/DbConnection.php';
 
 include 'form_constants.php'; 
 
-// Handle API Requests (POST)
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
-    header('Content-Type: application/json');
-    $response = ['success' => false, 'message' => 'Invalid action'];
-    
-    try {
-        $action = $_POST['action'];
+// Handle API Requests (GET)
+if ($_SERVER['REQUEST_METHOD'] === 'GET' && isset($_GET['action'])) {
+    if ($_GET['action'] === 'get_access_data') {
+        header('Content-Type: application/json');
+        $response = ['success' => false, 'message' => 'Invalid request'];
         
-        // --- Type Management ---
-        if ($action === 'create_type') {
-            $category = $_POST['category'] ?? '';
-            $name = trim($_POST['name'] ?? '');
-            $slug = trim($_POST['slug'] ?? '');
-            $icon = trim($_POST['icon'] ?? '');
+        try {
+            $formId = intval($_GET['id']);
+            if ($formId <= 0) throw new Exception('Invalid Form ID');
             
-            if (empty($name) || empty($slug) || empty($icon)) {
-                throw new Exception('جميع الحقول مطلوبة');
-            }
-            
-            $table = $category === 'target' ? 'EvaluatorTypes' : 'FormTypes';
-            
-            // Check slug
-            $stmt = $con->prepare("SELECT ID FROM $table WHERE Slug = ?");
-            $stmt->bind_param('s', $slug);
+            // Get Password
+            $stmt = $con->prepare("SELECT password FROM Form WHERE ID = ?");
+            $stmt->bind_param('i', $formId);
             $stmt->execute();
-            if ($stmt->get_result()->num_rows > 0) throw new Exception('المعرف موجود بالفعل');
+            $res = $stmt->get_result()->fetch_assoc();
+            $password = $res['password'] ?? '';
             $stmt->close();
             
-            // Insert
-            $stmt = $con->prepare("INSERT INTO $table (Name, Slug, Icon) VALUES (?, ?, ?)");
-            $stmt->bind_param('sss', $name, $slug, $icon);
-            if (!$stmt->execute()) throw new Exception('فشل الإضافة');
-            $newId = $con->insert_id;
-            $stmt->close();
-            
-            // For FormTypes, handle allowed targets
-            if ($category !== 'target' && !empty($_POST['allowed_targets'])) {
-                $stmt = $con->prepare("INSERT INTO FormType_EvaluatorType (FormTypeID, EvaluatorTypeID) VALUES (?, ?)");
-                foreach ($_POST['allowed_targets'] as $evalId) {
-                    $stmt->bind_param('ii', $newId, $evalId);
-                    $stmt->execute();
-                }
-                $stmt->close();
-            }
-            
-            $response = ['success' => true, 'message' => 'تم الإضافة بنجاح'];
-            
-        } elseif ($action === 'delete_type') {
-            $input = json_decode(file_get_contents('php://input'), true);
-            $id = intval($input['id'] ?? 0);
-            $category = $input['category'] ?? ''; // 'target' or 'type'
-            
-            if ($id <= 0) throw new Exception('معرف غير صحيح');
-            
-            $table = $category === 'target' ? 'EvaluatorTypes' : 'FormTypes';
-            $col = $category === 'target' ? 'EvaluatorTypeID' : 'FormTypeID';
-            
-            // Check usage
-            $stmt = $con->prepare("SELECT COUNT(*) as count FROM Form WHERE $col = ?");
-            $stmt->bind_param('i', $id);
+            // Get Fields
+            $fields = [];
+            $stmt = $con->prepare("SELECT ID, Label, FieldType, IsRequired FROM FormAccessFields WHERE FormID = ? ORDER BY OrderIndex ASC");
+            $stmt->bind_param('i', $formId);
             $stmt->execute();
-            $count = $stmt->get_result()->fetch_assoc()['count'];
-            $stmt->close();
-            
-            if ($count > 0) throw new Exception("لا يمكن الحذف لأنه مستخدم في $count نموذج");
-            
-            // Delete relationships first if needed (FormType_EvaluatorType)
-            if ($category !== 'target') {
-                $stmt = $con->prepare("DELETE FROM FormType_EvaluatorType WHERE FormTypeID = ?");
-                $stmt->bind_param('i', $id);
-                $stmt->execute();
-                $stmt->close();
-            } else {
-                 $stmt = $con->prepare("DELETE FROM FormType_EvaluatorType WHERE EvaluatorTypeID = ?");
-                $stmt->bind_param('i', $id);
-                $stmt->execute();
-                $stmt->close();
+            $result = $stmt->get_result();
+            while ($row = $result->fetch_assoc()) {
+                $fields[] = $row;
             }
-            
-            $stmt = $con->prepare("DELETE FROM $table WHERE ID = ?");
-            $stmt->bind_param('i', $id);
-            if (!$stmt->execute()) throw new Exception('فشل الحذف');
             $stmt->close();
             
-            $response = ['success' => true, 'message' => 'تم الحذف بنجاح'];
+            $response = [
+                'success' => true,
+                'password' => $password,
+                'fields' => $fields
+            ];
             
-        } 
-        // --- Form Settings (Password) ---
-        elseif ($action === 'update_password') {
-            $formId = intval($_POST['form_id']);
-            $password = trim($_POST['password'] ?? '');
-            
-            // If password is empty, set to NULL (remove password)
-            $sql = "UPDATE Form SET password = ? WHERE ID = ?";
-            $val = empty($password) ? null : $password;
-            
-            $stmt = $con->prepare($sql);
-            $stmt->bind_param('si', $val, $formId);
-            if (!$stmt->execute()) throw new Exception('فشل تحديث كلمة المرور');
-            $stmt->close();
-            
-            $response = ['success' => true, 'message' => 'تم تحديث كلمة المرور'];
-        }
-        // --- Registration Fields ---
-        elseif ($action === 'add_field') {
-            $formId = intval($_POST['form_id']);
-            $label = trim($_POST['label']);
-            $type = $_POST['type'];
-            $required = isset($_POST['required']) ? 1 : 0;
-            
-            $stmt = $con->prepare("INSERT INTO FormAccessFields (FormID, Label, FieldType, IsRequired) VALUES (?, ?, ?, ?)");
-            $stmt->bind_param('issi', $formId, $label, $type, $required);
-            if (!$stmt->execute()) throw new Exception('فشل إضافة الحقل');
-            $stmt->close();
-            
-            $response = ['success' => true, 'message' => 'تم إضافة الحقل'];
-        }
-        elseif ($action === 'delete_field') {
-            $fieldId = intval($_POST['field_id']);
-            $stmt = $con->prepare("DELETE FROM FormAccessFields WHERE ID = ?");
-            $stmt->bind_param('i', $fieldId);
-            if (!$stmt->execute()) throw new Exception('فشل حذف الحقل');
-            $stmt->close();
-            
-            $response = ['success' => true, 'message' => 'تم حذف الحقل'];
+        } catch (Exception $e) {
+            $response = ['success' => false, 'message' => $e->getMessage()];
         }
         
-    } catch (Exception $e) {
-        $response = ['success' => false, 'message' => $e->getMessage()];
+        echo json_encode($response);
+        exit();
     }
-    
-    echo json_encode($response);
-    exit();
-} 
+}
 
 // Handle API Requests (POST)
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
@@ -236,44 +145,53 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
             $response = ['success' => true, 'message' => 'تم الحذف بنجاح'];
             
         } 
-        // --- Form Settings (Password) ---
-        elseif ($action === 'update_password') {
+        // --- Access Settings (Unified) ---
+        elseif ($action === 'save_access_settings') {
             $formId = intval($_POST['form_id']);
             $password = trim($_POST['password'] ?? '');
+            $fields = json_decode($_POST['fields'], true);
             
-            // If password is empty, set to NULL (remove password)
-            $sql = "UPDATE Form SET password = ? WHERE ID = ?";
-            $val = empty($password) ? null : $password;
+            $con->begin_transaction();
             
-            $stmt = $con->prepare($sql);
-            $stmt->bind_param('si', $val, $formId);
-            if (!$stmt->execute()) throw new Exception('فشل تحديث كلمة المرور');
-            $stmt->close();
-            
-            $response = ['success' => true, 'message' => 'تم تحديث كلمة المرور'];
-        }
-        // --- Registration Fields ---
-        elseif ($action === 'add_field') {
-            $formId = intval($_POST['form_id']);
-            $label = trim($_POST['label']);
-            $type = $_POST['type'];
-            $required = isset($_POST['required']) ? 1 : 0;
-            
-            $stmt = $con->prepare("INSERT INTO FormAccessFields (FormID, Label, FieldType, IsRequired) VALUES (?, ?, ?, ?)");
-            $stmt->bind_param('issi', $formId, $label, $type, $required);
-            if (!$stmt->execute()) throw new Exception('فشل إضافة الحقل');
-            $stmt->close();
-            
-            $response = ['success' => true, 'message' => 'تم إضافة الحقل'];
-        }
-        elseif ($action === 'delete_field') {
-            $fieldId = intval($_POST['field_id']);
-            $stmt = $con->prepare("DELETE FROM FormAccessFields WHERE ID = ?");
-            $stmt->bind_param('i', $fieldId);
-            if (!$stmt->execute()) throw new Exception('فشل حذف الحقل');
-            $stmt->close();
-            
-            $response = ['success' => true, 'message' => 'تم حذف الحقل'];
+            try {
+                // 1. Update Password
+                $sql = "UPDATE Form SET password = ? WHERE ID = ?";
+                $val = empty($password) ? null : $password;
+                $stmt = $con->prepare($sql);
+                $stmt->bind_param('si', $val, $formId);
+                if (!$stmt->execute()) throw new Exception('فشل تحديث كلمة المرور');
+                $stmt->close();
+                
+                // 2. Update Fields
+                // Strategy: Delete all and re-insert. Simple and effective for this scale.
+                $stmt = $con->prepare("DELETE FROM FormAccessFields WHERE FormID = ?");
+                $stmt->bind_param('i', $formId);
+                $stmt->execute();
+                $stmt->close();
+                
+                if (!empty($fields)) {
+                    $stmt = $con->prepare("INSERT INTO FormAccessFields (FormID, Label, FieldType, IsRequired, OrderIndex) VALUES (?, ?, ?, ?, ?)");
+                    foreach ($fields as $index => $field) {
+                        $label = trim($field['Label']);
+                        $type = $field['FieldType'];
+                        $required = isset($field['IsRequired']) ? intval($field['IsRequired']) : 0;
+                        $order = $index;
+                        
+                        if (!empty($label)) {
+                            $stmt->bind_param('issii', $formId, $label, $type, $required, $order);
+                            $stmt->execute();
+                        }
+                    }
+                    $stmt->close();
+                }
+                
+                $con->commit();
+                $response = ['success' => true, 'message' => 'تم حفظ الإعدادات'];
+                
+            } catch (Exception $e) {
+                $con->rollback();
+                throw $e;
+            }
         }
         
     } catch (Exception $e) {
@@ -375,7 +293,7 @@ if (!$sections_result) {
                     <!-- Form Target Control -->
                     <div class="form-status-row">
                         <span>المُقيِّم : </span>
-                        <div class="custom-select-wrapper" id="target-select-wrapper">
+                        <div class="custom-select-wrapper form-target-control" id="target-select-wrapper">
                             <div class="custom-select-trigger" onclick="toggleCustomSelect('target')">
                                 <span id="target-selected-text"><?= FORM_TARGETS[$form['FormTarget']]['name'] ?? 'اختر' ?></span>
                                 <i class="fa-solid fa-chevron-down"></i>
@@ -400,7 +318,7 @@ if (!$sections_result) {
                     <!-- Form Type Control -->
                     <div class="form-status-row">
                         <span>نوع التقييم : </span>
-                        <div class="custom-select-wrapper" id="type-select-wrapper">
+                        <div class="custom-select-wrapper form-type-control" id="type-select-wrapper">
                             <div class="custom-select-trigger" onclick="toggleCustomSelect('type')">
                                 <span id="type-selected-text"><?= FORM_TYPES[$form['FormType']]['name'] ?? 'اختر' ?></span>
                                 <i class="fa-solid fa-chevron-down"></i>
@@ -426,53 +344,20 @@ if (!$sections_result) {
                         </div>
                     </div>
 
-                    <!-- Form Password -->
-                    <div class="form-status-row">
-                        <span>كلمة المرور : </span>
-                        <div style="display: flex; gap: 5px; width: 100%;">
-                            <input type="password" id="form-password" value="<?= htmlspecialchars($form['password'] ?? '') ?>" placeholder="اتركه فارغاً للوصول العام" style="flex-grow: 1; padding: 5px; border: 1px solid #ddd; border-radius: 4px;">
-                            <button type="button" onclick="updatePassword()" style="background: #e3f2fd; color: #1976d2; border: none; padding: 5px 10px; border-radius: 4px; cursor: pointer;">حفظ</button>
-                        </div>
+                    </div> <!-- Close control-buttons -->
+
+                    <div style="display: flex; gap: 10px;">
+                        <button class="access-settings-btn" onclick="openAccessModal()">
+                            <i class="fa-solid fa-lock"></i>
+                            إعدادات الوصول
+                        </button>
+                        <button class="download-form-button" data-printthis-ignore 
+                            data-form-id="<?php echo $form['ID']; ?>"
+                            data-form-title="<?php echo htmlspecialchars($form['Title'], ENT_QUOTES, 'UTF-8'); ?>">
+                            <img src=".././assets/icons/file-down.svg" alt="download" />
+                            تنزيل النموذج
+                        </button>
                     </div>
-
-                    <!-- Registration Fields -->
-                    <div class="form-status-row" style="flex-direction: column; align-items: flex-start;">
-                        <div style="display: flex; justify-content: space-between; width: 100%; margin-bottom: 10px;">
-                            <span>بيانات التسجيل المطلوبة : </span>
-                            <button type="button" onclick="openFieldModal()" style="background: #e8f5e9; color: #2e7d32; border: none; padding: 5px 10px; border-radius: 4px; cursor: pointer; font-size: 12px;">
-                                <i class="fa-solid fa-plus"></i> إضافة حقل
-                            </button>
-                        </div>
-                        <div id="registration-fields-list" style="width: 100%; display: flex; flex-direction: column; gap: 5px;">
-                            <?php while($field = mysqli_fetch_assoc($fields_result)): ?>
-                                <div class="field-item" style="background: #f5f5f5; padding: 8px; border-radius: 4px; display: flex; justify-content: space-between; align-items: center; font-size: 13px;">
-                                    <div>
-                                        <strong><?= htmlspecialchars($field['Label']) ?></strong>
-                                        <span style="color: #666; font-size: 11px;">(<?= $field['FieldType'] ?>)</span>
-                                        <?php if($field['IsRequired']): ?>
-                                            <span style="color: red; font-size: 11px;">*مطلوب</span>
-                                        <?php endif; ?>
-                                    </div>
-                                    <button onclick="deleteField(<?= $field['ID'] ?>)" style="color: #c62828; background: none; border: none; cursor: pointer;">
-                                        <i class="fa-solid fa-trash"></i>
-                                    </button>
-                                </div>
-                            <?php endwhile; ?>
-                            <?php if(mysqli_num_rows($fields_result) == 0): ?>
-                                <div style="color: #999; font-size: 12px; text-align: center;">لا توجد حقول إضافية</div>
-                            <?php endif; ?>
-                        </div>
-                    </div>
-
-                </div>
-
-                <!-- button download form -->
-                <button class="download-form-button" data-printthis-ignore 
-                    data-form-id="<?php echo $form['ID']; ?>"
-                    data-form-title="<?php echo htmlspecialchars($form['Title'], ENT_QUOTES, 'UTF-8'); ?>">
-                <img src=".././assets/icons/file-down.svg" alt="download" />
-                تنزيل النموذج
-            </button>
             </div>
         </div>
         
@@ -670,9 +555,189 @@ if (!$sections_result) {
         </div>
     </div>
 
+    <!-- Access Control Modal -->
+    <div id="accessControlModal" class="modal" style="display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5);">
+        <div class="access-modal-content">
+            <span class="close" onclick="closeAccessModal()" style="float: left; font-size: 24px; cursor: pointer;">&times;</span>
+            <h2 style="margin-bottom: 20px; border-bottom: 1px solid #eee; padding-bottom: 10px;">إعدادات الوصول</h2>
+            
+            <!-- Section 1: Password -->
+            <div class="access-section">
+                <h3>1. كلمة المرور</h3>
+                <div class="access-input-group">
+                    <label>كلمة مرور النموذج (اختياري)</label>
+                    <input type="password" id="access-form-password" placeholder="اتركه فارغاً للوصول العام">
+                    <small style="color: #666;">إذا تم تعيين كلمة مرور، سيطلب من المستخدم إدخالها قبل عرض النموذج.</small>
+                </div>
+            </div>
+
+            <!-- Section 2: Registration Fields -->
+            <div class="access-section">
+                <h3>2. بيانات التسجيل المطلوبة</h3>
+                <p style="margin-bottom: 10px; color: #666; font-size: 14px;">حدد البيانات التي يجب على المستخدم إدخالها قبل البدء.</p>
+                
+                <table class="fields-table">
+                    <thead>
+                        <tr>
+                            <th>اسم الحقل</th>
+                            <th style="width: 150px;">النوع</th>
+                            <th style="width: 100px;">إجباري؟</th>
+                            <th style="width: 50px;"></th>
+                        </tr>
+                    </thead>
+                    <tbody id="access-fields-tbody">
+                        <!-- Rows will be added here dynamically -->
+                    </tbody>
+                </table>
+                
+                <button type="button" class="btn-add-row" onclick="addAccessFieldRow()">
+                    <i class="fa-solid fa-plus"></i> إضافة حقل جديد
+                </button>
+            </div>
+
+            <div class="modal-footer">
+                <button type="button" class="btn-cancel" onclick="closeAccessModal()">إلغاء</button>
+                <button type="button" class="btn-save-access" onclick="saveAccessSettings()">حفظ التغييرات</button>
+            </div>
+        </div>
+    </div>
+
     <script src="https://cdnjs.cloudflare.com/ajax/libs/printThis/1.15.0/printThis.min.js"></script>
     <script src="../scripts/forms.js"></script>
     <script>
+    // Access Control Modal Functions
+    let currentAccessFields = [];
+
+    function openAccessModal() {
+        // Fetch current password
+        const currentPassword = "<?php echo htmlspecialchars($form['password'] ?? '', ENT_QUOTES); ?>"; // Initial value from PHP
+        // Note: For dynamic updates without reload, we might need to store this in a global var or data attribute
+        // For now, we use the PHP value. If user saved previously via AJAX, we should update this.
+        // Better: Read from a hidden input or data attribute on the page if we want it to persist without reload.
+        // Let's rely on the page state.
+        
+        document.getElementById('access-form-password').value = currentPassword;
+
+        // Fetch current fields
+        // We can parse them from the PHP-generated list if it existed, but we removed it.
+        // So we should fetch them via AJAX or store them in a JS variable on load.
+        // Let's fetch them via AJAX to be sure.
+        
+        const formId = <?php echo $form['ID']; ?>;
+        
+        // Show loading state?
+        const tbody = document.getElementById('access-fields-tbody');
+        tbody.innerHTML = '<tr><td colspan="4" style="text-align:center;">جاري التحميل...</td></tr>';
+        document.getElementById('accessControlModal').style.display = 'block';
+
+        fetch(`edit-form.php?id=${formId}&action=get_access_data`) // We need to implement this action!
+            .then(response => response.json())
+            .then(data => {
+                if(data.success) {
+                    document.getElementById('access-form-password').value = data.password;
+                    currentAccessFields = data.fields;
+                    renderAccessFields();
+                } else {
+                    alert('فشل تحميل البيانات');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                tbody.innerHTML = '<tr><td colspan="4" style="text-align:center; color:red;">خطأ في التحميل</td></tr>';
+            });
+    }
+
+    function closeAccessModal() {
+        document.getElementById('accessControlModal').style.display = 'none';
+    }
+
+    function renderAccessFields() {
+        const tbody = document.getElementById('access-fields-tbody');
+        tbody.innerHTML = '';
+        
+        currentAccessFields.forEach((field, index) => {
+            const row = document.createElement('tr');
+            row.innerHTML = `
+                <td><input type="text" value="${field.Label}" onchange="updateField(${index}, 'Label', this.value)" placeholder="مثال: الاسم الثلاثي"></td>
+                <td>
+                    <select onchange="updateField(${index}, 'FieldType', this.value)">
+                        <option value="text" ${field.FieldType === 'text' ? 'selected' : ''}>نص</option>
+                        <option value="number" ${field.FieldType === 'number' ? 'selected' : ''}>رقم</option>
+                        <option value="email" ${field.FieldType === 'email' ? 'selected' : ''}>بريد إلكتروني</option>
+                        <option value="date" ${field.FieldType === 'date' ? 'selected' : ''}>تاريخ</option>
+                        <option value="password" ${field.FieldType === 'password' ? 'selected' : ''}>كلمة مرور</option>
+                    </select>
+                </td>
+                <td style="text-align: center;">
+                    <input type="checkbox" ${field.IsRequired == 1 ? 'checked' : ''} onchange="updateField(${index}, 'IsRequired', this.checked ? 1 : 0)" style="width: auto;">
+                </td>
+                <td style="text-align: center;">
+                    <button type="button" class="btn-remove-row" onclick="removeAccessFieldRow(${index})">
+                        <i class="fa-solid fa-trash"></i>
+                    </button>
+                </td>
+            `;
+            tbody.appendChild(row);
+        });
+    }
+
+    function addAccessFieldRow() {
+        currentAccessFields.push({
+            ID: null, // New field
+            Label: '',
+            FieldType: 'text',
+            IsRequired: 1
+        });
+        renderAccessFields();
+    }
+
+    function removeAccessFieldRow(index) {
+        currentAccessFields.splice(index, 1);
+        renderAccessFields();
+    }
+
+    function updateField(index, key, value) {
+        currentAccessFields[index][key] = value;
+    }
+
+    function saveAccessSettings() {
+        const password = document.getElementById('access-form-password').value;
+        const formId = <?php echo $form['ID']; ?>;
+        
+        // Validate fields
+        for (let field of currentAccessFields) {
+            if (!field.Label.trim()) {
+                alert('يرجى إدخال اسم لجميع الحقول');
+                return;
+            }
+        }
+
+        const formData = new FormData();
+        formData.append('action', 'save_access_settings');
+        formData.append('form_id', formId);
+        formData.append('password', password);
+        formData.append('fields', JSON.stringify(currentAccessFields));
+
+        fetch('edit-form.php?id=' + formId, { // Post to same file
+            method: 'POST',
+            body: formData
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                alert('تم حفظ الإعدادات بنجاح');
+                closeAccessModal();
+                // Optionally reload or update UI indicators
+            } else {
+                alert('حدث خطأ: ' + data.message);
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('حدث خطأ في الاتصال');
+        });
+    }
+
     // Function to copy evaluation link
     function copyEvaluationLink(button) {
         const input = button.parentElement.querySelector('.evaluation-link-input');

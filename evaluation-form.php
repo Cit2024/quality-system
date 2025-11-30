@@ -157,7 +157,7 @@ try {
     }
     
     $stmt->close();
-    $stmt->close();
+
 } catch (Exception $e) {
     die("Database error: " . $e->getMessage());
 }
