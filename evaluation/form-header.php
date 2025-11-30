@@ -2,7 +2,7 @@
 // quality-system/evaluation/form-header.php
 if (!$form_exists) return;
 
-require_once __DIR__ . "/../../helpers/units.php";
+require_once __DIR__ . "/../helpers/units.php";
 
 // Always check if $row exists and contains KidNo
     if(isset($IDStudent)) {
@@ -33,32 +33,24 @@ $evaluatorName = FORM_TARGETS[$Evaluator]['name'];
     <?php elseif($Evaluator === 'alumni'): ?>
         <div class="alumni-header">
             <?php
-                floatingInputComponent(
-                    'سنة التخرج', 
-                    'GraduationYear',
-                    'text',
-                    true
-                );
-        
-                // Existing fields
-                floatingInputComponent(
-                    'الوظيفة الحالية وجهة العمل', 
-                    'Job'
-                );
-                
-                floatingInputComponent(
-                    'التخصص', 
-                    'Specialization'
-                );
-        
-                // Optional Graduate Name
-                floatingInputComponent(
-                    'اسم الخريج (اختياري)', 
-                    'GraduateName',
-                    'text',
-                    false
-                );
+                // Display alumni information from session (populated via form-login.php)
+                $graduationYear = $_SESSION['GraduationYear'] ?? '';
+                $job = $_SESSION['Job'] ?? '';
+                $specialization = $_SESSION['Specialization'] ?? '';
+                $graduateName = $_SESSION['GraduateName'] ?? '';
             ?>
+            <?php if ($graduationYear): ?>
+                <p><strong>سنة التخرج:</strong> <?= htmlspecialchars($graduationYear) ?></p>
+            <?php endif; ?>
+            <?php if ($job): ?>
+                <p><strong>الوظيفة الحالية:</strong> <?= htmlspecialchars($job) ?></p>
+            <?php endif; ?>
+            <?php if ($specialization): ?>
+                <p><strong>التخصص:</strong> <?= htmlspecialchars($specialization) ?></p>
+            <?php endif; ?>
+            <?php if ($graduateName): ?>
+                <p><strong>اسم الخريج:</strong> <?= htmlspecialchars($graduateName) ?></p>
+            <?php endif; ?>
         </div>
     <?php else: ?>
         <div class="default-header">
