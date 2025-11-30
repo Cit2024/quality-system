@@ -85,9 +85,14 @@ quality-system
 │   │   └── answer_processor.php [2.09 KB]
 │   ├── error_log [10.06 KB]
 │   ├── evaluation-thankyou.php [1.80 KB]
-│   ├── form-alumni.php [3.72 KB]
 │   ├── form-header.php [2.37 KB]
-│   └── form-student.php [8.57 KB]
+│   └── submit.php [NEW - Unified Entry Point]
+├── database/
+│   ├── migrations/
+│   │   ├── 001_dynamic_system_tables.sql [1.50 KB]
+│   │   └── 002_add_password_and_access_fields.sql [598 bytes]
+│   ├── citcoder_Quality.sql [6.41 KB]
+│   └── migrate_constants.php [2.50 KB]
 ├── forms/
 │   ├── add/
 │   │   ├── add-default-question.php [915 bytes]
@@ -108,10 +113,12 @@ quality-system
 │   │   ├── update-question.php [1.00 KB]
 │   │   └── update-section.php [1016 bytes]
 │   ├── create-form.php [3.12 KB]
-│   ├── edit-form.php [15.85 KB]
-│   └── form_constants.php [2.05 KB]
+│   ├── edit-form.php [36.82 KB] (includes type/password/field management)
+│   └── form_constants.php [1.28 KB]
 ├── helpers/
 │   ├── database.php [1.39 KB]
+│   ├── FormTypes.php [NEW - type loading helper]
+│   ├── ResponseHandler.php [NEW - Unified Logic]
 │   └── units.php [1.97 KB]
 ├── members/
 │   ├── delete/
@@ -200,11 +207,14 @@ quality-system
 │   ├── print.css [532 bytes]
 │   ├── statistics.css [10.72 KB]
 │   └── utils.css [37 bytes]
+├── ARCHITECTURE.md [26.27 KB]
 ├── README.md [11.51 KB]
 ├── dashboard.php [13.09 KB]
-├── evaluation-form.php [12.99 KB]
+├── evaluation-form.php [13.52 KB] (with auth check)
+├── folder-structure.md [10.28 KB]
 ├── forms.php [10.35 KB]
 ├── index.php [39 bytes]
+├── login-form.php [6.82 KB] (NEW - password/field collection)
 ├── login.php [3.75 KB]
 ├── logout.php [596 bytes]
 ├── members.php [11.36 KB]
@@ -218,11 +228,12 @@ quality-system
 
 ```plaintext
 Root Folder: quality-system
-Total Folders: 35
-Total Files: 174
+Total Folders: 36
+Total Files: 177
 File Types:
-  - .php Files: 75
-  - .md Files: 1
+  - .php Files: 77
+  - .md Files: 3
+  - .sql Files: 3
   - .ttf Files: 12
   - .svg Files: 42
   - .png Files: 1
