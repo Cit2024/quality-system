@@ -14,11 +14,11 @@ if (!isset($_GET['evaluation'], $_GET['Evaluator'])) {
     die("Missing required parameters");
 }
 
-// Retrieve and sanitize the data from the URL
-$Semester = !empty($_GET['Semester']) ? htmlspecialchars(trim($_GET['Semester'])) : null;
-$IDStudent = !empty($_GET['IDStudent']) ? htmlspecialchars(trim($_GET['IDStudent'])) : null;
-$IDCourse = !empty($_GET['IDCourse']) ? htmlspecialchars(trim($_GET['IDCourse'])) : null;
-$IDGroup = !empty($_GET['IDGroup']) ? htmlspecialchars(trim($_GET['IDGroup'])) : null;
+// Retrieve and sanitize the data from the URL or Session
+$Semester = $_SESSION['Semester'] ?? (!empty($_GET['Semester']) ? htmlspecialchars(trim($_GET['Semester'])) : null);
+$IDStudent = $_SESSION['IDStudent'] ?? (!empty($_GET['IDStudent']) ? htmlspecialchars(trim($_GET['IDStudent'])) : null);
+$IDCourse = $_SESSION['IDCourse'] ?? (!empty($_GET['IDCourse']) ? htmlspecialchars(trim($_GET['IDCourse'])) : null);
+$IDGroup = $_SESSION['IDGroup'] ?? (!empty($_GET['IDGroup']) ? htmlspecialchars(trim($_GET['IDGroup'])) : null);
 
 $Evaluator = htmlspecialchars(trim($_GET['Evaluator']));
 $TypeEvaluation = strtolower(trim($_GET['evaluation']));
@@ -138,7 +138,7 @@ if ($Evaluator == "student") {
 // Dynamic form query using prepared statements
 try {
     $stmt = $con->prepare("
-        SELECT ID, note, FormTarget 
+        SELECT ID, note, FormTarget, password 
         FROM Form 
         WHERE FormStatus = 'published' 
         AND FormType = ? 
@@ -157,9 +157,45 @@ try {
     }
     
     $stmt->close();
+    $stmt->close();
 } catch (Exception $e) {
     die("Database error: " . $e->getMessage());
 }
+
+// --- Authorization Check ---
+if ($form_exists) {
+    $formId = $form_by_type['ID'];
+    
+    // Check if form has password or access fields
+    $requiresAuth = false;
+    if (!empty($form_by_type['password'])) {
+        $requiresAuth = true;
+    } else {
+        // Check for access fields
+        $stmt = $con->prepare("SELECT COUNT(*) as count FROM FormAccessFields WHERE FormID = ?");
+        $stmt->bind_param("i", $formId);
+        $stmt->execute();
+        $res = $stmt->get_result()->fetch_assoc();
+        if ($res['count'] > 0) {
+            $requiresAuth = true;
+        }
+        $stmt->close();
+    }
+    
+    if ($requiresAuth) {
+        // Check if authorized in session
+        if (!isset($_SESSION['form_auth_' . $formId])) {
+            // Redirect to login
+            $query = http_build_query($_GET);
+            // Add ID to query if not present (it might not be in GET for evaluation-form, as it uses type/target)
+            // But wait, evaluation-form finds the form by type/target.
+            // We need to pass the ID to login-form.php
+            header("Location: login-form.php?id=$formId&" . $query);
+            exit();
+        }
+    }
+}
+// ---------------------------
     
 // If form exists, get its sections and questions
 if ($form_exists) {
@@ -250,14 +286,26 @@ if ($form_exists) {
                             <p><?php echo formatBilingualText($form_by_type['note']); ?></p>
                         </div>
                     <?php endif; ?>
-                        <input type="hidden" name="form_id" value="<?php echo $form_by_type['ID']; ?>">
-                        <?php if($Evaluator == "student") :?>
-                            <input type="hidden" name="IDStudent" value="<?php echo htmlspecialchars($IDStudent); ?>">
-                            <input type="hidden" name="IDCourse" value="<?php echo htmlspecialchars($IDCourse); ?>">
-                            <input type="hidden" name="Semester" value="<?php echo htmlspecialchars($Semester); ?>">
-                            <input type="hidden" name="IDGroup" value="<?php echo htmlspecialchars($IDGroup); ?>">
-                        <?php endif ?>
-                        <input type="hidden" name="evaluation_type" value="<?php echo htmlspecialchars($TypeEvaluation); ?>">
+        <input type="hidden" name="form_id" value="<?php echo $form_by_type['ID']; ?>">
+        <input type="hidden" name="evaluation_type" value="<?php echo $TypeEvaluation; ?>">
+        
+        <!-- Pass Context Data -->
+        <?php if (isset($Semester) && $Semester): ?><input type="hidden" name="Semester" value="<?= htmlspecialchars($Semester) ?>"><?php endif; ?>
+        <?php if (isset($IDStudent) && $IDStudent): ?><input type="hidden" name="IDStudent" value="<?= htmlspecialchars($IDStudent) ?>"><?php endif; ?>
+        <?php if (isset($IDCourse) && $IDCourse): ?><input type="hidden" name="IDCourse" value="<?= htmlspecialchars($IDCourse) ?>"><?php endif; ?>
+        <?php if (isset($IDGroup) && $IDGroup): ?><input type="hidden" name="IDGroup" value="<?= htmlspecialchars($IDGroup) ?>"><?php endif; ?>
+        
+        <!-- Pass Session Data as Hidden Fields for ResponseHandler -->
+        <?php 
+        // If logged in via login-form.php, pass those values too
+        if (isset($_SESSION['form_auth_' . $formId])) {
+            foreach ($_SESSION as $key => $val) {
+                if (strpos($key, 'field_') === 0 && !empty($val)) {
+                    echo '<input type="hidden" name="' . htmlspecialchars($key) . '" value="' . htmlspecialchars($val) . '">';
+                }
+            }
+        }
+        ?>
                         
                         <?php foreach ($sections as $section): ?>
                             <div class="evaluation-section">
