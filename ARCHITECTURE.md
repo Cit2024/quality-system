@@ -9,43 +9,43 @@
 │                   citcoder_Quality Database                 │
 ├─────────────────────────────────────────────────────────────┤
 │                                                             │
-│  ┌──────────────┐         ┌──────────────────────────┐    │
-│  │    Admin     │ creates │        Form              │    │
-│  ├──────────────┤─────────├──────────────────────────┤    │
-│  │ ID (PK)      │         │ ID (PK)                  │    │
-│  │ username     │         │ Title                    │    │
-│  │ password     │         │ Description              │    │
-│  │ Permissions: │         │ FormStatus (draft/pub)   │    │
-│  │ - isCanCreate│         │ FormType                 │    │
-│  │ - isCanDelete│         │ FormTarget               │    │
-│  │ - isCanUpdate│         │ note                     │    │
-│  │ - isCanRead  │         │ created_by (FK→Admin)    │    │
-│  │ - isCanGet.. │         │ created_at               │    │
-│  └──────────────┘         └──────┬───────────────────┘    │
-│                                   │ has                    │
-│                                   ▼                        │
-│                          ┌──────────────────┐              │
-│                          │    Section       │              │
-│                          ├──────────────────┤              │
-│                          │ ID (PK)          │              │
-│                          │ IDForm (FK→Form) │              │
-│                          │ title            │              │
-│                          └────────┬─────────┘              │
-│                                   │ has                    │
-│                                   ▼                        │
-│                          ┌──────────────────────────┐      │
-│                          │      Question            │      │
-│                          ├──────────────────────────┤      │
-│                          │ ID (PK)                  │      │
-│                          │ IDSection (FK→Section)   │      │
-│                          │ TypeQuestion:            │      │
-│                          │  - multiple_choice       │      │
-│                          │  - true_false            │      │
-│                          │  - essay                 │      │
-│                          │  - evaluation            │      │
-│                          │ TitleQuestion            │      │
-│                          │ Choices                  │      │
-│                          └──────────────────────────┘      │
+│  ┌──────────────┐         ┌──────────────────────────┐      │
+│  │    Admin     │ creates │        Form              │      │
+│  ├──────────────┤─────────├──────────────────────────┤      │
+│  │ ID (PK)      │         │ ID (PK)                  │      │
+│  │ username     │         │ Title                    │      │
+│  │ password     │         │ Description              │      │
+│  │ Permissions: │         │ FormStatus (draft/pub)   │      │
+│  │ - isCanCreate│         │ FormType                 │      │
+│  │ - isCanDelete│         │ FormTarget               │      │
+│  │ - isCanUpdate│         │ note                     │      │
+│  │ - isCanRead  │         │ created_by (FK→Admin)    │      │
+│  │ - isCanGet.. │         │ created_at               │      │
+│  └──────────────┘         └──────┬───────────────────┘      │
+│                                   │ has                     │
+│                                   ▼                         │
+│                          ┌──────────────────┐               │ 
+│                          │    Section       │               │
+│                          ├──────────────────┤               │
+│                          │ ID (PK)          │               │
+│                          │ IDForm (FK→Form) │               │
+│                          │ title            │               │
+│                          └────────┬─────────┘               │
+│                                   │ has                     │
+│                                   ▼                         │
+│                          ┌──────────────────────────┐       │
+│                          │      Question            │       │ 
+│                          ├──────────────────────────┤       │
+│                          │ ID (PK)                  │       │
+│                          │ IDSection (FK→Section)   │       │
+│                          │ TypeQuestion:            │       │
+│                          │  - multiple_choice       │       │
+│                          │  - true_false            │       │
+│                          │  - essay                 │       │
+│                          │  - evaluation            │       │
+│                          │ TitleQuestion            │       │
+│                          │ Choices                  │       │
+│                          └──────────────────────────┘       │
 └─────────────────────────────────────────────────────────────┘
 ``` 
 ### citcoder_Citgate Database (Student/Teacher Info)
@@ -55,23 +55,23 @@
 │                 citcoder_Citgate Database                    │
 ├──────────────────────────────────────────────────────────────┤
 │                                                              │
-│  ┌─────────────┐    ┌─────────────┐    ┌──────────────┐    │
-│  │ sprofiles   │    │ regteacher  │    │    zaman     │    │
-│  ├─────────────┤    ├─────────────┤    ├──────────────┤    │
-│  │ KidNo (PK)  │    │ id (PK)     │    │ ZamanNo (PK) │    │
-│  │ KesmNo      │    │ name        │    │ ZamanName    │    │
-│  │ (Student)   │    │ (Teacher)   │    │ (Semester)   │    │
-│  └─────────────┘    └─────────────┘    └──────────────┘    │
+│  ┌─────────────┐    ┌─────────────┐    ┌──────────────┐      │
+│  │ sprofiles   │    │ regteacher  │    │    zaman     │      │
+│  ├─────────────┤    ├─────────────┤    ├──────────────┤      │
+│  │ KidNo (PK)  │    │ id (PK)     │    │ ZamanNo (PK) │      │
+│  │ KesmNo      │    │ name        │    │ ZamanName    │      │
+│  │ (Student)   │    │ (Teacher)   │    │ (Semester)   │      │
+│  └─────────────┘    └─────────────┘    └──────────────┘      │
 │                                                              │
-│  ┌──────────────┐    ┌────────────────────────────┐         │
-│  │    mawad     │    │    coursesgroups           │         │
-│  ├──────────────┤    ├────────────────────────────┤         │
-│  │ MadaNo (PK)  │    │ ZamanNo (FK)               │         │
-│  │ MadaName     │    │ MadaNo (FK)                │         │
-│  │ (Course)     │    │ GNo                        │         │
-│  └──────────────┘    │ TNo (FK→regteacher)        │         │
-│                      │ (Course-Teacher Assign)    │         │
-│  ┌──────────────┐    └────────────────────────────┘         │
+│  ┌──────────────┐    ┌────────────────────────────┐          │
+│  │    mawad     │    │    coursesgroups           │          │
+│  ├──────────────┤    ├────────────────────────────┤          │
+│  │ MadaNo (PK)  │    │ ZamanNo (FK)               │          │
+│  │ MadaName     │    │ MadaNo (FK)                │          │
+│  │ (Course)     │    │ GNo                        │          │
+│  └──────────────┘    │ TNo (FK→regteacher)        │          │
+│                      │ (Course-Teacher Assign)    │          │
+│  ┌──────────────┐    └────────────────────────────┘          │
 │  │  divitions   │                                            │
 │  ├──────────────┤                                            │
 │  │ did (PK)     │                                            │
@@ -91,79 +91,88 @@
 │                  User Roles & Authentication                │
 ├─────────────────────────────────────────────────────────────┤
 │                                                             │
-│   ┌──────────┐  ┌──────────┐  ┌──────────┐  ┌──────────┐ │
-│   │  Admin   │  │ Student  │  │ Teacher  │  │  Alumni  │ │
-│   ├──────────┤  ├──────────┤  ├──────────┤  ├──────────┤ │
-│   │ Login:   │  │ Access:  │  │ Login:   │  │ Access:  │ │
-│   │ login.   │  │ Direct   │  │ login.   │  │ form-    │ │
-│   │ php      │  │ Link or  │  │ php      │  │ login.   │ │
-│   │ (user/   │  │ form-    │  │ (ID/     │  │ php      │ │
-│   │ pwd)     │  │ login)   │  │ auto-pwd)│  │ (grad    │ │
-│   └──────────┘  └──────────┘  └──────────┘  │ info)    │ │
-│                                              └──────────┘ │
-│   ┌──────────┐                                            │
-│   │Employer  │                                            │
-│   ├──────────┤                                            │
-│   │ Access:  │     Form Types:                            │
-│   │ Direct   │     • course_evaluation                    │
-│   │ Link     │     • teacher_evaluation                   │
-│   └──────────┘     • program_evaluation                   │
-│                    • facility_evaluation                   │
+│   ┌──────────┐  ┌──────────┐  ┌──────────┐  ┌──────────┐    │
+│   │  Admin   │  │ Student  │  │ Teacher  │  │  Alumni  │    │
+│   ├──────────┤  ├──────────┤  ├──────────┤  ├──────────┤    │
+│   │ Login:   │  │ Access:  │  │ Login:   │  │ Access:  │    │
+│   │ login.   │  │ Direct   │  │ login.   │  │ form-    │    │
+│   │ php      │  │ Link or  │  │ php      │  │ login.   │    │
+│   │ (user/   │  │ form-    │  │ (ID/     │  │ php      │    │
+│   │ pwd)     │  │ login)   │  │ auto-pwd)│  │ (grad    │    │
+│   └──────────┘  └──────────┘  └──────────┘  │ info)    │    │
+│                                             └──────────┘    │
+│   ┌──────────┐                                              │
+│   │Employer  │                                              │
+│   ├──────────┤                                              │
+│   │ Access:  │     Form Types:                              │
+│   │ Direct   │     • course_evaluation                      │
+│   │ Link     │     • teacher_evaluation                     │
+│   └──────────┘     • program_evaluation                     │
+│                    • facility_evaluation                    │
 └─────────────────────────────────────────────────────────────┘
 ```
 
 ## Type Management System (Added 2025-11-29, Refactored 2025-11-29)
 
 ```
-┌────────────────────────────────────────────────────────────────┐
-│                   Type Management Architecture                  │
-├────────────────────────────────────────────────────────────────┤
-│                                                                │
+┌───────────────────────────────────────────────────────────────┐
+│                   Type Management Architecture                │
+├───────────────────────────────────────────────────────────────┤
+│                                                               │
 │  Form Edit Page (Self-Contained)                              │
 │  ┌─────────────────────────────────────────────────────────┐  │
-│  │ • forms/edit-form.php                                    │  │
-│  │                                                           │  │
-│  │   Manages (via internal POST handlers):                  │  │
-│  │   - FormTypes table (Name, Slug, Icon, Allowed Targets)  │  │
-│  │   - EvaluatorTypes table (Name, Slug, Icon)              │  │
-│  │   - Form Password (form.password)                        │  │
-│  │   - FormAccessFields (registration fields)               │  │
-│  │                                                           │  │
-│  │   Actions:                                                │  │
-│  │   - action=create_type    → Insert into FormTypes/       │  │
-│  │                              EvaluatorTypes               │  │
-│  │   - action=delete_type    → Delete from FormTypes/       │  │
-│  │                              EvaluatorTypes               │  │
-│  │   - action=update_password → Update Form.password        │  │
-│  │   - action=add_field      → Insert FormAccessFields      │  │
-│  │   - action=delete_field   → Delete FormAccessFields      │  │
+│  │ • forms/edit-form.php                                   │  │
+│  │                                                         │  │
+│  │   Manages (via internal POST handlers):                 │  │
+│  │   - FormTypes table (Name, Slug, Icon, Allowed Targets) │  │
+│  │   - EvaluatorTypes table (Name, Slug, Icon)             │  │
+│  │   - Form Password (form.password)                       │  │
+│  │   - FormAccessFields (registration fields)              │  │
+│  │                                                         │  │
+│  │   Actions:                                              │  │
+│  │   - action=create_type    → Insert into FormTypes/      │  │
+│  │                              EvaluatorTypes             │  │
+│  │   - action=delete_type    → Delete from FormTypes/      │  │
+│  │                              EvaluatorTypes             │  │
+│  │   - action=update_password → Update Form.password       │  │
+│  │   - action=add_field      → Insert FormAccessFields     │  │
+│  │   - action=delete_field   → Delete FormAccessFields     │  │
 │  └─────────────────────────────────────────────────────────┘  │
-│                                                                │
-│  Database Tables                                               │
+│                                                               │
+│  Database Tables                                              │
 │  ┌──────────────────────────────────────────────────────────┐ │
 │  │ FormTypes            EvaluatorTypes                      │ │
 │  │ ├─ ID (PK)           ├─ ID (PK)                          │ │
 │  │ ├─ Name              ├─ Name                             │ │
 │  │ ├─ Slug              ├─ Slug                             │ │
 │  │ └─ Icon              └─ Icon                             │ │
-│  │                                                           │ │
+│  │                                                          │ │
 │  │ FormType_EvaluatorType (Many-to-Many)                    │ │
 │  │ ├─ FormTypeID (FK→FormTypes)                             │ │
 │  │ └─ EvaluatorTypeID (FK→EvaluatorTypes)                   │ │
+│  │ FormType_EvaluatorType (Many-to-Many)                    │ │
+│  │ ├─ FormTypeID (FK→FormTypes)                             │ │
+│  │ └─ EvaluatorTypeID (FK→EvaluatorTypes)                   │ │
+│  │                                                          │ │
+│  │ FormAccessFields                                         │ │
+│  │ ├─ ID (PK), FormID (FK)                                  │ │
+│  │ ├─ Label (Arabic Name)                                   │ │
+│  │ ├─ Slug (URL Param)                                      │ │
+│  │ └─ FieldType, IsRequired                                 │ │
 │  └──────────────────────────────────────────────────────────┘ │
-│                                                                │
-│  Features:                                                     │
+│                                                               │
+│  Features:                                                    │
 │  • Create new form types and evaluator types via admin UI     │
 │  • Edit existing types (name, slug, icon)                     │
 │  • Delete types (with usage validation)                       │
 │  • Manage allowed targets (which evaluators can use which     │
-│    form types)                                                 │
+│    form types)                                                │
 │  • Database-driven constants (no code changes needed)         │
 │  • Set password protection per form                           │
 │  • Define custom registration fields per form                 │
 │  • All logic self-contained in edit-form.php (no admin/api)   │
-│                                                                │
-└────────────────────────────────────────────────────────────────┘
+│                                                               │
+└───────────────────────────────────────────────────────────────┘
 ```
 
 ## Unified Response Handler (Added 2025-11-29)
@@ -195,33 +204,33 @@
 ┌────────────────────────────────────────────────────────────────┐
 │                    Application Components                      │
 ├────────────────────────────────────────────────────────────────┤
-│  │   form-teacher.php  │  │  ┌──────────────────────┐         │
-│  │   form-alumni.php   │  │  │ • config/            │         │
-│  │   form-admin.php    │  │  │   DbConnection.php   │         │
-│  │   form-employer.php │  │  │   dbConnectionCit    │         │
-│  └─────────────────────┘  │  │ • helpers/           │         │
-│                           │  │   database.php       │         │
-│  Statistics & Analytics   │  │   units.php          │         │
-│  ┌─────────────────────┐  │  │ • forms/             │         │
-│  │ • statistics.php    │  │  │   form_constants.php │         │
-│  │ • statistics/       │  │  └──────────────────────┘         │
-│  │   get_statistics    │  │                                   │
-│  │   get_teacher_stats │  │  UI & Scripts                     │
-│  │   router.php        │  │  ┌──────────────────────┐         │
-│  │   analytics/        │  │  │ • styles/            │         │
-│  │   PDFReportGen.js   │  │  │   global.css         │         │
-│  │ • scripts/          │  │  │   dashboard.css      │         │
-│  │   statistics.js     │  │  │   forms.css          │         │
-│  └─────────────────────┘  │  │ • scripts/           │         │
-│                           │  │   main.js            │         │
-│  Shared Components        │  │   dashbord.js        │         │
-│  ┌─────────────────────┐  │  │   evaluation-form.js │         │
-│  │ • components/       │  │  └──────────────────────┘         │
-│  │   header.php        │  │                                   │
-│  │   footer.php        │  │                                   │
-│  │   navigation.php    │  │                                   │
-│  │   separator.html    │  │                                   │
-│  └─────────────────────┘  │                                   │
+│  │   form-teacher.php  │  │  ┌──────────────────────┐          │
+│  │   form-alumni.php   │  │  │ • config/            │          │
+│  │   form-admin.php    │  │  │   DbConnection.php   │          │
+│  │   form-employer.php │  │  │   dbConnectionCit    │          │
+│  └─────────────────────┘  │  │ • helpers/           │          │
+│                           │  │   database.php       │          │
+│  Statistics & Analytics   │  │   units.php          │          │
+│  ┌─────────────────────┐  │  │ • forms/             │          │
+│  │ • statistics.php    │  │  │   form_constants.php │          │
+│  │ • statistics/       │  │  └──────────────────────┘          │
+│  │   get_statistics    │  │                                    │
+│  │   get_teacher_stats │  │  UI & Scripts                      │
+│  │   router.php        │  │  ┌──────────────────────┐          │
+│  │   analytics/        │  │  │ • styles/            │          │
+│  │   PDFReportGen.js   │  │  │   global.css         │          │
+│  │ • scripts/          │  │  │   dashboard.css      │          │
+│  │   statistics.js     │  │  │   forms.css          │          │
+│  └─────────────────────┘  │  │ • scripts/           │          │
+│                           │  │   main.js            │          │
+│  Shared Components        │  │   dashbord.js        │          │
+│  ┌─────────────────────┐  │  │   evaluation-form.js │          │
+│  │ • components/       │  │  └──────────────────────┘          │
+│  │   header.php        │  │                                    │
+│  │   footer.php        │  │                                    │
+│  │   navigation.php    │  │                                    │
+│  │   separator.html    │  │                                    │
+│  └─────────────────────┘  │                                    │
 │                                                                │
 └────────────────────────────────────────────────────────────────┘
 ```

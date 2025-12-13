@@ -34,7 +34,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET' && isset($_GET['action'])) {
             
             // Get Fields
             $fields = [];
-            $stmt = $con->prepare("SELECT ID, Label, FieldType, IsRequired FROM FormAccessFields WHERE FormID = ? ORDER BY OrderIndex ASC");
+            $stmt = $con->prepare("SELECT ID, Label, Slug, FieldType, IsRequired FROM FormAccessFields WHERE FormID = ? ORDER BY OrderIndex ASC");
             $stmt->bind_param('i', $formId);
             $stmt->execute();
             $result = $stmt->get_result();
@@ -170,15 +170,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
                 $stmt->close();
                 
                 if (!empty($fields)) {
-                    $stmt = $con->prepare("INSERT INTO FormAccessFields (FormID, Label, FieldType, IsRequired, OrderIndex) VALUES (?, ?, ?, ?, ?)");
+                    $stmt = $con->prepare("INSERT INTO FormAccessFields (FormID, Label, Slug, FieldType, IsRequired, OrderIndex) VALUES (?, ?, ?, ?, ?, ?)");
                     foreach ($fields as $index => $field) {
                         $label = trim($field['Label']);
+                        $slug = trim($field['Slug'] ?? '');
                         $type = $field['FieldType'];
                         $required = isset($field['IsRequired']) ? intval($field['IsRequired']) : 0;
                         $order = $index;
                         
+                        // Default slug if empty? Maybe auto-generate or required. User said "Slug that will be used in URL".
+                        // Use Label as fallback if valid, or just allow empty (but URL param key needs to be valid).
+                        // Let's assume validation in JS ensures it, or we rely on user input.
+                        
                         if (!empty($label)) {
-                            $stmt->bind_param('issii', $formId, $label, $type, $required, $order);
+                            $stmt->bind_param('isssii', $formId, $label, $slug, $type, $required, $order);
                             $stmt->execute();
                         }
                     }
@@ -374,10 +379,13 @@ if (!$sections_result) {
                 $evalLink = $baseUrl . "/evaluation-form.php?evaluation=" . urlencode($form['FormType']) . 
                            "&Evaluator=" . urlencode($form['FormTarget']);
                 // Add additional parameters based on form target
-                if ($form['FormTarget'] === 'student') {
-                    $evalLink .= "&Semester={Semester}&IDStudent={IDStudent}";
-                    if (in_array($form['FormType'], ['teacher_evaluation', 'course_evaluation'])) {
-                        $evalLink .= "&IDCourse={IDCourse}&IDGroup={IDGroup}";
+                // Add dynamic parameters from Access Fields
+                $accessFieldsQuery = "SELECT Slug FROM FormAccessFields WHERE FormID = " . intval($form['ID']) . " ORDER BY OrderIndex ASC";
+                $accessFieldsRes = mysqli_query($con, $accessFieldsQuery);
+                while($af = mysqli_fetch_assoc($accessFieldsRes)) {
+                    if(!empty($af['Slug'])) {
+                        $slug = $af['Slug'];
+                        $evalLink .= "&" . urlencode($slug) . "={" . $slug . "}";
                     }
                 }
                 ?>
@@ -390,9 +398,7 @@ if (!$sections_result) {
             <p class="link-note">
                 <i class="fa-solid fa-info-circle"></i>
                 هذا الرابط يمكن مشاركته مع المقيمين للمشاركة في التقييم. 
-                <?php if ($form['FormTarget'] === 'student'): ?>
-                    <br>ملاحظة: يجب استبدال المتغيرات {Semester}, {IDStudent}, {IDCourse}, {IDGroup} بالقيم الفعلية.
-                <?php endif; ?>
+                    <br>ملاحظة: سيتم استبدال المتغيرات ما بين الأقواس {} بالقيم الفعلية عند المشاركة.
             </p>
         </div>
         <?php endif; ?>
@@ -579,7 +585,8 @@ if (!$sections_result) {
                 <table class="fields-table">
                     <thead>
                         <tr>
-                            <th>اسم الحقل</th>
+                            <th>اسم الحقل (العربية)</th>
+                            <th>المعرف (URL Slug)</th>
                             <th style="width: 150px;">النوع</th>
                             <th style="width: 100px;">إجباري؟</th>
                             <th style="width: 50px;"></th>
@@ -658,7 +665,8 @@ if (!$sections_result) {
         currentAccessFields.forEach((field, index) => {
             const row = document.createElement('tr');
             row.innerHTML = `
-                <td><input type="text" value="${field.Label}" onchange="updateField(${index}, 'Label', this.value)" placeholder="مثال: الاسم الثلاثي"></td>
+                <td><input type="text" value="${field.Label}" onchange="updateField(${index}, 'Label', this.value)" placeholder="مثال: رقم الطالب"></td>
+                <td><input type="text" value="${field.Slug || ''}" onchange="updateField(${index}, 'Slug', this.value)" placeholder="IDStudent" style="direction: ltr;"></td>
                 <td>
                     <select onchange="updateField(${index}, 'FieldType', this.value)">
                         <option value="text" ${field.FieldType === 'text' ? 'selected' : ''}>نص</option>
@@ -685,6 +693,7 @@ if (!$sections_result) {
         currentAccessFields.push({
             ID: null, // New field
             Label: '',
+            Slug: '',
             FieldType: 'text',
             IsRequired: 1
         });
@@ -960,89 +969,7 @@ if (!$sections_result) {
             });
         }
 
-        // Password Update
-        function updatePassword() {
-            const password = document.getElementById('form-password').value;
-            const formData = new FormData();
-            formData.append('action', 'update_password');
-            formData.append('form_id', <?= $formId ?>);
-            formData.append('password', password);
 
-            fetch(window.location.href, {
-                method: 'POST',
-                body: formData
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    alert('تم حفظ كلمة المرور');
-                } else {
-                    alert('خطأ: ' + data.message);
-                }
-            })
-            .catch(err => alert('حدث خطأ'));
-        }
-
-        // Field Modal Logic
-        function openFieldModal() {
-            document.getElementById('fieldModal').style.display = 'block';
-            document.getElementById('new-field-label').value = '';
-            document.getElementById('new-field-type').value = 'text';
-            document.getElementById('new-field-required').checked = false;
-        }
-
-        function addField() {
-            const label = document.getElementById('new-field-label').value;
-            const type = document.getElementById('new-field-type').value;
-            const required = document.getElementById('new-field-required').checked ? 1 : 0;
-            
-            if (!label) {
-                alert('يرجى إدخال اسم الحقل');
-                return;
-            }
-
-            const formData = new FormData();
-            formData.append('action', 'add_field');
-            formData.append('form_id', <?= $formId ?>);
-            formData.append('label', label);
-            formData.append('type', type);
-            formData.append('required', required);
-            
-            fetch(window.location.href, {
-                method: 'POST',
-                body: formData
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    location.reload();
-                } else {
-                    alert('خطأ: ' + data.message);
-                }
-            });
-        }
-
-        // Delete Field
-        function deleteField(id) {
-            if(!confirm('حذف هذا الحقل؟')) return;
-            
-            const formData = new FormData();
-            formData.append('action', 'delete_field');
-            formData.append('field_id', id);
-
-            fetch(window.location.href, {
-                method: 'POST',
-                body: formData
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    location.reload();
-                } else {
-                    alert('خطأ: ' + data.message);
-                }
-            });
-        }
     </script>
 
 </body>
