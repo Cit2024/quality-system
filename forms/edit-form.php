@@ -191,7 +191,39 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
                 }
                 
                 $con->commit();
-                $response = ['success' => true, 'message' => 'تم حفظ الإعدادات'];
+
+                // Re-generate the evaluation link
+                $baseUrl = "http://" . $_SERVER['HTTP_HOST'] . dirname(dirname($_SERVER['PHP_SELF']));
+                
+                // Fetch form details again to be sure (or reuse $formId)
+                // We need FormType and FormTarget. They shouldn't have changed here, but let's fetch to be safe or pass them if available.
+                // Since this is a POST request, we might not have $form loaded. Let's fetch it.
+                $stmt = $con->prepare("SELECT FormType, FormTarget FROM Form WHERE ID = ?");
+                $stmt->bind_param('i', $formId);
+                $stmt->execute();
+                $fResult = $stmt->get_result()->fetch_assoc();
+                $stmt->close();
+                
+                $evalLink = "";
+                if ($fResult) {
+                    $evalLink = $baseUrl . "/evaluation-form.php?evaluation=" . urlencode($fResult['FormType']) . 
+                               "&Evaluator=" . urlencode($fResult['FormTarget']);
+                               
+                    // Add dynamic parameters from the JUST INSERTED fields
+                    // We can reuse the $fields array we just processed, assuming it matches what's in DB.
+                    // But to be 100% accurate to what the link generation logic uses, let's allow it to flow from the input.
+                    // Or better, query the DB like the frontend does.
+                    $accessFieldsQuery = "SELECT Slug FROM FormAccessFields WHERE FormID = " . intval($formId) . " ORDER BY OrderIndex ASC";
+                    $accessFieldsRes = mysqli_query($con, $accessFieldsQuery);
+                    while($af = mysqli_fetch_assoc($accessFieldsRes)) {
+                        if(!empty($af['Slug'])) {
+                            $slug = $af['Slug'];
+                            $evalLink .= "&" . urlencode($slug) . "={" . $slug . "}";
+                        }
+                    }
+                }
+
+                $response = ['success' => true, 'message' => 'تم حفظ الإعدادات', 'eval_link' => $evalLink];
                 
             } catch (Exception $e) {
                 $con->rollback();
@@ -299,20 +331,24 @@ if (!$sections_result) {
                     <div class="form-status-row">
                         <span>المُقيِّم : </span>
                         <div class="custom-select-wrapper form-target-control" id="target-select-wrapper">
-                            <div class="custom-select-trigger" onclick="toggleCustomSelect('target')">
+                            <div class="custom-select-trigger js-custom-select-trigger" data-type="target">
                                 <span id="target-selected-text"><?= FORM_TARGETS[$form['FormTarget']]['name'] ?? 'اختر' ?></span>
                                 <i class="fa-solid fa-chevron-down"></i>
                             </div>
                             <div class="custom-select-options" id="target-options">
                                 <?php foreach (FORM_TARGETS as $key => $target): ?>
-                                    <div class="custom-option <?= $key === $form['FormTarget'] ? 'selected' : '' ?>" data-value="<?= $key ?>" data-db-id="<?= $target['id'] ?>" onclick="selectOption('target', '<?= $key ?>', '<?= $target['name'] ?>', this)">
+                                    <div class="custom-option js-custom-option <?= $key === $form['FormTarget'] ? 'selected' : '' ?>" 
+                                         data-type="target" 
+                                         data-value="<?= $key ?>" 
+                                         data-db-id="<?= $target['id'] ?>" 
+                                         data-name="<?= $target['name'] ?>">
                                         <span><?= $target['name'] ?></span>
-                                        <button type="button" class="btn-delete-option" onclick="event.stopPropagation(); deleteType('target', '<?= $target['id'] ?>', '<?= $key ?>')" title="حذف">
+                                        <button type="button" class="btn-delete-option js-delete-type" data-category="target" data-db-id="<?= $target['id'] ?>" title="حذف">
                                             <i class="fa-solid fa-trash"></i>
                                         </button>
                                     </div>
                                 <?php endforeach; ?>
-                                <div class="custom-option-add" onclick="openTypeModal('target')">
+                                <div class="custom-option-add js-open-type-modal" data-category="target">
                                     <i class="fa-solid fa-plus"></i> إضافة جديد
                                 </div>
                             </div>
@@ -324,24 +360,25 @@ if (!$sections_result) {
                     <div class="form-status-row">
                         <span>نوع التقييم : </span>
                         <div class="custom-select-wrapper form-type-control" id="type-select-wrapper">
-                            <div class="custom-select-trigger" onclick="toggleCustomSelect('type')">
+                            <div class="custom-select-trigger js-custom-select-trigger" data-type="type">
                                 <span id="type-selected-text"><?= FORM_TYPES[$form['FormType']]['name'] ?? 'اختر' ?></span>
                                 <i class="fa-solid fa-chevron-down"></i>
                             </div>
                             <div class="custom-select-options" id="type-options">
                                 <?php foreach (FORM_TYPES as $key => $type): ?>
-                                    <div class="custom-option <?= $key === $form['FormType'] ? 'selected' : '' ?>" 
+                                    <div class="custom-option js-custom-option <?= $key === $form['FormType'] ? 'selected' : '' ?>" 
+                                         data-type="type"
                                          data-value="<?= $key ?>" 
                                          data-db-id="<?= $type['id'] ?>" 
                                          data-targets="<?= implode(',', $type['allowed_targets']) ?>"
-                                         onclick="selectOption('type', '<?= $key ?>', '<?= $type['name'] ?>', this)">
+                                         data-name="<?= $type['name'] ?>">
                                         <span><?= $type['name'] ?></span>
-                                        <button type="button" class="btn-delete-option" onclick="event.stopPropagation(); deleteType('type', '<?= $type['id'] ?>', '<?= $key ?>')" title="حذف">
+                                        <button type="button" class="btn-delete-option js-delete-type" data-category="type" data-db-id="<?= $type['id'] ?>" title="حذف">
                                             <i class="fa-solid fa-trash"></i>
                                         </button>
                                     </div>
                                 <?php endforeach; ?>
-                                <div class="custom-option-add" onclick="openTypeModal('type')">
+                                <div class="custom-option-add js-open-type-modal" data-category="type">
                                     <i class="fa-solid fa-plus"></i> إضافة جديد
                                 </div>
                             </div>
@@ -352,7 +389,7 @@ if (!$sections_result) {
                     </div> <!-- Close control-buttons -->
 
                     <div style="display: flex; gap: 10px;">
-                        <button class="access-settings-btn" onclick="openAccessModal()">
+                        <button type="button" class="access-settings-btn js-open-access-modal">
                             <i class="fa-solid fa-lock"></i>
                             إعدادات الوصول
                         </button>
@@ -390,7 +427,7 @@ if (!$sections_result) {
                 }
                 ?>
                 <input type="text" class="evaluation-link-input" value="<?php echo htmlspecialchars($evalLink); ?>" readonly>
-                <button class="copy-link-btn" onclick="copyEvaluationLink(this)" title="نسخ الرابط">
+                <button class="copy-link-btn" title="نسخ الرابط">
                     <i class="fa-solid fa-copy"></i>
                     <span>نسخ</span>
                 </button>
@@ -398,7 +435,14 @@ if (!$sections_result) {
             <p class="link-note">
                 <i class="fa-solid fa-info-circle"></i>
                 هذا الرابط يمكن مشاركته مع المقيمين للمشاركة في التقييم. 
-                    <br>ملاحظة: سيتم استبدال المتغيرات ما بين الأقواس {} بالقيم الفعلية عند المشاركة.
+                    <br>ملاحظة: سيتم استبدال المتغيرات ما بين الأقواس <?php 
+                   $accessFieldsRes = mysqli_query($con, $accessFieldsQuery); 
+                    while($af = mysqli_fetch_assoc($accessFieldsRes)) {
+                    if(!empty($af['Slug'])) {
+                        $slug = $af['Slug'];
+                        echo "{" . urlencode($slug) . "}" . " ";
+                    }
+                }?> بالقيم الفعلية عند المشاركة.
             </p>
         </div>
         <?php endif; ?>
@@ -518,7 +562,7 @@ if (!$sections_result) {
     <!-- Type Management Modal -->
     <div id="typeModal" class="modal" style="display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5);">
         <div class="modal-content" style="background: white; margin: 10% auto; padding: 20px; border-radius: 8px; width: 90%; max-width: 400px; position: relative;">
-            <span class="close" onclick="closeTypeModal()" style="position: absolute; left: 15px; top: 10px; font-size: 24px; cursor: pointer;">&times;</span>
+            <span class="close js-close-type-modal" style="position: absolute; left: 15px; top: 10px; font-size: 24px; cursor: pointer;">&times;</span>
             <h2 id="modalTitle" style="margin-bottom: 20px;">إضافة عنصر جديد</h2>
             <form id="typeForm">
                 <input type="hidden" id="typeCategory" name="category"> <!-- 'target' or 'type' -->
@@ -564,7 +608,7 @@ if (!$sections_result) {
     <!-- Access Control Modal -->
     <div id="accessControlModal" class="modal" style="display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5);">
         <div class="access-modal-content">
-            <span class="close" onclick="closeAccessModal()" style="float: left; font-size: 24px; cursor: pointer;">&times;</span>
+            <span class="close js-close-access-modal" style="float: left; font-size: 24px; cursor: pointer;">&times;</span>
             <h2 style="margin-bottom: 20px; border-bottom: 1px solid #eee; padding-bottom: 10px;">إعدادات الوصول</h2>
             
             <!-- Section 1: Password -->
@@ -597,14 +641,14 @@ if (!$sections_result) {
                     </tbody>
                 </table>
                 
-                <button type="button" class="btn-add-row" onclick="addAccessFieldRow()">
+                <button type="button" class="btn-add-row js-add-access-row">
                     <i class="fa-solid fa-plus"></i> إضافة حقل جديد
                 </button>
             </div>
 
             <div class="modal-footer">
-                <button type="button" class="btn-cancel" onclick="closeAccessModal()">إلغاء</button>
-                <button type="button" class="btn-save-access" onclick="saveAccessSettings()">حفظ التغييرات</button>
+                <button type="button" class="btn-cancel js-close-access-modal">إلغاء</button>
+                <button type="button" class="btn-save-access js-save-access-settings">حفظ التغييرات</button>
             </div>
         </div>
     </div>
@@ -612,364 +656,10 @@ if (!$sections_result) {
     <script src="https://cdnjs.cloudflare.com/ajax/libs/printThis/1.15.0/printThis.min.js"></script>
     <script src="../scripts/forms.js"></script>
     <script>
-    // Access Control Modal Functions
-    let currentAccessFields = [];
-
-    function openAccessModal() {
-        // Fetch current password
-        const currentPassword = "<?php echo htmlspecialchars($form['password'] ?? '', ENT_QUOTES); ?>"; // Initial value from PHP
-        // Note: For dynamic updates without reload, we might need to store this in a global var or data attribute
-        // For now, we use the PHP value. If user saved previously via AJAX, we should update this.
-        // Better: Read from a hidden input or data attribute on the page if we want it to persist without reload.
-        // Let's rely on the page state.
-        
-        document.getElementById('access-form-password').value = currentPassword;
-
-        // Fetch current fields
-        // We can parse them from the PHP-generated list if it existed, but we removed it.
-        // So we should fetch them via AJAX or store them in a JS variable on load.
-        // Let's fetch them via AJAX to be sure.
-        
-        const formId = <?php echo $form['ID']; ?>;
-        
-        // Show loading state?
-        const tbody = document.getElementById('access-fields-tbody');
-        tbody.innerHTML = '<tr><td colspan="4" style="text-align:center;">جاري التحميل...</td></tr>';
-        document.getElementById('accessControlModal').style.display = 'block';
-
-        fetch(`edit-form.php?id=${formId}&action=get_access_data`) // We need to implement this action!
-            .then(response => response.json())
-            .then(data => {
-                if(data.success) {
-                    document.getElementById('access-form-password').value = data.password;
-                    currentAccessFields = data.fields;
-                    renderAccessFields();
-                } else {
-                    alert('فشل تحميل البيانات');
-                }
-            })
-            .catch(error => {
-                console.error('Error:', error);
-                tbody.innerHTML = '<tr><td colspan="4" style="text-align:center; color:red;">خطأ في التحميل</td></tr>';
-            });
-    }
-
-    function closeAccessModal() {
-        document.getElementById('accessControlModal').style.display = 'none';
-    }
-
-    function renderAccessFields() {
-        const tbody = document.getElementById('access-fields-tbody');
-        tbody.innerHTML = '';
-        
-        currentAccessFields.forEach((field, index) => {
-            const row = document.createElement('tr');
-            row.innerHTML = `
-                <td><input type="text" value="${field.Label}" onchange="updateField(${index}, 'Label', this.value)" placeholder="مثال: رقم الطالب"></td>
-                <td><input type="text" value="${field.Slug || ''}" onchange="updateField(${index}, 'Slug', this.value)" placeholder="IDStudent" style="direction: ltr;"></td>
-                <td>
-                    <select onchange="updateField(${index}, 'FieldType', this.value)">
-                        <option value="text" ${field.FieldType === 'text' ? 'selected' : ''}>نص</option>
-                        <option value="number" ${field.FieldType === 'number' ? 'selected' : ''}>رقم</option>
-                        <option value="email" ${field.FieldType === 'email' ? 'selected' : ''}>بريد إلكتروني</option>
-                        <option value="date" ${field.FieldType === 'date' ? 'selected' : ''}>تاريخ</option>
-                        <option value="password" ${field.FieldType === 'password' ? 'selected' : ''}>كلمة مرور</option>
-                    </select>
-                </td>
-                <td style="text-align: center;">
-                    <input type="checkbox" ${field.IsRequired == 1 ? 'checked' : ''} onchange="updateField(${index}, 'IsRequired', this.checked ? 1 : 0)" style="width: auto;">
-                </td>
-                <td style="text-align: center;">
-                    <button type="button" class="btn-remove-row" onclick="removeAccessFieldRow(${index})">
-                        <i class="fa-solid fa-trash"></i>
-                    </button>
-                </td>
-            `;
-            tbody.appendChild(row);
-        });
-    }
-
-    function addAccessFieldRow() {
-        currentAccessFields.push({
-            ID: null, // New field
-            Label: '',
-            Slug: '',
-            FieldType: 'text',
-            IsRequired: 1
-        });
-        renderAccessFields();
-    }
-
-    function removeAccessFieldRow(index) {
-        currentAccessFields.splice(index, 1);
-        renderAccessFields();
-    }
-
-    function updateField(index, key, value) {
-        currentAccessFields[index][key] = value;
-    }
-
-    function saveAccessSettings() {
-        const password = document.getElementById('access-form-password').value;
-        const formId = <?php echo $form['ID']; ?>;
-        
-        // Validate fields
-        for (let field of currentAccessFields) {
-            if (!field.Label.trim()) {
-                alert('يرجى إدخال اسم لجميع الحقول');
-                return;
-            }
-        }
-
-        const formData = new FormData();
-        formData.append('action', 'save_access_settings');
-        formData.append('form_id', formId);
-        formData.append('password', password);
-        formData.append('fields', JSON.stringify(currentAccessFields));
-
-        fetch('edit-form.php?id=' + formId, { // Post to same file
-            method: 'POST',
-            body: formData
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (data.success) {
-                alert('تم حفظ الإعدادات بنجاح');
-                closeAccessModal();
-                // Optionally reload or update UI indicators
-            } else {
-                alert('حدث خطأ: ' + data.message);
-            }
-        })
-        .catch(error => {
-            console.error('Error:', error);
-            alert('حدث خطأ في الاتصال');
-        });
-    }
-
-    // Function to copy evaluation link
-    function copyEvaluationLink(button) {
-        const input = button.parentElement.querySelector('.evaluation-link-input');
-        input.select();
-        document.execCommand('copy');
-        
-        // Visual feedback
-        const originalHtml = button.innerHTML;
-        button.classList.add('copied');
-        button.innerHTML = '<i class="fa-solid fa-check"></i> <span>تم النسخ</span>';
-        
-        setTimeout(() => {
-            button.classList.remove('copied');
-            button.innerHTML = originalHtml;
-        }, 2000);
-    }
-    </script>
-    <script>
-        const TYPE_QUESTION = <?php echo json_encode(TYPE_QUESTION); ?>;
-    </script>
-    
-    <script src="../scripts/lib/utils.js"></script>
-    <script src="../scripts/forms.js"></script>
-    <script>
-        // Type Management Logic
-        const iconsList = [
-            'assets/icons/college.png',
-            'assets/icons/user.svg',
-            'assets/icons/users.svg',
-            'assets/icons/star.svg',
-            'assets/icons/file-text.svg',
-            'assets/icons/clipboard.svg',
-            'assets/icons/check-circle.svg',
-            'assets/icons/calendar.svg'
-        ];
-
-        function openTypeModal(category) {
-            document.getElementById('typeCategory').value = category;
-            document.getElementById('modalTitle').textContent = category === 'target' ? 'إضافة مقيّم جديد' : 'إضافة نوع تقييم جديد';
-            document.getElementById('typeForm').reset();
-            
-            // Populate icons
-            const iconContainer = document.querySelector('.icon-selector');
-            iconContainer.innerHTML = '';
-            iconsList.forEach(icon => {
-                const div = document.createElement('div');
-                div.className = 'icon-option';
-                div.style.cursor = 'pointer';
-                div.style.padding = '5px';
-                div.style.textAlign = 'center';
-                div.style.border = '1px solid transparent';
-                div.innerHTML = `<img src="../${icon}" style="width: 24px; height: 24px;">`;
-                div.onclick = function() {
-                    document.querySelectorAll('.icon-option').forEach(el => el.style.borderColor = 'transparent');
-                    div.style.borderColor = '#2196F3';
-                    document.getElementById('typeIcon').value = icon;
-                };
-                iconContainer.appendChild(div);
-            });
-            
-            document.getElementById('typeModal').style.display = 'block';
-        }
-
-        function closeTypeModal() {
-            document.getElementById('typeModal').style.display = 'none';
-        }
-
-        document.getElementById('typeForm').addEventListener('submit', function(e) {
-            e.preventDefault();
-            const category = document.getElementById('typeCategory').value;
-            const formData = new FormData(this);
-            formData.append('action', 'create_type');
-            
-            fetch(window.location.href, {
-                method: 'POST',
-                body: formData
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    alert('تم الإضافة بنجاح');
-                    location.reload(); 
-                } else {
-                    alert('خطأ: ' + data.message);
-                }
-            })
-            .catch(err => alert('حدث خطأ في الاتصال'));
-        });
-
-        // Custom Select Logic
-        function toggleCustomSelect(type) {
-            const options = document.getElementById(type + '-options');
-            const isOpen = options.classList.contains('open');
-            
-            // Close all other selects
-            document.querySelectorAll('.custom-select-options').forEach(el => el.classList.remove('open'));
-            
-            if (!isOpen) {
-                options.classList.add('open');
-            }
-        }
-
-        function selectOption(type, value, name, element) {
-            // Update hidden input
-            const inputId = type === 'target' ? 'form-target-select' : 'form-type-select';
-            document.getElementById(inputId).value = value;
-            
-            // Update display text
-            document.getElementById(type + '-selected-text').textContent = name;
-            
-            // Update selected class
-            const wrapper = document.getElementById(type + '-select-wrapper');
-            wrapper.querySelectorAll('.custom-option').forEach(el => el.classList.remove('selected'));
-            element.classList.add('selected');
-            
-            // Close dropdown
-            document.getElementById(type + '-options').classList.remove('open');
-            
-            // Trigger change event if needed (for saving)
-            updateFormSetting(type === 'target' ? 'FormTarget' : 'FormType', value);
-        }
-
-        // Close selects when clicking outside
-        document.addEventListener('click', function(e) {
-            if (!e.target.closest('.custom-select-wrapper')) {
-                document.querySelectorAll('.custom-select-options').forEach(el => el.classList.remove('open'));
-            }
-        });
-
-        // Type Management Logic
-        const iconsList = [
-            'assets/icons/college.png',
-            'assets/icons/user.svg',
-            'assets/icons/users.svg',
-            'assets/icons/star.svg',
-            'assets/icons/file-text.svg',
-            'assets/icons/clipboard.svg',
-            'assets/icons/check-circle.svg',
-            'assets/icons/calendar.svg'
-        ];
-
-        function openTypeModal(category) {
-            document.getElementById('typeCategory').value = category;
-            document.getElementById('modalTitle').textContent = category === 'target' ? 'إضافة مقيّم جديد' : 'إضافة نوع تقييم جديد';
-            document.getElementById('typeForm').reset();
-            
-            // Populate icons
-            const iconContainer = document.querySelector('.icon-selector');
-            iconContainer.innerHTML = '';
-            iconsList.forEach(icon => {
-                const div = document.createElement('div');
-                div.className = 'icon-option';
-                div.style.cursor = 'pointer';
-                div.style.padding = '5px';
-                div.style.textAlign = 'center';
-                div.style.border = '1px solid transparent';
-                div.innerHTML = `<img src="../${icon}" style="width: 24px; height: 24px;">`;
-                div.onclick = function() {
-                    document.querySelectorAll('.icon-option').forEach(el => el.style.borderColor = 'transparent');
-                    div.style.borderColor = '#2196F3';
-                    document.getElementById('typeIcon').value = icon;
-                };
-                iconContainer.appendChild(div);
-            });
-            
-            document.getElementById('typeModal').style.display = 'block';
-        }
-
-        function closeTypeModal() {
-            document.getElementById('typeModal').style.display = 'none';
-        }
-
-        document.getElementById('typeForm').addEventListener('submit', function(e) {
-            e.preventDefault();
-            const category = document.getElementById('typeCategory').value;
-            const formData = new FormData(this);
-            formData.append('action', 'create_type');
-            
-            fetch(window.location.href, {
-                method: 'POST',
-                body: formData
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    alert('تم الإضافة بنجاح');
-                    location.reload(); 
-                } else {
-                    alert('خطأ: ' + data.message);
-                }
-            })
-            .catch(err => alert('حدث خطأ في الاتصال'));
-        });
-
-        function deleteType(category, id, slug) {
-            if (!id) {
-                alert('لا يمكن حذف هذا العنصر');
-                return;
-            }
-
-            if (!confirm('هل أنت متأكد من الحذف؟')) return;
-
-            fetch(window.location.href, {
-                method: 'POST',
-                headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify({ 
-                    action: 'delete_type',
-                    id: id,
-                    category: category
-                })
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    alert('تم الحذف بنجاح');
-                    location.reload();
-                } else {
-                    alert('خطأ: ' + data.message);
-                }
-            });
-        }
-
-
+        window.formConfig = {
+            id: <?php echo $form['ID']; ?>,
+            password: "<?php echo htmlspecialchars($form['password'] ?? '', ENT_QUOTES); ?>"
+        };
     </script>
 
 </body>

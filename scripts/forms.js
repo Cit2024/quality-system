@@ -29,13 +29,13 @@ $(document).ready(function () {
     $(document).on("click", ".question-type", handleQuestionTypeChange);
     
     // Initialize options for existing multiple_choice questions on page load
-    $(document).ready(function() {
-        $('.question').each(function() {
-            const $question = $(this);
-            if ($question.find('.question-type').data('type') === 'multiple_choice') {
-                attachOptionEventListeners($question);
-            }
-        });
+    $(document).ready(function () {
+      $('.question').each(function () {
+        const $question = $(this);
+        if ($question.find('.question-type').data('type') === 'multiple_choice') {
+          attachOptionEventListeners($question);
+        }
+      });
     });
 
     // Event listeners for adding and deleting sections/questions
@@ -98,16 +98,39 @@ $(document).ready(function () {
   function handleFormTypeToggle() {
     const formId = $(".form-details").data("form-id");
     const newType = this.value;
-    const allowedTargets = $(this).find(":selected").data("targets").split(',');
+    
+    // Get allowed targets from the custom option element
+    const selectedOption = $(`#type-options .custom-option[data-value="${newType}"]`);
+    const allowedTargetsStr = selectedOption.data("targets");
+    const allowedTargets = allowedTargetsStr ? String(allowedTargetsStr).split(',') : [];
     
     // Filter FormTarget options
-    $("#form-target-select option").each(function() {
-        const targetVal = $(this).val();
-        $(this).toggle(allowedTargets.includes(targetVal));
+    const $targetOptions = $("#target-options .custom-option");
+    
+    $targetOptions.each(function () {
+      const targetVal = $(this).data('value');
+      const isAllowed = allowedTargets.includes(String(targetVal));
+      
+      if (isAllowed) {
+        $(this).show();
+      } else {
+        $(this).hide();
+      }
     });
+
+    // Reset target selection if current target is hidden
+    const currentTarget = $('#form-target-select').val();
+    if (!allowedTargets.includes(String(currentTarget)) && allowedTargets.length > 0) {
+        // Automatically select the first visible option or reset
+        // For now, let's just leave it or user will see "Select" text if we reset UI only
+        // Implementation choice: Keep it simple. User must select new target.
+        $('#target-selected-text').text('اختر');
+        $('#form-target-select').val('');
+        // NOTE: We could auto-select the first valid one here.
+    }
     
     updateFormType(formId, newType);
-   }
+  }
 
   // Function to handle FormTarget toggle
   function handleFormTargetToggle() {
@@ -200,58 +223,58 @@ $(document).ready(function () {
     $modal.find('.type-option').first().focus();
 
     // Type selection events
-    $modal.on('click', '.type-option', function() {
-        const newType = $(this).data('type');
-        handleTypeSelection(newType, currentType, questionId, $element);
-        $modal.remove();
+    $modal.on('click', '.type-option', function () {
+      const newType = $(this).data('type');
+      handleTypeSelection(newType, currentType, questionId, $element);
+      $modal.remove();
     });
 
     // Close the window when clicked outside it
     $modal.on('click', (e) => {
-        if ($(e.target).hasClass('type-select-modal')) {
-            $modal.remove();
-        }
+      if ($(e.target).hasClass('type-select-modal')) {
+        $modal.remove();
+      }
     });
 
     // Close with keyboard (Esc)
     $(document).on('keydown', (e) => {
-        if (e.key === 'Escape') $modal.remove();
+      if (e.key === 'Escape') $modal.remove();
     });
-}
+  }
 
   // Type selection processing function
   function handleTypeSelection(newType, currentType, questionId, $element) {
     if (newType !== currentType) {
-        if (confirm(`هل تريد تغيير النوع إلى "${TYPE_QUESTION[newType].name}"؟`)) {
-            updateQuestionType(questionId, newType, $element);
-        }
+      if (confirm(`هل تريد تغيير النوع إلى "${TYPE_QUESTION[newType].name}"؟`)) {
+        updateQuestionType(questionId, newType, $element);
+      }
     }
-}
+  }
   
   // Function to handle question type changes
   function handleQuestionTypeChange(e) {
-      e.stopPropagation();
-      const $this = $(this);
-      const questionId = $this.data("id");
-      const currentType = $this.data("type");
+    e.stopPropagation();
+    const $this = $(this);
+    const questionId = $this.data("id");
+    const currentType = $this.data("type");
     
-      // Create a modal with options
-      openTypeModal(currentType, questionId, $this);
-    }
+    // Create a modal with options
+    openTypeModal(currentType, questionId, $this);
+  }
     
   function addQuestionOption(questionId, optionText, callback) {
-  sendAjaxRequest("./add/add-question-option.php", {
-    questionId: questionId,
-    option: optionText
-  }, callback);
-}
+    sendAjaxRequest("./add/add-question-option.php", {
+      questionId: questionId,
+      option: optionText
+    }, callback);
+  }
 
   function removeQuestionOption(questionId, optionText, callback) {
-  sendAjaxRequest("./delete/remove-question-option.php", {
-    questionId: questionId,
-    option: optionText
-  }, callback);
-}
+    sendAjaxRequest("./delete/remove-question-option.php", {
+      questionId: questionId,
+      option: optionText
+    }, callback);
+  }
 
   // Function to handle adding a new section
   function handleAddSection(event) {
@@ -292,19 +315,19 @@ $(document).ready(function () {
     const formId = $button.data('form-id');
     const formTitle = $button.data('form-title');
     downloadFormEnhanced(formId, formTitle);
-   }
+  }
    
   // Enhanced PDF download function
   function downloadFormEnhanced(formId, formTitle) {
-        // Clone the container
-        const $printContainer = $('.view-container').clone();
+    // Clone the container
+    const $printContainer = $('.view-container').clone();
         
-        // Remove elements that shouldn't be printed
-        $printContainer.find('[data-printthis-ignore]').remove();
+    // Remove elements that shouldn't be printed
+    $printContainer.find('[data-printthis-ignore]').remove();
         
-        // Create a new window for printing
-        const printWindow = window.open('', '_blank');
-        printWindow.document.write(`
+    // Create a new window for printing
+    const printWindow = window.open('', '_blank');
+    printWindow.document.write(`
             <!DOCTYPE html>
             <html>
             <head>
@@ -337,48 +360,48 @@ $(document).ready(function () {
             </body>
             </html>
         `);
-        printWindow.document.close();
-    }
+    printWindow.document.close();
+  }
 
   // Function to replace text with an input field
   function replaceWithInputField($element, text, callback) {
-        const $input = $("<input type='text' />").val(text);
-        $element.html($input);
+    const $input = $("<input type='text' />").val(text);
+    $element.html($input);
         
-        // Select all text when input is focused
-        $input.focus().select();
+    // Select all text when input is focused
+    $input.focus().select();
         
-        // Handle blur event
-        $input.on("blur", function () {
-            const newText = $input.val().trim();
-            if (newText === "") {
-                alert("لا يمكن ترك الحقل فارغاً!");
-                $element.text(text); // Restore original text
-            } else {
-                $element.text(newText);
-                if (newText !== text) { // Only call callback if text changed
-                    callback(newText);
-                }
-            }
-        });
+    // Handle blur event
+    $input.on("blur", function () {
+      const newText = $input.val().trim();
+      if (newText === "") {
+        alert("لا يمكن ترك الحقل فارغاً!");
+        $element.text(text); // Restore original text
+      } else {
+        $element.text(newText);
+        if (newText !== text) { // Only call callback if text changed
+          callback(newText);
+        }
+      }
+    });
         
-        // Handle Enter key to save
-        $input.on("keypress", function(e) {
-            if (e.which === 13) { // Enter key
-                e.preventDefault();
-                $(this).blur();
-            }
-        });
+    // Handle Enter key to save
+    $input.on("keypress", function (e) {
+      if (e.which === 13) { // Enter key
+        e.preventDefault();
+        $(this).blur();
+      }
+    });
         
-        // Handle Escape key to cancel
-        $input.on("keydown", function(e) {
-            if (e.which === 27) { // Escape key
-                e.preventDefault();
-                $element.text(text); // Restore original text
-                $input.remove();
-            }
-        });
-    }
+    // Handle Escape key to cancel
+    $input.on("keydown", function (e) {
+      if (e.which === 27) { // Escape key
+        e.preventDefault();
+        $element.text(text); // Restore original text
+        $input.remove();
+      }
+    });
+  }
 
   // Function to replace text with a textarea field
   function replaceWithTextareaField($element, text, callback) {
@@ -396,7 +419,7 @@ $(document).ready(function () {
     });
     
     // Handle Ctrl+Enter to save
-    $textarea.on("keydown", function(e) {
+    $textarea.on("keydown", function (e) {
       if (e.which === 13 && e.ctrlKey) { // Ctrl+Enter
         e.preventDefault();
         $(this).blur();
@@ -488,17 +511,17 @@ $(document).ready(function () {
   // New visual update handler
   function updateTypeVisuals($element, newType) {
     const icons = {
-        'multiple_choice': 'list-check',
-        'true_false': 'square-check',
-        'evaluation': 'star',
-        'essay': 'quote'
+      'multiple_choice': 'list-check',
+      'true_false': 'square-check',
+      'evaluation': 'star',
+      'essay': 'quote'
     };
     
     const labels = {
-        'multiple_choice': 'إختيار من متعدد',
-        'true_false': 'صح/خطأ',
-        'evaluation': 'تقييم',
-        'essay': 'مقالي'
+      'multiple_choice': 'إختيار من متعدد',
+      'true_false': 'صح/خطأ',
+      'evaluation': 'تقييم',
+      'essay': 'مقالي'
     };
 
     $element.html(`
@@ -512,67 +535,67 @@ $(document).ready(function () {
     // Remove existing options section
     $question.find('.options-section').remove();
     
-        // Add options section ONLY if the new type is multiple_choice
+    // Add options section ONLY if the new type is multiple_choice
     if (newType === 'multiple_choice') {
-        const optionsHtml = `
+      const optionsHtml = `
             <div class="options-section">
                 <label>خيارات الإجابة:</label>
                 <div class="options-list"></div>
                 <button class="add-option">+ إضافة خيار</button>
             </div>
         `;
-        $question.append(optionsHtml);
+      $question.append(optionsHtml);
         
-        // Attach event listeners to the new buttons
-        attachOptionEventListeners($question);
+      // Attach event listeners to the new buttons
+      attachOptionEventListeners($question);
     }
-   }
+  }
    
   
   function attachOptionEventListeners($question) {
     // Add Option
-    $question.find('.add-option').off('click').on('click', function(e) {
-        e.stopPropagation();
-        const questionId = $question.find('.question-type').data('id');
-        const newOption = prompt("أدخل الخيار الجديد:");
-        if (newOption) {
-            addQuestionOption(questionId, newOption, (response) => {
-                const optionHtml = `
+    $question.find('.add-option').off('click').on('click', function (e) {
+      e.stopPropagation();
+      const questionId = $question.find('.question-type').data('id');
+      const newOption = prompt("أدخل الخيار الجديد:");
+      if (newOption) {
+        addQuestionOption(questionId, newOption, (response) => {
+          const optionHtml = `
                     <div class="option-item" data-option="${newOption}">
                         <p class="option-value">${newOption}</p>
                         <button class="remove-option" data-printthis-ignore><i class="fa-solid fa-trash"></i></button>
                     </div>
                 `;
-                $question.find('.options-list').append(optionHtml);
-            });
-        }
+          $question.find('.options-list').append(optionHtml);
+        });
+      }
     });
 
-     $question.off('click', '.remove-option').on('click', '.remove-option', function(e) {
-        e.stopPropagation();
-        const $optionItem = $(this).closest('.option-item');
-        const questionId = $question.find('.question-type').data('id');
-        const optionText = $optionItem.data('option');
+    $question.off('click', '.remove-option').on('click', '.remove-option', function (e) {
+      e.stopPropagation();
+      const $optionItem = $(this).closest('.option-item');
+      const questionId = $question.find('.question-type').data('id');
+      const optionText = $optionItem.data('option');
         
-        if (confirm("حذف هذا الخيار؟")) {
-            removeQuestionOption(questionId, optionText, () => {
-                $optionItem.remove();
-            });
-        }
-      });
-    }
+      if (confirm("حذف هذا الخيار؟")) {
+        removeQuestionOption(questionId, optionText, () => {
+          $optionItem.remove();
+        });
+      }
+    });
+  }
 
   // Function to update question type
   function updateQuestionType(questionId, newType, $element) {
     sendAjaxRequest(
-        "./update/update-question-type.php",
-        { id: questionId, type: newType },
-        (response) => {
-            $element.data("type", newType);
-            updateTypeVisuals($element, newType);
-        }
+      "./update/update-question-type.php",
+      { id: questionId, type: newType },
+      (response) => {
+        $element.data("type", newType);
+        updateTypeVisuals($element, newType);
+      }
     );
-   }
+  }
 
   // Function to handle adding a new note
   function handleAddNoteClick() {
@@ -596,12 +619,12 @@ $(document).ready(function () {
     });
   }
 
-    // Function to add a new section
+  // Function to add a new section
   function addNewSection(formId) {
     sendAjaxRequest("./add/add-new-section.php", { formId }, () =>
       location.reload()
     );
-  }  
+  }
 
   // Function to delete a section
   function deleteSection(sectionId) {
@@ -626,31 +649,31 @@ $(document).ready(function () {
     );
   }
 
-   function downloadForm(formId, formTitle) {
+  function downloadForm(formId, formTitle) {
     const $spinner = $('<div class="pdf-loading-spinner"></div>').appendTo('body');
     const url = `./forms/edit-form.php?id=${formId}`;
 
     fetch(url)
-        .then(response => response.text())
-        .then(html => {
-            const $tempContainer = $('<div>').html(
-                html.replace(/\.\.(\/\.?)?\/assets/g, '/quality-system/assets')
-            );
+      .then(response => response.text())
+      .then(html => {
+        const $tempContainer = $('<div>').html(
+          html.replace(/\.\.(\/\.?)?\/assets/g, '/quality-system/assets')
+        );
             
-            $tempContainer.find('[data-printthis-ignore]').remove();
+        $tempContainer.find('[data-printthis-ignore]').remove();
             
-            // Fallback to basic printing if printThis isn't available
-            if (typeof $.fn.printThis !== 'function') {
-                console.warn('printThis plugin not loaded, using fallback printing');
-                return fallbackPrint($tempContainer, formTitle);
-            }
+        // Fallback to basic printing if printThis isn't available
+        if (typeof $.fn.printThis !== 'function') {
+          console.warn('printThis plugin not loaded, using fallback printing');
+          return fallbackPrint($tempContainer, formTitle);
+        }
             
-            $tempContainer.printThis({
-                importCSS: true,
-                loadCSS: "/quality-system/styles/forms.css",
-                pageTitle: formTitle,
-                beforePrint: () => {
-                    $('head').append(`
+        $tempContainer.printThis({
+          importCSS: true,
+          loadCSS: "/quality-system/styles/forms.css",
+          pageTitle: formTitle,
+          beforePrint: () => {
+            $('head').append(`
                         <style>
                             @media print {
                                 body { 
@@ -665,24 +688,24 @@ $(document).ready(function () {
                             }
                         </style>
                     `);
-                },
-                afterPrint: () => {
-                    $spinner.remove();
-                    $tempContainer.remove();
-                }
-            });
-        })
-        .catch(error => {
-            console.error("Error:", error);
-            alert("فشل تنزيل النموذج. يرجى المحاولة مرة أخرى.");
-        })
-        .finally(() => $spinner.remove());
-}
+          },
+          afterPrint: () => {
+            $spinner.remove();
+            $tempContainer.remove();
+          }
+        });
+      })
+      .catch(error => {
+        console.error("Error:", error);
+        alert("فشل تنزيل النموذج. يرجى المحاولة مرة أخرى.");
+      })
+      .finally(() => $spinner.remove());
+  }
 
-   // Fallback printing function
-   function fallbackPrint($content, title) {
-        const printWindow = window.open('', '_blank');
-        printWindow.document.write(`
+  // Fallback printing function
+  function fallbackPrint($content, title) {
+    const printWindow = window.open('', '_blank');
+    printWindow.document.write(`
             <!DOCTYPE html>
             <html>
             <head>
@@ -715,36 +738,8 @@ $(document).ready(function () {
             </body>
             </html>
         `);
-        printWindow.document.close();
-    }
-  
-   // New function to process bilingual text
-   function processBilingualTextForPrint($container) {
-        $container.find('p, span, div').each(function() {
-            const text = $(this).html();
-            const processed = formatBilingualTextJS(text);
-            $(this).html(processed);
-        });
-    }
-    
-    // JavaScript version of formatBilingualText
-    function formatBilingualTextJS(text) {
-        // Check for Arabic and English mix
-        const arabicPattern = /[\u0600-\u06FF]/;
-        const englishPattern = /[a-zA-Z]/;
-        
-        if (arabicPattern.test(text) && englishPattern.test(text)) {
-            // Split into Arabic and English parts
-            const parts = text.split(/([a-zA-Z].*)/);
-            const arabic = parts[0].trim();
-            const english = parts[1]?.trim() || '';
-            
-            if (arabic && english) {
-                return `${arabic}<span class="english-text">${english}</span>`;
-            }
-        }
-        return text;
-    }
+    printWindow.document.close();
+  }
   
   // Function to handle copy link
   function handleCopyLink(event) {
@@ -789,4 +784,343 @@ $(document).ready(function () {
       },
     });
   }
+
+    /* =========================================
+    /* =========================================
+     Access Control & Type Management Logic
+     Integrated into forms.js style
+     ========================================= */
+
+  let currentAccessFields = [];
+  const iconsList = [
+    'assets/icons/college.png',
+    'assets/icons/user.svg',
+    'assets/icons/users.svg',
+    'assets/icons/star.svg',
+    'assets/icons/file-text.svg',
+    'assets/icons/clipboard.svg',
+    'assets/icons/check-circle.svg',
+    'assets/icons/calendar.svg'
+  ];
+
+  // --- Access Control Functions ---
+
+  function openAccessModal() {
+    console.log("Opening Access Modal...");
+    if (!window.formConfig) {
+        console.error("formConfig is missing!");
+        alert("System Error: Configuration missing.");
+        return;
+    }
+    
+    $('#access-form-password').val(window.formConfig.password);
+    
+    // Show loading state
+    const tbody = $('#access-fields-tbody');
+    tbody.html('<tr><td colspan="4" style="text-align:center;">جاري التحميل...</td></tr>');
+    $('#accessControlModal').show();
+
+    $.ajax({
+      url: `edit-form.php?id=${window.formConfig.id}&action=get_access_data`,
+      method: 'GET',
+      dataType: 'json',
+      success: function(data) {
+        if(data.success) {
+          $('#access-form-password').val(data.password);
+          currentAccessFields = data.fields;
+          renderAccessFields();
+        } else {
+          alert('فشل تحميل البيانات');
+        }
+      },
+      error: function(err) {
+        console.error('Error:', err);
+        tbody.html('<tr><td colspan="4" style="text-align:center; color:red;">خطأ في التحميل</td></tr>');
+      }
+    });
+  }
+
+  function closeAccessModal() {
+    $('#accessControlModal').hide();
+  }
+
+  function renderAccessFields() {
+    const tbody = $('#access-fields-tbody');
+    tbody.empty();
+    
+    currentAccessFields.forEach((field, index) => {
+      const row = `
+        <tr>
+          <td><input type="text" class="js-access-input" data-index="${index}" data-key="Label" value="${field.Label}" placeholder="مثال: رقم الطالب"></td>
+          <td><input type="text" class="js-access-input" data-index="${index}" data-key="Slug" value="${field.Slug || ''}" placeholder="IDStudent" style="direction: ltr;"></td>
+          <td>
+            <select class="js-access-input" data-index="${index}" data-key="FieldType">
+              <option value="text" ${field.FieldType === 'text' ? 'selected' : ''}>نص</option>
+              <option value="number" ${field.FieldType === 'number' ? 'selected' : ''}>رقم</option>
+              <option value="email" ${field.FieldType === 'email' ? 'selected' : ''}>بريد إلكتروني</option>
+              <option value="date" ${field.FieldType === 'date' ? 'selected' : ''}>تاريخ</option>
+              <option value="password" ${field.FieldType === 'password' ? 'selected' : ''}>كلمة مرور</option>
+            </select>
+          </td>
+          <td style="text-align: center;">
+            <input type="checkbox" class="js-access-checkbox" data-index="${index}" data-key="IsRequired" ${field.IsRequired == 1 ? 'checked' : ''} style="width: auto;">
+          </td>
+          <td style="text-align: center;">
+            <button type="button" class="btn-remove-row js-remove-access-row" data-index="${index}">
+              <i class="fa-solid fa-trash"></i>
+            </button>
+          </td>
+        </tr>
+      `;
+      tbody.append(row);
+    });
+  }
+
+  function addAccessFieldRow() {
+    currentAccessFields.push({
+      ID: null,
+      Label: '',
+      Slug: '',
+      FieldType: 'text',
+      IsRequired: 1
+    });
+    renderAccessFields();
+  }
+
+  function removeAccessFieldRow(index) {
+    currentAccessFields.splice(index, 1);
+    renderAccessFields();
+  }
+
+  function updateAccessField(index, key, value) {
+    currentAccessFields[index][key] = value;
+  }
+
+  function saveAccessSettings() {
+    const password = $('#access-form-password').val();
+    
+    for (let field of currentAccessFields) {
+      if (!field.Label.trim()) {
+        alert('يرجى إدخال اسم لجميع الحقول');
+        return;
+      }
+    }
+
+    const formData = new FormData();
+    formData.append('action', 'save_access_settings');
+    formData.append('form_id', window.formConfig.id);
+    formData.append('password', password);
+    formData.append('fields', JSON.stringify(currentAccessFields));
+
+    $.ajax({
+      url: 'edit-form.php?id=' + window.formConfig.id,
+      method: 'POST',
+      data: formData,
+      processData: false,
+      contentType: false,
+      dataType: 'json',
+      success: function(data) {
+        if (data.success) {
+          alert('تم حفظ الإعدادات بنجاح');
+          closeAccessModal();
+          
+          if (data.eval_link) {
+            $('.evaluation-link-input').val(data.eval_link);
+          }
+        } else {
+          alert('حدث خطأ: ' + data.message);
+        }
+      },
+      error: function() {
+        alert('حدث خطأ في الاتصال');
+      }
+    });
+  }
+
+  // --- Type Management Functions ---
+
+  function openTypeModal(category) {
+    $('#typeCategory').val(category);
+    $('#modalTitle').text(category === 'target' ? 'إضافة مقيّم جديد' : 'إضافة نوع تقييم جديد');
+    $('#typeForm')[0].reset();
+    
+    // Populate icons
+    const iconContainer = $('.icon-selector');
+    iconContainer.empty();
+    
+    iconsList.forEach(icon => {
+      const div = $('<div>')
+        .addClass('icon-option js-icon-option')
+        .css({
+          cursor: 'pointer',
+          padding: '5px',
+          textAlign: 'center',
+          border: '1px solid transparent'
+        })
+        .html(`<img src="../${icon}" style="width: 24px; height: 24px;">`)
+        .data('icon', icon);
+        
+      iconContainer.append(div);
+    });
+    
+    $('#typeModal').show();
+  }
+
+  function closeTypeModal() {
+    $('#typeModal').hide();
+  }
+
+  function deleteType(category, id) {
+    if (!id) {
+      alert('لا يمكن حذف هذا العنصر');
+      return;
+    }
+
+    if (!confirm('هل أنت متأكد من الحذف؟')) return;
+
+    $.ajax({
+      url: window.location.href,
+      method: 'POST',
+      contentType: 'application/json',
+      data: JSON.stringify({ 
+        action: 'delete_type',
+        id: id,
+        category: category
+      }),
+      success: function(data) {
+        if (data.success) {
+          alert('تم الحذف بنجاح');
+          location.reload();
+        } else {
+          alert('خطأ: ' + data.message);
+        }
+      }
+    });
+  }
+
+  function toggleCustomSelect(type) {
+    const wrapper = $('#' + type + '-select-wrapper');
+    const isOpen = wrapper.hasClass('open');
+    
+    $('.custom-select-wrapper').removeClass('open');
+    
+    if (!isOpen) {
+      wrapper.addClass('open');
+    }
+  }
+
+  function selectOption(type, value, name, element) {
+    const inputId = type === 'target' ? 'form-target-select' : 'form-type-select';
+    const inputElement = $('#' + inputId);
+    
+    inputElement.val(value).trigger('change');
+    
+    $('#' + type + '-selected-text').text(name);
+    
+    const wrapper = $('#' + type + '-select-wrapper');
+    wrapper.find('.custom-option').removeClass('selected');
+    $(element).addClass('selected');
+    
+    wrapper.removeClass('open');
+  }
+
+  // --- Event Listeners Registration ---
+
+  // Access Control Modals
+  $(document).on('click', '.js-open-access-modal', openAccessModal);
+  $(document).on('click', '.js-close-access-modal, .btn-cancel', function(e) {
+      // Check if it's inside access modal
+      if ($(this).closest('#accessControlModal').length > 0) {
+          closeAccessModal();
+      }
+  });
+  $(document).on('click', '.js-save-access-settings', saveAccessSettings);
+  $(document).on('click', '.js-add-access-row', addAccessFieldRow);
+  
+  // Dynamic Access Fields Inputs
+  $(document).on('change', '.js-access-input', function() {
+    const index = $(this).data('index');
+    const key = $(this).data('key');
+    updateAccessField(index, key, $(this).val());
+  });
+  
+  $(document).on('change', '.js-access-checkbox', function() {
+    const index = $(this).data('index');
+    const key = $(this).data('key');
+    updateAccessField(index, key, $(this).is(':checked') ? 1 : 0);
+  });
+  
+  $(document).on('click', '.js-remove-access-row', function() {
+    const index = $(this).data('index');
+    removeAccessFieldRow(index);
+  });
+
+  // Type Management
+  $(document).on('click', '.js-open-type-modal', function() {
+      const category = $(this).data('category');
+      openTypeModal(category);
+  });
+  $(document).on('click', '.js-close-type-modal', closeTypeModal);
+  
+  $(document).on('click', '.js-icon-option', function() {
+      $('.icon-option').css('borderColor', 'transparent');
+      $(this).css('borderColor', '#2196F3');
+      $('#typeIcon').val($(this).data('icon'));
+  });
+
+  $(document).on('submit', '#typeForm', function(e) {
+      e.preventDefault();
+      const formData = new FormData(this);
+      formData.append('action', 'create_type');
+      
+      $.ajax({
+          url: window.location.href,
+          method: 'POST',
+          data: formData,
+          processData: false,
+          contentType: false,
+          dataType: 'json',
+          success: function(data) {
+              if (data.success) {
+                  alert('تم الإضافة بنجاح');
+                  location.reload(); 
+              } else {
+                  alert('خطأ: ' + data.message);
+              }
+          },
+          error: function() { alert('حدث خطأ في الاتصال'); }
+      });
+  });
+
+  $(document).on('click', '.js-delete-type', function(e) {
+      e.stopPropagation();
+      const category = $(this).data('category');
+      const id = $(this).data('db-id');
+      deleteType(category, id);
+  });
+
+  // Custom Selects
+  $(document).on('click', '.js-custom-select-trigger', function() {
+      const type = $(this).data('type');
+      toggleCustomSelect(type);
+  });
+
+  $(document).on('click', '.js-custom-option', function() {
+      const type = $(this).data('type');
+      const value = $(this).data('value');
+      const name = $(this).data('name'); // We need to add data-name to HTML
+      
+      // If name isn't in data attribute (legacy), try to get text
+      const finalName = name || $(this).find('span').first().text();
+      
+      selectOption(type, value, finalName, this);
+  });
+
+  // Close selects when clicking outside
+  $(document).on('click', function(e) {
+      if (!$(e.target).closest('.custom-select-wrapper').length) {
+          $('.custom-select-wrapper').removeClass('open');
+      }
+  });
+
 });

@@ -70,11 +70,17 @@ class StatisticsHandler {
             ]
         ];
 
-        if (!isset($configs[$this->formType])) {
-            throw new InvalidArgumentException('Unsupported form type: ' . $this->formType);
+        // Return specific config if exists, otherwise return generic config
+        if (isset($configs[$this->formType])) {
+            return $configs[$this->formType];
         }
-    
-        return $configs[$this->formType];
+
+        // Generic fallback for dynamic types
+        return [
+            'metadata' => [], 
+            'group_fields' => ['Semester'],
+            'template' => 'generic'
+        ];
     }
 
     private function processEvaluations($config) {
@@ -262,8 +268,30 @@ class StatisticsHandler {
             case 'facility_evaluation':
                 return $this->processFacilityRecord($record, $baseData);
             default:
-                return null;
+                // Use generic processor for unknown types
+                return $this->processGenericRecord($record, $baseData);
         }
+    }
+
+    // Add generic record processor
+    private function processGenericRecord($record, $baseData) {
+        return array_merge($baseData, [
+            'type' => $this->formType,
+            'evaluations' => $this->getGenericEvaluationCount($record)
+        ]);
+    }
+
+    private function getGenericEvaluationCount($record) {
+        return fetchData(
+            $this->con,
+            "SELECT COUNT(DISTINCT JSON_UNQUOTE(JSON_EXTRACT(Metadata, '$.student_id'))) AS cnt 
+             FROM EvaluationResponses 
+             WHERE FormTarget = ?
+               AND FormType = ?
+               AND Semester = ?",
+            [$this->formTarget, $this->formType, $record['Semester']],
+            'ssi'
+        )[0]['cnt'] ?? 0;
     }
     
     private function processFacilityRecord($record, $baseData) {
@@ -570,10 +598,45 @@ class StatisticsHandler {
                 'teacher_evaluation' => $this->teacherTemplate($item),
                 'program_evaluation' => $this->programTemplate($item),
                 'facility_evaluation' => $this->facilityTemplate($item),
-                default => ''
+                default => $this->genericTemplate($item)
             };
         }
         return $html;
+    }
+
+    private function genericTemplate($item) {
+        $queryParams = http_build_query([
+            'target' => $this->formTarget,
+            'type' => $this->formType,
+            'semester' => $item['semester_no']
+        ]);
+        
+        $semesterName = htmlspecialchars($item['semester_name'] ?? 'فترة غير محددة');
+        $evaluations = htmlspecialchars($item['evaluations']);
+
+        return <<<HTML
+        <div class="card" data-semester="{$item['semester_no']}">
+            <div class="card-content-course">
+                <div class="info-course">
+                    <a href="./statistics/router.php?{$queryParams}" class="facility-title">
+                        تقرير {$semesterName}
+                    </a>
+                    <div class="facility-meta">
+                        <div class="semester">
+                            <img src="./assets/icons/calendar.svg" alt="الفترة">
+                            {$semesterName}
+                        </div>
+                    </div>
+                </div>
+                <div class="container-number-evaluation">
+                    <div class="number-evaluation">
+                        <span class="primary">{$evaluations}</span>
+                        تقييمات
+                    </div>
+                </div>
+            </div>
+        </div>
+HTML;
     }
 
     private function courseTemplate($item) {
