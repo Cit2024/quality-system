@@ -184,7 +184,6 @@ $stats = fetchData($con, "SELECT COUNT(ID) AS total_forms FROM Form")[0] ?? ['to
     </div>
     <?php include "components/footer.php"; ?>
 
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/printThis/1.15.0/printThis.min.js"></script>
     <script src="./scripts/forms.js"></script>
 </body>
 </html>

@@ -29,13 +29,11 @@ $(document).ready(function () {
     $(document).on("click", ".question-type", handleQuestionTypeChange);
     
     // Initialize options for existing multiple_choice questions on page load
-    $(document).ready(function () {
-      $('.question').each(function () {
-        const $question = $(this);
-        if ($question.find('.question-type').data('type') === 'multiple_choice') {
-          attachOptionEventListeners($question);
-        }
-      });
+    $('.question').each(function () {
+      const $question = $(this);
+      if ($question.find('.question-type').data('type') === 'multiple_choice') {
+        attachOptionEventListeners($question);
+      }
     });
 
     // Event listeners for adding and deleting sections/questions
@@ -49,43 +47,149 @@ $(document).ready(function () {
 
     // Event listener for the download form button
     $(document).on("click", ".download-form-button", handleDownloadForm);
+
+    // ========== ACCESS CONTROL EVENT LISTENERS ==========
+    $(document).on('click', '.js-open-access-modal', openAccessModal);
+    $(document).on('click', '.js-close-access-modal', function(e) {
+      if ($(this).closest('#accessControlModal').length > 0) {
+        closeAccessModal();
+      }
+    });
+    $(document).on('click', '#accessControlModal .btn-cancel', closeAccessModal);
+    $(document).on('click', '.js-save-access-settings', saveAccessSettings);
+    $(document).on('click', '.js-add-access-row', addAccessFieldRow);
+    
+    // Dynamic Access Fields Inputs
+    $(document).on('change', '.js-access-input', function() {
+      const index = $(this).data('index');
+      const key = $(this).data('key');
+      updateAccessField(index, key, $(this).val());
+    });
+    
+    $(document).on('change', '.js-access-checkbox', function() {
+      const index = $(this).data('index');
+      const key = $(this).data('key');
+      updateAccessField(index, key, $(this).is(':checked') ? 1 : 0);
+    });
+    
+    $(document).on('click', '.js-remove-access-row', function() {
+      const index = $(this).data('index');
+      removeAccessFieldRow(index);
+    });
+
+    // ========== TYPE MANAGEMENT EVENT LISTENERS ==========
+    $(document).on('click', '.js-open-type-modal', function() {
+      const category = $(this).data('category');
+      openTypeModal(category);
+    });
+    $(document).on('click', '.js-close-type-modal', closeTypeModal);
+    
+    $(document).on('click', '.js-icon-option', function() {
+      $('.icon-option').css('borderColor', 'transparent');
+      $(this).css('borderColor', '#2196F3');
+      $('#typeIcon').val($(this).data('icon'));
+    });
+
+    $(document).on('submit', '#typeForm', function(e) {
+      e.preventDefault();
+      const formData = new FormData(this);
+      formData.append('action', 'create_type');
+      
+      $.ajax({
+        url: window.location.href,
+        method: 'POST',
+        data: formData,
+        processData: false,
+        contentType: false,
+        dataType: 'json',
+        success: function(data) {
+          if (data.success) {
+            alert('تم الإضافة بنجاح');
+            location.reload(); 
+          } else {
+            alert('خطأ: ' + data.message);
+          }
+        },
+        error: function() { 
+          alert('حدث خطأ في الاتصال'); 
+        }
+      });
+    });
+
+    $(document).on('click', '.js-delete-type', function(e) {
+      e.stopPropagation();
+      const category = $(this).data('category');
+      const id = $(this).data('db-id');
+      deleteType(category, id);
+    });
+
+    // ========== CUSTOM SELECTS EVENT LISTENERS ==========
+    $(document).on('click', '.js-custom-select-trigger', function() {
+      const type = $(this).data('type');
+      toggleCustomSelect(type);
+    });
+
+    $(document).on('click', '.js-custom-option', function() {
+      const type = $(this).data('type');
+      const value = $(this).data('value');
+      const name = $(this).data('name') || $(this).find('span').first().text();
+      
+      selectOption(type, value, name, this);
+    });
+
+    // Close selects when clicking outside
+    $(document).on('click', function(e) {
+      if (!$(e.target).closest('.custom-select-wrapper').length) {
+        $('.custom-select-wrapper').removeClass('open');
+      }
+    });
   }
 
-  // Function to handle form actions (download or delete)
+  // ========== GLOBAL VARIABLES ==========
+  let currentAccessFields = [];
+  const iconsList = [
+    'assets/icons/college.png',
+    'assets/icons/user-check.svg',
+    'assets/icons/user-graduate-solid.svg',
+    'assets/icons/chalkboard-user-solid.svg',
+    'assets/icons/building-solid.svg',
+    'assets/icons/briefcase-solid.svg',
+    'assets/icons/clipboard-list.svg',
+    'assets/icons/book-bookmark-solid.svg',
+    'assets/icons/star.svg',
+    'assets/icons/calendar.svg'
+  ];
+
+  // ========== FORM ACTION HANDLERS ==========
+  
   function handleFormAction(event) {
-    event.stopPropagation(); // Prevent the card click event from firing
+    event.stopPropagation();
     const $this = $(this);
-    const formId = $this.data("form-id"); // Get the form ID from the button
+    const formId = $this.data("form-id");
     const formTitle = $this.data('form-title');
-    const action = $this.data("action"); // Get the action (download or delete)
+    const action = $this.data("action");
 
     if (action === "download") {
-      downloadForm(formId, formTitle); // Call the download function
+      downloadForm(formId, formTitle);
     } else if (action === "delete") {
       if (confirm("هل أنت متأكد أنك تريد حذف هذا النموذج؟")) {
-        deleteForm(formId); // Call the delete function
+        deleteForm(formId);
       }
     }
   }
 
-  // Function to handle toggling section visibility
   function handleToggleSection(event) {
-    // Ensure the click is not on a child element that should not trigger the toggle
     if (!$(event.target).closest(".delete-section, .copy-plus").length) {
       toggleSection(this);
     }
   }
 
-  // Function to toggle section visibility
   function toggleSection(header) {
     const section = header.parentElement;
     const questionsContainer = section.querySelector(".questions-container");
     const chevron = header.querySelector(".chevron");
 
-    if (
-      questionsContainer.style.display === "block" ||
-      questionsContainer.style.display === ""
-    ) {
+    if (questionsContainer.style.display === "block" || questionsContainer.style.display === "") {
       questionsContainer.style.display = "none";
       chevron.innerHTML = `<img src="../assets/icons/chevron-down.svg" alt="Chevron down icon" />`;
     } else {
@@ -94,17 +198,14 @@ $(document).ready(function () {
     }
   }
 
-  // Function to handle FormType toggle
   function handleFormTypeToggle() {
     const formId = $(".form-details").data("form-id");
     const newType = this.value;
     
-    // Get allowed targets from the custom option element
     const selectedOption = $(`#type-options .custom-option[data-value="${newType}"]`);
     const allowedTargetsStr = selectedOption.data("targets");
     const allowedTargets = allowedTargetsStr ? String(allowedTargetsStr).split(',') : [];
     
-    // Filter FormTarget options
     const $targetOptions = $("#target-options .custom-option");
     
     $targetOptions.each(function () {
@@ -118,35 +219,27 @@ $(document).ready(function () {
       }
     });
 
-    // Reset target selection if current target is hidden
     const currentTarget = $('#form-target-select').val();
     if (!allowedTargets.includes(String(currentTarget)) && allowedTargets.length > 0) {
-        // Automatically select the first visible option or reset
-        // For now, let's just leave it or user will see "Select" text if we reset UI only
-        // Implementation choice: Keep it simple. User must select new target.
-        $('#target-selected-text').text('اختر');
-        $('#form-target-select').val('');
-        // NOTE: We could auto-select the first valid one here.
+      $('#target-selected-text').text('اختر');
+      $('#form-target-select').val('');
     }
     
     updateFormType(formId, newType);
   }
 
-  // Function to handle FormTarget toggle
   function handleFormTargetToggle() {
     const formId = $(".form-details").data("form-id");
     const newTarget = this.value;
     updateFormTarget(formId, newTarget);
   }
 
-  // Function to handle FormStatus toggle
   function handleFormStatusToggle() {
     const formId = $(".form-details").data("form-id");
     const newStatus = this.checked ? "published" : "draft";
     updateFormStatus(formId, newStatus);
   }
 
-  // Function to handle editable field clicks
   function handleEditableFieldClick() {
     const $this = $(this);
     const text = $this.text();
@@ -158,19 +251,16 @@ $(document).ready(function () {
     });
   }
 
-  // Function to handle editable note clicks
   function handleEditableNoteClick() {
     const $this = $(this);
-    const text = $this.text().trim(); // Get the current note text
-    const formId = $(".form-details").data("form-id"); // Get the form ID
+    const text = $this.text().trim();
+    const formId = $(".form-details").data("form-id");
 
-    // Replace the note text with an input field
     replaceWithTextareaField($this, text, (newText) => {
-      updateFormNote(formId, newText); // Save the updated note
+      updateFormNote(formId, newText);
     });
   }
 
-  // Function to handle editable section title clicks
   function handleEditableSectionClick(e) {
     e.stopPropagation();
     const $this = $(this);
@@ -183,7 +273,6 @@ $(document).ready(function () {
     });
   }
 
-  // Function to handle editable question clicks
   function handleEditableQuestionClick(e) {
     e.stopPropagation();
     const $this = $(this);
@@ -196,69 +285,60 @@ $(document).ready(function () {
     });
   }
   
-  // Function to open the popup window
   function openTypeModal(currentType, questionId, $element) {
-    // Create window content
-    const modalContent = Object.keys(TYPE_QUESTION).map(type => `
-        <div class="type-option" 
-             data-type="${type}"
-             role="button"
-             tabindex="0"
-             aria-label="اختر ${TYPE_QUESTION[type].name}">
-            <img src="../${TYPE_QUESTION[type].icon}" alt="${type}" />
-            <span>${TYPE_QUESTION[type].name}</span>
-        </div>
+    const modalContent = Object.keys(window.TYPE_QUESTION || {}).map(type => `
+      <div class="type-option" 
+           data-type="${type}"
+           role="button"
+           tabindex="0"
+           aria-label="اختر ${window.TYPE_QUESTION[type].name}">
+          <img src="../${window.TYPE_QUESTION[type].icon}" alt="${type}" />
+          <span>${window.TYPE_QUESTION[type].name}</span>
+      </div>
     `).join('');
 
     const $modal = $(`
-        <div class="type-select-modal" role="dialog" aria-modal="true">
-            <div class="modal-content">
-                <h3 id="modal-title">اختر نوع السؤال</h3>
-                ${modalContent}
-            </div>
+      <div class="type-select-modal" role="dialog" aria-modal="true">
+        <div class="modal-content">
+          <h3 id="modal-title">اختر نوع السؤال</h3>
+          ${modalContent}
         </div>
+      </div>
     `).appendTo('body').addClass('active');
 
-    // Manage focus of the window
     $modal.find('.type-option').first().focus();
 
-    // Type selection events
     $modal.on('click', '.type-option', function () {
       const newType = $(this).data('type');
       handleTypeSelection(newType, currentType, questionId, $element);
       $modal.remove();
     });
 
-    // Close the window when clicked outside it
     $modal.on('click', (e) => {
       if ($(e.target).hasClass('type-select-modal')) {
         $modal.remove();
       }
     });
 
-    // Close with keyboard (Esc)
     $(document).on('keydown', (e) => {
       if (e.key === 'Escape') $modal.remove();
     });
   }
 
-  // Type selection processing function
   function handleTypeSelection(newType, currentType, questionId, $element) {
     if (newType !== currentType) {
-      if (confirm(`هل تريد تغيير النوع إلى "${TYPE_QUESTION[newType].name}"؟`)) {
+      if (confirm(`هل تريد تغيير النوع إلى "${window.TYPE_QUESTION[newType].name}"؟`)) {
         updateQuestionType(questionId, newType, $element);
       }
     }
   }
   
-  // Function to handle question type changes
   function handleQuestionTypeChange(e) {
     e.stopPropagation();
     const $this = $(this);
     const questionId = $this.data("id");
     const currentType = $this.data("type");
     
-    // Create a modal with options
     openTypeModal(currentType, questionId, $this);
   }
     
@@ -276,14 +356,12 @@ $(document).ready(function () {
     }, callback);
   }
 
-  // Function to handle adding a new section
   function handleAddSection(event) {
     event.stopPropagation();
     const formId = $(this).data("form-id");
     addNewSection(formId);
   }
 
-  // Function to handle deleting a section
   function handleDeleteSection(event) {
     event.stopPropagation();
     const sectionId = $(this).data("section-id");
@@ -292,7 +370,6 @@ $(document).ready(function () {
     }
   }
 
-  // Function to handle deleting a question
   function handleDeleteQuestion(event) {
     event.stopPropagation();
     const questionId = $(this).data("question-id");
@@ -301,14 +378,12 @@ $(document).ready(function () {
     }
   }
 
-  // Function to handle adding a default question
   function handleAddDefaultQuestion(event) {
     event.stopPropagation();
     const sectionId = $(this).data("section-id");
     addDefaultQuestion(sectionId);
   }
 
-  // Function to handle downloading the form as a PDF
   function handleDownloadForm(event) {
     event.stopPropagation();
     const $button = $(this);
@@ -317,121 +392,107 @@ $(document).ready(function () {
     downloadFormEnhanced(formId, formTitle);
   }
    
-  // Enhanced PDF download function
   function downloadFormEnhanced(formId, formTitle) {
-    // Clone the container
     const $printContainer = $('.view-container').clone();
-        
-    // Remove elements that shouldn't be printed
     $printContainer.find('[data-printthis-ignore]').remove();
-        
-    // Create a new window for printing
+    
     const printWindow = window.open('', '_blank');
     printWindow.document.write(`
-            <!DOCTYPE html>
-            <html>
-            <head>
-                <title>${formTitle}</title>
-                <link rel="stylesheet" href=".././styles/forms.css" media="print">
-                <style>
-                    @media print {
-                      body { 
-                        direction: rtl;
-                        font-family: 'DINRegular', sans-serif;
-                        padding: 0 20px !important;
-                      }
-                      .section-header .chevron,
-                      .questions-container {
-                        display: block !important;
-                      }
-                }
-                </style>
-            </head>
-            <body>
-                ${$printContainer.html()}
-                <script>
-                    window.onload = function() {
-                        setTimeout(function() {
-                            window.print();
-                            window.close();
-                        }, 200);
-                    }
-                <\/script>
-            </body>
-            </html>
-        `);
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <title>${formTitle}</title>
+        <link rel="stylesheet" href=".././styles/forms.css" media="print">
+        <style>
+          @media print {
+            body { 
+              direction: rtl;
+              font-family: 'DINRegular', sans-serif;
+              padding: 0 20px !important;
+            }
+            .section-header .chevron,
+            .questions-container {
+              display: block !important;
+            }
+          }
+        </style>
+      </head>
+      <body>
+        ${$printContainer.html()}
+        <script>
+          window.onload = function() {
+            setTimeout(function() {
+              window.print();
+              window.close();
+            }, 200);
+          }
+        <\/script>
+      </body>
+      </html>
+    `);
     printWindow.document.close();
   }
 
-  // Function to replace text with an input field
   function replaceWithInputField($element, text, callback) {
     const $input = $("<input type='text' />").val(text);
     $element.html($input);
-        
-    // Select all text when input is focused
+    
     $input.focus().select();
-        
-    // Handle blur event
+    
     $input.on("blur", function () {
       const newText = $input.val().trim();
       if (newText === "") {
         alert("لا يمكن ترك الحقل فارغاً!");
-        $element.text(text); // Restore original text
+        $element.text(text);
       } else {
         $element.text(newText);
-        if (newText !== text) { // Only call callback if text changed
+        if (newText !== text) {
           callback(newText);
         }
       }
     });
-        
-    // Handle Enter key to save
+    
     $input.on("keypress", function (e) {
-      if (e.which === 13) { // Enter key
+      if (e.which === 13) {
         e.preventDefault();
         $(this).blur();
       }
     });
-        
-    // Handle Escape key to cancel
+    
     $input.on("keydown", function (e) {
-      if (e.which === 27) { // Escape key
+      if (e.which === 27) {
         e.preventDefault();
-        $element.text(text); // Restore original text
+        $element.text(text);
         $input.remove();
       }
     });
   }
 
-  // Function to replace text with a textarea field
   function replaceWithTextareaField($element, text, callback) {
     $element.html(`<textarea class="editable-input">${text}</textarea>`);
     const $textarea = $element.find("textarea");
     $textarea.focus().select();
 
-    // Save the note when the textarea loses focus
     $textarea.on("blur", function () {
       const newText = $textarea.val().trim();
-      $element.text(newText); // Replace the textarea with the updated note
-      if (newText !== text) { // Only call callback if text changed
-        callback(newText); // Call the callback to save the note
+      $element.text(newText);
+      if (newText !== text) {
+        callback(newText);
       }
     });
     
-    // Handle Ctrl+Enter to save
     $textarea.on("keydown", function (e) {
-      if (e.which === 13 && e.ctrlKey) { // Ctrl+Enter
+      if (e.which === 13 && e.ctrlKey) {
         e.preventDefault();
         $(this).blur();
-      } else if (e.which === 27) { // Escape key to cancel
+      } else if (e.which === 27) {
         e.preventDefault();
-        $element.text(text); // Restore original text
+        $element.text(text);
         $textarea.remove();
       }
     });
   }
 
-  // Function to update FormType
   function updateFormType(formId, newType) {
     sendAjaxRequest(
       "./update/update-form-type.php",
@@ -442,7 +503,6 @@ $(document).ready(function () {
     );
   }
 
-  // Function to update FormTarget
   function updateFormTarget(formId, newTarget) {
     sendAjaxRequest(
       "./update/update-form-target.php",
@@ -453,7 +513,6 @@ $(document).ready(function () {
     );
   }
 
-  // Function to update FormStatus
   function updateFormStatus(formId, newStatus) {
     sendAjaxRequest(
       "./update/update-form-status.php",
@@ -469,7 +528,6 @@ $(document).ready(function () {
     );
   }
 
-  // Function to update a form field
   function updateFormField(formId, field, value) {
     sendAjaxRequest("./update/update-form.php", {
       id: formId,
@@ -478,19 +536,16 @@ $(document).ready(function () {
     });
   }
 
-  // Function to update the form note
   function updateFormNote(formId, newNote) {
     sendAjaxRequest(
       "./update/update-form-note.php",
       { id: formId, note: newNote },
       (response) => {
-        // Optional: Show a success message or update the UI
         console.log("Note updated successfully");
       }
     );
   }
 
-  // Function to update a section field
   function updateSectionField(sectionId, field, value) {
     sendAjaxRequest("./update/update-section.php", {
       id: sectionId,
@@ -499,7 +554,6 @@ $(document).ready(function () {
     });
   }
 
-  // Function to update a question field
   function updateQuestionField(questionId, field, value) {
     sendAjaxRequest("./update/update-question.php", {
       id: questionId,
@@ -508,7 +562,6 @@ $(document).ready(function () {
     });
   }
   
-  // New visual update handler
   function updateTypeVisuals($element, newType) {
     const icons = {
       'multiple_choice': 'list-check',
@@ -525,35 +578,27 @@ $(document).ready(function () {
     };
 
     $element.html(`
-        <img src=".././assets/icons/${icons[newType]}.svg" alt="${newType}" />
-        <span>${labels[newType]}</span>
+      <img src=".././assets/icons/${icons[newType]}.svg" alt="${newType}" />
+      <span>${labels[newType]}</span>
     `);
     
-    // Get parent question element
     const $question = $element.closest('.question');
-    
-    // Remove existing options section
     $question.find('.options-section').remove();
     
-    // Add options section ONLY if the new type is multiple_choice
     if (newType === 'multiple_choice') {
       const optionsHtml = `
-            <div class="options-section">
-                <label>خيارات الإجابة:</label>
-                <div class="options-list"></div>
-                <button class="add-option">+ إضافة خيار</button>
-            </div>
-        `;
+        <div class="options-section">
+          <label>خيارات الإجابة:</label>
+          <div class="options-list"></div>
+          <button class="add-option">+ إضافة خيار</button>
+        </div>
+      `;
       $question.append(optionsHtml);
-        
-      // Attach event listeners to the new buttons
       attachOptionEventListeners($question);
     }
   }
    
-  
   function attachOptionEventListeners($question) {
-    // Add Option
     $question.find('.add-option').off('click').on('click', function (e) {
       e.stopPropagation();
       const questionId = $question.find('.question-type').data('id');
@@ -561,11 +606,11 @@ $(document).ready(function () {
       if (newOption) {
         addQuestionOption(questionId, newOption, (response) => {
           const optionHtml = `
-                    <div class="option-item" data-option="${newOption}">
-                        <p class="option-value">${newOption}</p>
-                        <button class="remove-option" data-printthis-ignore><i class="fa-solid fa-trash"></i></button>
-                    </div>
-                `;
+            <div class="option-item" data-option="${newOption}">
+              <p class="option-value">${newOption}</p>
+              <button class="remove-option" data-printthis-ignore><i class="fa-solid fa-trash"></i></button>
+            </div>
+          `;
           $question.find('.options-list').append(optionHtml);
         });
       }
@@ -585,7 +630,6 @@ $(document).ready(function () {
     });
   }
 
-  // Function to update question type
   function updateQuestionType(questionId, newType, $element) {
     sendAjaxRequest(
       "./update/update-question-type.php",
@@ -597,43 +641,37 @@ $(document).ready(function () {
     );
   }
 
-  // Function to handle adding a new note
   function handleAddNoteClick() {
     const $this = $(this);
-    const formId = $(".form-details").data("form-id"); // Get the form ID
+    const formId = $(".form-details").data("form-id");
 
-    // Replace the button with a textarea for editing
     replaceWithTextareaField($this.parent(), "", (newText) => {
-      updateFormNote(formId, newText); // Save the updated note
+      updateFormNote(formId, newText);
     });
   }
 
-  // Function to delete a form
   function deleteForm(formId) {
     sendAjaxRequest("./forms/delete/delete-form.php", { id: formId }, (response) => {
       if (response.status === "success") {
-        location.reload(); // Reload the page after successful deletion
+        location.reload();
       } else {
-        alert("Failed to delete form: " + response.message); // Show an error message
+        alert("Failed to delete form: " + response.message);
       }
     });
   }
 
-  // Function to add a new section
   function addNewSection(formId) {
     sendAjaxRequest("./add/add-new-section.php", { formId }, () =>
       location.reload()
     );
   }
 
-  // Function to delete a section
   function deleteSection(sectionId) {
     sendAjaxRequest("./delete/delete-section.php", { id: sectionId }, () =>
       location.reload()
     );
   }
 
-  // Function to delete a question
   function deleteQuestion(questionId) {
     sendAjaxRequest(
       "./delete/delete-question.php",
@@ -642,7 +680,6 @@ $(document).ready(function () {
     );
   }
 
-  // Function to add a default question
   function addDefaultQuestion(sectionId) {
     sendAjaxRequest("./add/add-default-question.php", { sectionId }, () =>
       location.reload()
@@ -662,7 +699,6 @@ $(document).ready(function () {
             
         $tempContainer.find('[data-printthis-ignore]').remove();
             
-        // Fallback to basic printing if printThis isn't available
         if (typeof $.fn.printThis !== 'function') {
           console.warn('printThis plugin not loaded, using fallback printing');
           return fallbackPrint($tempContainer, formTitle);
@@ -674,20 +710,20 @@ $(document).ready(function () {
           pageTitle: formTitle,
           beforePrint: () => {
             $('head').append(`
-                        <style>
-                            @media print {
-                                body { 
-                                    direction: rtl;
-                                    font-family: 'DINRegular', sans-serif;
-                                    padding: 0 20px !important;
-                                }
-                                .section-header .chevron,
-                                .questions-container {
-                                    display: block !important;
-                                }
-                            }
-                        </style>
-                    `);
+              <style>
+                @media print {
+                  body { 
+                    direction: rtl;
+                    font-family: 'DINRegular', sans-serif;
+                    padding: 0 20px !important;
+                  }
+                  .section-header .chevron,
+                  .questions-container {
+                    display: block !important;
+                  }
+                }
+              </style>
+            `);
           },
           afterPrint: () => {
             $spinner.remove();
@@ -702,59 +738,55 @@ $(document).ready(function () {
       .finally(() => $spinner.remove());
   }
 
-  // Fallback printing function
   function fallbackPrint($content, title) {
     const printWindow = window.open('', '_blank');
     printWindow.document.write(`
-            <!DOCTYPE html>
-            <html>
-            <head>
-                <title>${title}</title>
-                <link rel="stylesheet" href="/quality-system/styles/forms.css" media="print">
-                <style>
-                    @media print {
-                        body { 
-                            direction: rtl;
-                            font-family: 'DINRegular', sans-serif;
-                            padding: 0 20px !important;
-                        }
-                        .section-header .chevron,
-                        .questions-container {
-                            display: block !important;
-                        }
-                    }
-                </style>
-            </head>
-            <body>
-                ${$content.html()}
-                <script>
-                    window.onload = function() {
-                        setTimeout(function() {
-                            window.print();
-                            window.close();
-                        }, 200);
-                    }
-                <\/script>
-            </body>
-            </html>
-        `);
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <title>${title}</title>
+        <link rel="stylesheet" href="/quality-system/styles/forms.css" media="print">
+        <style>
+          @media print {
+            body { 
+              direction: rtl;
+              font-family: 'DINRegular', sans-serif;
+              padding: 0 20px !important;
+            }
+            .section-header .chevron,
+            .questions-container {
+              display: block !important;
+            }
+          }
+        </style>
+      </head>
+      <body>
+        ${$content.html()}
+        <script>
+          window.onload = function() {
+            setTimeout(function() {
+              window.print();
+              window.close();
+            }, 200);
+          }
+        <\/script>
+      </body>
+      </html>
+    `);
     printWindow.document.close();
   }
   
-  // Function to handle copy link
   function handleCopyLink(event) {
     event.stopPropagation();
     const $button = $(this);
     const link = $button.data('link') || $button.prev('.evaluation-link, .evaluation-link-input').val();
     
-    // Copy to clipboard
     const tempInput = $('<input>');
     $('body').append(tempInput);
     tempInput.val(link).select();
     document.execCommand('copy');
     tempInput.remove();
     
-    // Visual feedback
     const originalHtml = $button.html();
     $button.addClass('copied');
     $button.html('<i class="fa-solid fa-check"></i> <span>تم النسخ</span>');
@@ -765,7 +797,6 @@ $(document).ready(function () {
     }, 2000);
   }
   
-  // Generic function to send AJAX requests
   function sendAjaxRequest(url, data, successCallback) {
     $.ajax({
       url,
@@ -785,63 +816,56 @@ $(document).ready(function () {
     });
   }
 
-    /* =========================================
-    /* =========================================
-     Access Control & Type Management Logic
-     Integrated into forms.js style
-     ========================================= */
+  function showSuccessToast(message) {
+    console.log("Success:", message);
+  }
 
-  let currentAccessFields = [];
-  const iconsList = [
-    'assets/icons/college.png',
-    'assets/icons/user.svg',
-    'assets/icons/users.svg',
-    'assets/icons/star.svg',
-    'assets/icons/file-text.svg',
-    'assets/icons/clipboard.svg',
-    'assets/icons/check-circle.svg',
-    'assets/icons/calendar.svg'
-  ];
-
-  // --- Access Control Functions ---
+  // ========== ACCESS CONTROL FUNCTIONS ==========
 
   function openAccessModal() {
     console.log("Opening Access Modal...");
+    
     if (!window.formConfig) {
-        console.error("formConfig is missing!");
-        alert("System Error: Configuration missing.");
-        return;
+      console.error("formConfig is missing!");
+      alert("System Error: Configuration missing.");
+      return;
     }
     
-    $('#access-form-password').val(window.formConfig.password);
+    console.log("Form Config:", window.formConfig);
     
-    // Show loading state
+    $('#access-form-password').val(window.formConfig.password || '');
+    
     const tbody = $('#access-fields-tbody');
-    tbody.html('<tr><td colspan="4" style="text-align:center;">جاري التحميل...</td></tr>');
-    $('#accessControlModal').show();
+    tbody.html('<tr><td colspan="5" style="text-align:center;">جاري التحميل...</td></tr>');
+    
+    $('#accessControlModal').addClass('active').show();
+    console.log("Modal displayed");
 
     $.ajax({
       url: `edit-form.php?id=${window.formConfig.id}&action=get_access_data`,
       method: 'GET',
       dataType: 'json',
       success: function(data) {
+        console.log("Access data loaded:", data);
         if(data.success) {
-          $('#access-form-password').val(data.password);
-          currentAccessFields = data.fields;
+          $('#access-form-password').val(data.password || '');
+          currentAccessFields = data.fields || [];
           renderAccessFields();
         } else {
-          alert('فشل تحميل البيانات');
+          alert('فشل تحميل البيانات: ' + (data.message || 'خطأ غير معروف'));
         }
       },
-      error: function(err) {
-        console.error('Error:', err);
-        tbody.html('<tr><td colspan="4" style="text-align:center; color:red;">خطأ في التحميل</td></tr>');
+      error: function(xhr, status, error) {
+        console.error('AJAX Error:', {xhr, status, error});
+        tbody.html('<tr><td colspan="5" style="text-align:center; color:red;">خطأ في التحميل</td></tr>');
+        alert('خطأ في الاتصال بالخادم');
       }
     });
   }
 
   function closeAccessModal() {
-    $('#accessControlModal').hide();
+    console.log("Closing Access Modal");
+    $('#accessControlModal').removeClass('active').hide();
   }
 
   function renderAccessFields() {
@@ -927,6 +951,8 @@ $(document).ready(function () {
           if (data.eval_link) {
             $('.evaluation-link-input').val(data.eval_link);
           }
+          
+          location.reload();
         } else {
           alert('حدث خطأ: ' + data.message);
         }
@@ -937,14 +963,15 @@ $(document).ready(function () {
     });
   }
 
-  // --- Type Management Functions ---
+  // ========== TYPE MANAGEMENT FUNCTIONS ==========
 
   function openTypeModal(category) {
+    console.log("Opening Type Modal for:", category);
+    
     $('#typeCategory').val(category);
     $('#modalTitle').text(category === 'target' ? 'إضافة مقيّم جديد' : 'إضافة نوع تقييم جديد');
     $('#typeForm')[0].reset();
     
-    // Populate icons
     const iconContainer = $('.icon-selector');
     iconContainer.empty();
     
@@ -955,7 +982,8 @@ $(document).ready(function () {
           cursor: 'pointer',
           padding: '5px',
           textAlign: 'center',
-          border: '1px solid transparent'
+          border: '2px solid transparent',
+          borderRadius: '4px'
         })
         .html(`<img src="../${icon}" style="width: 24px; height: 24px;">`)
         .data('icon', icon);
@@ -963,11 +991,13 @@ $(document).ready(function () {
       iconContainer.append(div);
     });
     
-    $('#typeModal').show();
+    $('#typeModal').addClass('active').show();
+    console.log("Type Modal displayed");
   }
 
   function closeTypeModal() {
-    $('#typeModal').hide();
+    console.log("Closing Type Modal");
+    $('#typeModal').removeClass('active').hide();
   }
 
   function deleteType(category, id) {
@@ -987,6 +1017,7 @@ $(document).ready(function () {
         id: id,
         category: category
       }),
+      dataType: 'json',
       success: function(data) {
         if (data.success) {
           alert('تم الحذف بنجاح');
@@ -994,6 +1025,9 @@ $(document).ready(function () {
         } else {
           alert('خطأ: ' + data.message);
         }
+      },
+      error: function() {
+        alert('حدث خطأ في الاتصال');
       }
     });
   }
@@ -1023,104 +1057,5 @@ $(document).ready(function () {
     
     wrapper.removeClass('open');
   }
-
-  // --- Event Listeners Registration ---
-
-  // Access Control Modals
-  $(document).on('click', '.js-open-access-modal', openAccessModal);
-  $(document).on('click', '.js-close-access-modal, .btn-cancel', function(e) {
-      // Check if it's inside access modal
-      if ($(this).closest('#accessControlModal').length > 0) {
-          closeAccessModal();
-      }
-  });
-  $(document).on('click', '.js-save-access-settings', saveAccessSettings);
-  $(document).on('click', '.js-add-access-row', addAccessFieldRow);
-  
-  // Dynamic Access Fields Inputs
-  $(document).on('change', '.js-access-input', function() {
-    const index = $(this).data('index');
-    const key = $(this).data('key');
-    updateAccessField(index, key, $(this).val());
-  });
-  
-  $(document).on('change', '.js-access-checkbox', function() {
-    const index = $(this).data('index');
-    const key = $(this).data('key');
-    updateAccessField(index, key, $(this).is(':checked') ? 1 : 0);
-  });
-  
-  $(document).on('click', '.js-remove-access-row', function() {
-    const index = $(this).data('index');
-    removeAccessFieldRow(index);
-  });
-
-  // Type Management
-  $(document).on('click', '.js-open-type-modal', function() {
-      const category = $(this).data('category');
-      openTypeModal(category);
-  });
-  $(document).on('click', '.js-close-type-modal', closeTypeModal);
-  
-  $(document).on('click', '.js-icon-option', function() {
-      $('.icon-option').css('borderColor', 'transparent');
-      $(this).css('borderColor', '#2196F3');
-      $('#typeIcon').val($(this).data('icon'));
-  });
-
-  $(document).on('submit', '#typeForm', function(e) {
-      e.preventDefault();
-      const formData = new FormData(this);
-      formData.append('action', 'create_type');
-      
-      $.ajax({
-          url: window.location.href,
-          method: 'POST',
-          data: formData,
-          processData: false,
-          contentType: false,
-          dataType: 'json',
-          success: function(data) {
-              if (data.success) {
-                  alert('تم الإضافة بنجاح');
-                  location.reload(); 
-              } else {
-                  alert('خطأ: ' + data.message);
-              }
-          },
-          error: function() { alert('حدث خطأ في الاتصال'); }
-      });
-  });
-
-  $(document).on('click', '.js-delete-type', function(e) {
-      e.stopPropagation();
-      const category = $(this).data('category');
-      const id = $(this).data('db-id');
-      deleteType(category, id);
-  });
-
-  // Custom Selects
-  $(document).on('click', '.js-custom-select-trigger', function() {
-      const type = $(this).data('type');
-      toggleCustomSelect(type);
-  });
-
-  $(document).on('click', '.js-custom-option', function() {
-      const type = $(this).data('type');
-      const value = $(this).data('value');
-      const name = $(this).data('name'); // We need to add data-name to HTML
-      
-      // If name isn't in data attribute (legacy), try to get text
-      const finalName = name || $(this).find('span').first().text();
-      
-      selectOption(type, value, finalName, this);
-  });
-
-  // Close selects when clicking outside
-  $(document).on('click', function(e) {
-      if (!$(e.target).closest('.custom-select-wrapper').length) {
-          $('.custom-select-wrapper').removeClass('open');
-      }
-  });
 
 });

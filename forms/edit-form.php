@@ -10,8 +10,6 @@ if (!isset($_SESSION['admin_id'])) {
 
 // Include the database connection
 include '.././config/DbConnection.php';
-
-
 include 'form_constants.php'; 
 
 // Handle API Requests (GET)
@@ -108,7 +106,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
         } elseif ($action === 'delete_type') {
             $input = json_decode(file_get_contents('php://input'), true);
             $id = intval($input['id'] ?? 0);
-            $category = $input['category'] ?? ''; // 'target' or 'type'
+            $category = $input['category'] ?? '';
             
             if ($id <= 0) throw new Exception('معرف غير صحيح');
             
@@ -124,14 +122,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
             
             if ($count > 0) throw new Exception("لا يمكن الحذف لأنه مستخدم في $count نموذج");
             
-            // Delete relationships first if needed (FormType_EvaluatorType)
+            // Delete relationships first if needed
             if ($category !== 'target') {
                 $stmt = $con->prepare("DELETE FROM FormType_EvaluatorType WHERE FormTypeID = ?");
                 $stmt->bind_param('i', $id);
                 $stmt->execute();
                 $stmt->close();
             } else {
-                 $stmt = $con->prepare("DELETE FROM FormType_EvaluatorType WHERE EvaluatorTypeID = ?");
+                $stmt = $con->prepare("DELETE FROM FormType_EvaluatorType WHERE EvaluatorTypeID = ?");
                 $stmt->bind_param('i', $id);
                 $stmt->execute();
                 $stmt->close();
@@ -163,7 +161,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
                 $stmt->close();
                 
                 // 2. Update Fields
-                // Strategy: Delete all and re-insert. Simple and effective for this scale.
                 $stmt = $con->prepare("DELETE FROM FormAccessFields WHERE FormID = ?");
                 $stmt->bind_param('i', $formId);
                 $stmt->execute();
@@ -178,10 +175,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
                         $required = isset($field['IsRequired']) ? intval($field['IsRequired']) : 0;
                         $order = $index;
                         
-                        // Default slug if empty? Maybe auto-generate or required. User said "Slug that will be used in URL".
-                        // Use Label as fallback if valid, or just allow empty (but URL param key needs to be valid).
-                        // Let's assume validation in JS ensures it, or we rely on user input.
-                        
                         if (!empty($label)) {
                             $stmt->bind_param('isssii', $formId, $label, $slug, $type, $required, $order);
                             $stmt->execute();
@@ -195,9 +188,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
                 // Re-generate the evaluation link
                 $baseUrl = "http://" . $_SERVER['HTTP_HOST'] . dirname(dirname($_SERVER['PHP_SELF']));
                 
-                // Fetch form details again to be sure (or reuse $formId)
-                // We need FormType and FormTarget. They shouldn't have changed here, but let's fetch to be safe or pass them if available.
-                // Since this is a POST request, we might not have $form loaded. Let's fetch it.
                 $stmt = $con->prepare("SELECT FormType, FormTarget FROM Form WHERE ID = ?");
                 $stmt->bind_param('i', $formId);
                 $stmt->execute();
@@ -209,10 +199,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
                     $evalLink = $baseUrl . "/evaluation-form.php?evaluation=" . urlencode($fResult['FormType']) . 
                                "&Evaluator=" . urlencode($fResult['FormTarget']);
                                
-                    // Add dynamic parameters from the JUST INSERTED fields
-                    // We can reuse the $fields array we just processed, assuming it matches what's in DB.
-                    // But to be 100% accurate to what the link generation logic uses, let's allow it to flow from the input.
-                    // Or better, query the DB like the frontend does.
                     $accessFieldsQuery = "SELECT Slug FROM FormAccessFields WHERE FormID = " . intval($formId) . " ORDER BY OrderIndex ASC";
                     $accessFieldsRes = mysqli_query($con, $accessFieldsQuery);
                     while($af = mysqli_fetch_assoc($accessFieldsRes)) {
@@ -239,7 +225,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
     exit();
 } 
 
-
 // Get the form ID from the URL
 $formId = $_GET['id'];
 
@@ -249,9 +234,7 @@ $stmt->bind_param("i", $formId);
 $stmt->execute();
 $form = $stmt->get_result()->fetch_assoc();
 
-
 // Fetch sections for the form
-
 $sections_query = "SELECT * FROM Section WHERE IDForm = $formId";
 $sections_result = mysqli_query($con, $sections_query);
 
@@ -274,11 +257,371 @@ if (!$sections_result) {
     <link rel="stylesheet" href="../styles/forms.css">
     <link rel="stylesheet" href="../components/ComponentsStyles.css">
     <link rel="icon" href=".././assets/icons/college.png">
-
-    <!-- ================== font awesome =================== -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
      
-    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <style>
+    /* Modal Styles */
+    .modal {
+        display: none;
+        position: fixed;
+        z-index: 10000;
+        left: 0;
+        top: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0,0,0,0.5);
+        overflow: auto;
+    }
+
+    .modal.active {
+        display: block !important;
+    }
+
+    .modal-content,
+    .access-modal-content {
+        background: white;
+        margin: 5% auto;
+        padding: 30px;
+        border-radius: 8px;
+        width: 90%;
+        max-width: 600px;
+        position: relative;
+        max-height: 80vh;
+        overflow-y: auto;
+        direction: rtl;
+    }
+
+    .close {
+        position: absolute;
+        left: 15px;
+        top: 15px;
+        font-size: 28px;
+        font-weight: bold;
+        cursor: pointer;
+        color: #666;
+        line-height: 1;
+        z-index: 1;
+    }
+
+    .close:hover {
+        color: #000;
+    }
+
+    .icon-selector {
+        display: grid;
+        grid-template-columns: repeat(5, 1fr);
+        gap: 10px;
+        max-height: 150px;
+        overflow-y: auto;
+        border: 1px solid #ddd;
+        padding: 10px;
+        border-radius: 4px;
+        background: #f9f9f9;
+    }
+
+    .icon-option {
+        cursor: pointer;
+        padding: 8px;
+        text-align: center;
+        border: 2px solid transparent;
+        border-radius: 4px;
+        transition: all 0.3s;
+        background: white;
+    }
+
+    .icon-option:hover {
+        background: #f5f5f5;
+        border-color: #ddd;
+    }
+
+    .icon-option img {
+        width: 24px;
+        height: 24px;
+        display: block;
+        margin: 0 auto;
+    }
+
+    .fields-table {
+        width: 100%;
+        border-collapse: collapse;
+        margin: 15px 0;
+    }
+
+    .fields-table th,
+    .fields-table td {
+        padding: 10px;
+        border: 1px solid #ddd;
+        text-align: right;
+    }
+
+    .fields-table th {
+        background: #f5f5f5;
+        font-weight: bold;
+    }
+
+    .fields-table input[type="text"],
+    .fields-table select {
+        width: 100%;
+        padding: 8px;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+        font-family: inherit;
+    }
+
+    .btn-add-row,
+    .btn-remove-row {
+        padding: 8px 15px;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+        font-size: 14px;
+        transition: all 0.3s;
+    }
+
+    .btn-add-row {
+        background: #4CAF50;
+        color: white;
+        margin-top: 10px;
+    }
+
+    .btn-add-row:hover {
+        background: #45a049;
+    }
+
+    .btn-remove-row {
+        background: #f44336;
+        color: white;
+        padding: 5px 10px;
+    }
+
+    .btn-remove-row:hover {
+        background: #da190b;
+    }
+
+    .modal-footer {
+        margin-top: 20px;
+        text-align: left;
+        border-top: 1px solid #eee;
+        padding-top: 15px;
+        display: flex;
+        gap: 10px;
+        justify-content: flex-start;
+    }
+
+    .btn-cancel,
+    .btn-save-access {
+        padding: 10px 20px;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+        font-size: 14px;
+        transition: all 0.3s;
+    }
+
+    .btn-cancel {
+        background: #666;
+        color: white;
+    }
+
+    .btn-cancel:hover {
+        background: #555;
+    }
+
+    .btn-save-access {
+        background: #2196F3;
+        color: white;
+    }
+
+    .btn-save-access:hover {
+        background: #0b7dda;
+    }
+
+    .access-section {
+        margin-bottom: 30px;
+        padding-bottom: 20px;
+        border-bottom: 1px solid #eee;
+    }
+
+    .access-section:last-of-type {
+        border-bottom: none;
+    }
+
+    .access-section h3 {
+        margin-bottom: 15px;
+        color: #333;
+    }
+
+    .access-input-group {
+        margin-bottom: 15px;
+    }
+
+    .access-input-group label {
+        display: block;
+        margin-bottom: 5px;
+        font-weight: 500;
+    }
+
+    .access-input-group input {
+        width: 100%;
+        padding: 10px;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+        font-family: inherit;
+    }
+
+    .access-input-group small {
+        display: block;
+        margin-top: 5px;
+        color: #666;
+        font-size: 12px;
+    }
+
+    /* Custom Select Styles */
+    .custom-select-wrapper {
+        position: relative;
+        display: inline-block;
+        min-width: 200px;
+    }
+
+    .custom-select-trigger {
+        padding: 8px 15px;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+        background: white;
+        cursor: pointer;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 10px;
+        transition: all 0.3s;
+    }
+
+    .custom-select-trigger:hover {
+        border-color: #2196F3;
+    }
+
+    .custom-select-options {
+        display: none;
+        position: absolute;
+        top: 100%;
+        right: 0;
+        left: 0;
+        background: white;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+        margin-top: 5px;
+        max-height: 300px;
+        overflow-y: auto;
+        z-index: 1000;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+
+    .custom-select-wrapper.open .custom-select-options {
+        display: block;
+    }
+
+    .custom-option {
+        padding: 10px 15px;
+        cursor: pointer;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        transition: background 0.2s;
+    }
+
+    .custom-option:hover {
+        background: #f5f5f5;
+    }
+
+    .custom-option.selected {
+        background: #e3f2fd;
+    }
+
+    .btn-delete-option {
+        background: transparent;
+        border: none;
+        color: #f44336;
+        cursor: pointer;
+        padding: 5px;
+        transition: color 0.3s;
+    }
+
+    .btn-delete-option:hover {
+        color: #da190b;
+    }
+
+    .custom-option-add {
+        padding: 10px 15px;
+        cursor: pointer;
+        border-top: 1px solid #ddd;
+        color: #2196F3;
+        font-weight: 500;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        transition: background 0.2s;
+    }
+
+    .custom-option-add:hover {
+        background: #f5f5f5;
+    }
+
+    .form-group {
+        margin-bottom: 20px;
+    }
+
+    .form-group label {
+        display: block;
+        margin-bottom: 8px;
+        font-weight: 500;
+        color: #333;
+    }
+
+    .form-group input[type="text"],
+    .form-group input[type="password"] {
+        width: 100%;
+        padding: 10px;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+        font-family: inherit;
+        font-size: 14px;
+    }
+
+    .form-group button[type="submit"] {
+        width: 100%;
+        background: #4CAF50;
+        color: white;
+        border: none;
+        padding: 12px;
+        border-radius: 4px;
+        cursor: pointer;
+        font-size: 16px;
+        font-weight: 500;
+        transition: all 0.3s;
+    }
+
+    .form-group button[type="submit"]:hover {
+        background: #45a049;
+    }
+
+    .access-settings-btn {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 10px 20px;
+        background: #2196F3;
+        color: white;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+        font-size: 14px;
+        transition: all 0.3s;
+    }
+
+    .access-settings-btn:hover {
+        background: #0b7dda;
+    }
+    </style>
 </head>
 
 <body>
@@ -386,20 +729,20 @@ if (!$sections_result) {
                         </div>
                     </div>
 
-                    </div> <!-- Close control-buttons -->
+                </div> <!-- Close control-buttons -->
 
-                    <div style="display: flex; gap: 10px;">
-                        <button type="button" class="access-settings-btn js-open-access-modal">
-                            <i class="fa-solid fa-lock"></i>
-                            إعدادات الوصول
-                        </button>
-                        <button class="download-form-button" data-printthis-ignore 
-                            data-form-id="<?php echo $form['ID']; ?>"
-                            data-form-title="<?php echo htmlspecialchars($form['Title'], ENT_QUOTES, 'UTF-8'); ?>">
-                            <img src=".././assets/icons/file-down.svg" alt="download" />
-                            تنزيل النموذج
-                        </button>
-                    </div>
+                <div style="display: flex; gap: 10px;">
+                    <button type="button" class="access-settings-btn js-open-access-modal">
+                        <i class="fa-solid fa-lock"></i>
+                        إعدادات الوصول
+                    </button>
+                    <button class="download-form-button" data-printthis-ignore 
+                        data-form-id="<?php echo $form['ID']; ?>"
+                        data-form-title="<?php echo htmlspecialchars($form['Title'], ENT_QUOTES, 'UTF-8'); ?>">
+                        <img src=".././assets/icons/file-down.svg" alt="download" />
+                        تنزيل النموذج
+                    </button>
+                </div>
             </div>
         </div>
         
@@ -415,8 +758,6 @@ if (!$sections_result) {
                 $baseUrl = "http://" . $_SERVER['HTTP_HOST'] . dirname(dirname($_SERVER['PHP_SELF']));
                 $evalLink = $baseUrl . "/evaluation-form.php?evaluation=" . urlencode($form['FormType']) . 
                            "&Evaluator=" . urlencode($form['FormTarget']);
-                // Add additional parameters based on form target
-                // Add dynamic parameters from Access Fields
                 $accessFieldsQuery = "SELECT Slug FROM FormAccessFields WHERE FormID = " . intval($form['ID']) . " ORDER BY OrderIndex ASC";
                 $accessFieldsRes = mysqli_query($con, $accessFieldsQuery);
                 while($af = mysqli_fetch_assoc($accessFieldsRes)) {
@@ -435,12 +776,12 @@ if (!$sections_result) {
             <p class="link-note">
                 <i class="fa-solid fa-info-circle"></i>
                 هذا الرابط يمكن مشاركته مع المقيمين للمشاركة في التقييم. 
-                    <br>ملاحظة: سيتم استبدال المتغيرات ما بين الأقواس <?php 
-                   $accessFieldsRes = mysqli_query($con, $accessFieldsQuery); 
-                    while($af = mysqli_fetch_assoc($accessFieldsRes)) {
+                <br>ملاحظة: سيتم استبدال المتغيرات ما بين الأقواس <?php 
+                $accessFieldsRes = mysqli_query($con, $accessFieldsQuery); 
+                while($af = mysqli_fetch_assoc($accessFieldsRes)) {
                     if(!empty($af['Slug'])) {
                         $slug = $af['Slug'];
-                        echo "{" . urlencode($slug) . "}" . " ";
+                        echo "{" . htmlspecialchars($slug) . "}" . " ";
                     }
                 }?> بالقيم الفعلية عند المشاركة.
             </p>
@@ -560,56 +901,50 @@ if (!$sections_result) {
     <?php include "../components/footer.html"; ?>
 
     <!-- Type Management Modal -->
-    <div id="typeModal" class="modal" style="display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5);">
-        <div class="modal-content" style="background: white; margin: 10% auto; padding: 20px; border-radius: 8px; width: 90%; max-width: 400px; position: relative;">
-            <span class="close js-close-type-modal" style="position: absolute; left: 15px; top: 10px; font-size: 24px; cursor: pointer;">&times;</span>
-            <h2 id="modalTitle" style="margin-bottom: 20px;">إضافة عنصر جديد</h2>
+    <div id="typeModal" class="modal">
+        <div class="modal-content">
+            <span class="close js-close-type-modal">&times;</span>
+            <h2 id="modalTitle">إضافة عنصر جديد</h2>
             <form id="typeForm">
-                <input type="hidden" id="typeCategory" name="category"> <!-- 'target' or 'type' -->
+                <input type="hidden" id="typeCategory" name="category">
                 
-                <div class="form-group" style="margin-bottom: 15px;">
-                    <label style="display: block; margin-bottom: 5px;">الاسم (بالعربية)</label>
-                    <input type="text" id="typeName" name="name" required style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px;">
+                <div class="form-group">
+                    <label>الاسم (بالعربية)</label>
+                    <input type="text" id="typeName" name="name" required placeholder="مثال: طالب">
                 </div>
                 
-                <div class="form-group" style="margin-bottom: 15px;">
-                    <label style="display: block; margin-bottom: 5px;">المعرف (Slug - إنجليزي)</label>
-                    <input type="text" id="typeSlug" name="slug" required placeholder="example_slug" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px;">
+                <div class="form-group">
+                    <label>المعرف (Slug - إنجليزي)</label>
+                    <input type="text" id="typeSlug" name="slug" required placeholder="example_slug" style="direction: ltr;">
                 </div>
 
-                <div class="form-group" style="margin-bottom: 15px;">
-                    <label style="display: block; margin-bottom: 5px;">الأيقونة</label>
-                    <div class="icon-selector" style="display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px; max-height: 150px; overflow-y: auto; border: 1px solid #ddd; padding: 10px; border-radius: 4px;">
+                <div class="form-group" id="allowedTargetsContainer" style="display: none;">
+                    <label>أنواع المقيمين المسموح لهم (اختياري)</label>
+                    <div id="allowedTargetsList" style="display: flex; flex-wrap: wrap; gap: 10px; max-height: 100px; overflow-y: auto; border: 1px solid #ddd; padding: 10px; border-radius: 4px;">
+                        <!-- Checkboxes will be injected here -->
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label>الأيقونة</label>
+                    <div class="icon-selector">
                         <!-- Icons will be injected here -->
                     </div>
                     <input type="hidden" id="typeIcon" name="icon" required>
                 </div>
 
-                    <select name="type" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px;">
-                        <option value="text">نص (Text)</option>
-                        <option value="number">رقم (Number)</option>
-                        <option value="email">بريد إلكتروني (Email)</option>
-                        <option value="date">تاريخ (Date)</option>
-                    </select>
+                <div class="form-group">
+                    <button type="submit">إضافة</button>
                 </div>
-
-                <div class="form-group" style="margin-bottom: 15px;">
-                    <label style="display: flex; align-items: center; gap: 10px;">
-                        <input type="checkbox" name="required" value="1">
-                        حقل إجباري
-                    </label>
-                </div>
-
-                <button type="submit" style="width: 100%; background: #4CAF50; color: white; border: none; padding: 10px; border-radius: 4px; cursor: pointer;">إضافة</button>
             </form>
         </div>
     </div>
 
     <!-- Access Control Modal -->
-    <div id="accessControlModal" class="modal" style="display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5);">
+    <div id="accessControlModal" class="modal">
         <div class="access-modal-content">
-            <span class="close js-close-access-modal" style="float: left; font-size: 24px; cursor: pointer;">&times;</span>
-            <h2 style="margin-bottom: 20px; border-bottom: 1px solid #eee; padding-bottom: 10px;">إعدادات الوصول</h2>
+            <span class="close js-close-access-modal">&times;</span>
+            <h2>إعدادات الوصول</h2>
             
             <!-- Section 1: Password -->
             <div class="access-section">
@@ -617,7 +952,7 @@ if (!$sections_result) {
                 <div class="access-input-group">
                     <label>كلمة مرور النموذج (اختياري)</label>
                     <input type="password" id="access-form-password" placeholder="اتركه فارغاً للوصول العام">
-                    <small style="color: #666;">إذا تم تعيين كلمة مرور، سيطلب من المستخدم إدخالها قبل عرض النموذج.</small>
+                    <small>إذا تم تعيين كلمة مرور، سيطلب من المستخدم إدخالها قبل عرض النموذج.</small>
                 </div>
             </div>
 
@@ -653,15 +988,42 @@ if (!$sections_result) {
         </div>
     </div>
 
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/printThis/1.15.0/printThis.min.js"></script>
-    <script src="../scripts/forms.js"></script>
+    <?php include "components/footer.php"; ?>
+
+    <!-- Scripts -->
     <script>
+        // Define configuration FIRST before any other scripts
         window.formConfig = {
             id: <?php echo $form['ID']; ?>,
             password: "<?php echo htmlspecialchars($form['password'] ?? '', ENT_QUOTES); ?>"
         };
+        
+        // Define TYPE_QUESTION for question type modal
+        window.TYPE_QUESTION = {
+            'multiple_choice': {
+                name: 'إختيار من متعدد',
+                icon: 'assets/icons/list-check.svg'
+            },
+            'true_false': {
+                name: 'صح/خطأ',
+                icon: 'assets/icons/square-check.svg'
+            },
+            'evaluation': {
+                name: 'تقييم',
+                icon: 'assets/icons/star.svg'
+            },
+            'essay': {
+                name: 'مقالي',
+                icon: 'assets/icons/quote.svg'
+            }
+        };
+        
+        console.log("Form Config initialized:", window.formConfig);
+        console.log("TYPE_QUESTION initialized:", window.TYPE_QUESTION);
     </script>
-
+    <script src="../scripts/forms.js"></script>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/printThis/1.15.0/printThis.min.js"></script>
 </body>
 
 </html>
