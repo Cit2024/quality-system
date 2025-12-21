@@ -1058,4 +1058,120 @@ $(document).ready(function () {
     wrapper.removeClass('open');
   }
 
+  // ========== FONT AWESOME ICON PICKER ==========
+  
+  let fontAwesomeIcons = [];
+  
+  // Curated list of popular Font Awesome solid icons
+  const popularIcons = [
+    'book-bookmark', 'graduation-cap', 'chalkboard-user', 'user-tie', 
+    'user-graduate', 'briefcase', 'building', 'person-chalkboard',
+    'layer-group', 'clipboard-list', 'user-check', 'users', 'calendar',
+    'chart-bar', 'chart-line', 'chart-pie', 'file-alt', 'folder',
+    'home', 'cog', 'user', 'envelope', 'phone', 'map-marker-alt',
+    'star', 'heart', 'check', 'times', 'plus', 'minus', 'edit',
+    'trash', 'download', 'upload', 'search', 'filter', 'sort',
+    'bell', 'comment', 'share', 'link', 'lock', 'unlock',
+    'eye', 'eye-slash', 'print', 'save', 'copy', 'paste',
+    'lightbulb', 'rocket', 'trophy', 'medal', 'award', 'certificate',
+    'book', 'bookmark', 'pen', 'pencil', 'highlighter', 'eraser',
+    'calculator', 'compass', 'globe', 'flag', 'shield', 'crown'
+  ];
+  
+  function loadFontAwesomeIcons() {
+    // Use curated list of popular icons
+    fontAwesomeIcons = popularIcons.map(icon => ({
+      name: icon,
+      className: `fa-solid fa-${icon}`
+    }));
+    
+    renderIcons(fontAwesomeIcons);
+  }
+  
+  function renderIcons(icons) {
+    const iconSelector = $('.icon-selector');
+    iconSelector.empty();
+    
+    if (icons.length === 0) {
+      iconSelector.html(`
+        <div style="grid-column: 1 / -1; text-align: center; padding: 20px; color: #999;">
+          لم يتم العثور على أيقونات
+        </div>
+      `);
+      return;
+    }
+    
+    icons.forEach(icon => {
+      const iconElement = $(`
+        <div class="icon-option" data-icon="${icon.className}" style="
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          padding: 12px;
+          border: 2px solid transparent;
+          border-radius: 4px;
+          cursor: pointer;
+          transition: all 0.2s;
+          background: white;
+        " title="${icon.name}">
+          <i class="${icon.className}" style="font-size: 24px; color: #333;"></i>
+        </div>
+      `);
+      
+      iconElement.on('mouseenter', function() {
+        $(this).css({backgroundColor: '#e3f2fd', transform: 'scale(1.1)'});
+      });
+      
+      iconElement.on('mouseleave', function() {
+        if (!$(this).hasClass('selected')) {
+          $(this).css({backgroundColor: 'white', transform: 'scale(1)'});
+        }
+      });
+      
+      iconElement.on('click', function() {
+        $('.icon-option').removeClass('selected').css({
+          borderColor: 'transparent',
+          backgroundColor: 'white',
+          transform: 'scale(1)'
+        });
+        
+        $(this).addClass('selected').css({
+          borderColor: '#2196F3',
+          backgroundColor: '#e3f2fd',
+          transform: 'scale(1.05)'
+        });
+        
+        $('#typeIcon').val(icon.className);
+        $('#selectedIconDisplay').attr('class', icon.className);
+        $('#selectedIconName').text(icon.className);
+        $('#selectedIconPreview').show();
+      });
+      
+      iconSelector.append(iconElement);
+    });
+  }
+  
+  // Search functionality
+  $(document).on('input', '#iconSearch', function() {
+    const searchTerm = $(this).val().toLowerCase();
+    
+    if (!searchTerm) {
+      renderIcons(fontAwesomeIcons);
+      return;
+    }
+    
+    const filteredIcons = fontAwesomeIcons.filter(icon => 
+      icon.name.toLowerCase().includes(searchTerm)
+    );
+    
+    renderIcons(filteredIcons);
+  });
+  
+  // Initialize icon picker when modal opens
+  $(document).on('click', '.js-open-type-modal', function() {
+    if (fontAwesomeIcons.length === 0) {
+      loadFontAwesomeIcons();
+    }
+  });
+
 });
