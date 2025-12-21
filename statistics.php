@@ -4,14 +4,18 @@ session_start();
 $currentPage = 'statistics';
 
 include 'components/header.php';
-include 'forms/form_constants.php';
+// include 'forms/form_constants.php'; // Removed
 
 // Include database connections
 require_once 'config/dbConnectionCit.php';
 require_once 'config/DbConnection.php';
-include 'helpers/database.php';
+require_once 'helpers/database.php';
+require_once 'helpers/FormTypes.php';
 
-$validTabs = array_keys(FORM_TARGETS);
+$formTypes = FormTypes::getFormTypes($con);
+$formTargets = FormTypes::getFormTargets($con);
+
+$validTabs = array_keys($formTargets);
 $tab = isset($_GET['tab']) && in_array($_GET['tab'], $validTabs) ? $_GET['tab'] : 'student';
 
 ?>
@@ -47,10 +51,10 @@ $tab = isset($_GET['tab']) && in_array($_GET['tab'], $validTabs) ? $_GET['tab'] 
             <div class="container-statistics">
                 <!-- Main Tabs -->
                 <div class="tabs">
-                    <?php foreach(FORM_TARGETS as $target => $targetData): ?>
+                    <?php foreach($formTargets as $target => $targetData): ?>
                         <button class="tab-button <?= $tab === $target ? 'active' : '' ?>" 
                                 data-target="<?= $target ?>">
-                            <img src="<?= $targetData['icon'] ?>" class="tab-icon">
+                            <i class="<?= $targetData['icon'] ?> tab-icon"></i>
                             <?= $targetData['name'] ?>
                         </button>
                     <?php endforeach; ?>
@@ -67,15 +71,15 @@ $tab = isset($_GET['tab']) && in_array($_GET['tab'], $validTabs) ? $_GET['tab'] 
                 </div>
 
                 <!-- Tab Contents -->
-                <?php foreach(FORM_TARGETS as $target => $targetData): ?>
+                <?php foreach($formTargets as $target => $targetData): ?>
                     <div class="tab-content <?= $tab === $target ? 'active' : '' ?>" id="<?= $target ?>-tab">
                         <!-- Sub Tabs -->
                         <div class="sub-tabs-wrapper"> <!-- Add this wrapper -->
                             <div class="sub-tabs">
-                                <?php foreach(FORM_TYPES as $type => $typeData): 
+                                <?php foreach($formTypes as $type => $typeData): 
                                     if(in_array($target, $typeData['allowed_targets'])): ?>
                                         <button class="sub-tab-button" data-type="<?= $type ?>">
-                                            <img src="<?= $typeData['icon'] ?>" class="sub-tab-icon">
+                                            <i class="<?= $typeData['icon'] ?> sub-tab-icon"></i>
                                             <?= $typeData['name'] ?>
                                         </button>
                                     <?php endif; ?>
@@ -110,8 +114,8 @@ $tab = isset($_GET['tab']) && in_array($_GET['tab'], $validTabs) ? $_GET['tab'] 
 
     <!-- ==================== JavaScript ==================== -->
     <script>
-        window.FORM_TYPES = <?= json_encode(FORM_TYPES) ?>;
-        window.FORM_TARGETS = <?= json_encode(FORM_TARGETS) ?>;
+        window.FORM_TYPES = <?= json_encode($formTypes) ?>;
+        window.FORM_TARGETS = <?= json_encode($formTargets) ?>;
     </script>
     <script src="./scripts/lib/utils.js"></script> <!-- Add this line -->
     <script src="./scripts/statistics.js"></script>

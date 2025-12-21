@@ -6,7 +6,7 @@ session_start();
 require_once 'config/dbConnectionCit.php';
 require_once 'config/DbConnection.php';
 require_once 'helpers/database.php';
-require_once 'forms/form_constants.php';
+// require_once 'forms/form_constants.php'; // Removed
 
 $currentPage = 'dashboard';
 

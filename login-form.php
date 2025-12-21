@@ -57,36 +57,44 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 break;
             }
             // Add to redirect params
-            // We use the Label as the key for the URL param (or we could use a slug, but Label is what we have)
-            // To be safe and match existing patterns (like IDStudent), we might need to map them.
-            // For now, we'll pass them as they are defined in the field label, assuming the admin knows what they are doing
-            // (e.g. naming the field "IDStudent").
-            // OR better: we pass them as generic params and let the evaluation form handle them?
-            // The user request said: "For example, the evaluator can be directed to login-form.php (the student's registration number is a required field)..."
-            // This implies we should pass "IDStudent" if the label is "IDStudent".
-            // Let's just pass the value with the label as the key.
-            $redirectParams[$field['Label']] = $val;
+            // We use the Slug as the key for the URL param to ensure it matches what evaluation-form expects
+            $paramKey = !empty($field['Slug']) ? $field['Slug'] : $field['Label'];
+            $redirectParams[$paramKey] = $val;
         }
     }
     
     if ($valid) {
+        // Store field values in session using Slug naming
+        foreach ($fields as $field) {
+            $val = trim($_POST['field_' . $field['ID']] ?? '');
+            $slug = !empty($field['Slug']) ? $field['Slug'] : $field['Label'];
+            
+            // Store in session for evaluation-form to find
+            if (!empty($val)) {
+                $_SESSION[$slug] = $val;
+            }
+        }
+        
         // Build Redirect URL
         $params = [
             'evaluation' => $evaluation,
             'Evaluator' => $evaluator,
-            // Pass through existing params if any (like Semester if it was in the URL)
-            // But usually this form is the entry point.
         ];
         
-        // Merge collected data
-        $params = array_merge($params, $redirectParams);
-        
-        // Also pass Semester/IDCourse/IDGroup/IDStudent if they were already in GET (unlikely if we are here, but possible)
-        foreach (['Semester', 'IDCourse', 'IDGroup', 'IDStudent'] as $key) {
-            if (isset($_GET[$key])) $params[$key] = $_GET[$key];
+        // Merge with existing GET params and collected redirect params
+        foreach ($fields as $field) {
+            $val = trim($_POST['field_' . $field['ID']] ?? '');
+            $slug = !empty($field['Slug']) ? $field['Slug'] : $field['Label'];
+            if (!empty($val)) {
+                $params[$slug] = $val;
+            }
         }
-
-        // Mark as authorized in session to avoid loops (optional, but good for UX)
+        $params = array_merge($_GET, $params);
+        
+        // Remove internal params
+        unset($params['id']); 
+        
+        // Mark as authorized
         $_SESSION['form_auth_' . $formId] = true;
         
         $queryString = http_build_query($params);
@@ -183,6 +191,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     </label>
                     <input type="<?= $field['FieldType'] ?>" 
                            name="field_<?= $field['ID'] ?>" 
+                           value="<?= isset($field['Slug']) && isset($_GET[$field['Slug']]) ? htmlspecialchars($_GET[$field['Slug']]) : '' ?>"
                            <?= $field['IsRequired'] ? 'required' : '' ?>>
                 </div>
             <?php endforeach; ?>

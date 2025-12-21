@@ -10,7 +10,7 @@ if (!isset($_SESSION['admin_id'])) {
 
 $currentPage = 'dashboard';
 
-require_once __DIR__ . '/forms/form_constants.php';
+// require_once __DIR__ . '/forms/form_constants.php'; // Removed
 
 // // Get semester data for header
 include './components/header.php';
@@ -19,6 +19,10 @@ require_once 'config/dbConnectionCit.php';
 require_once 'config/DbConnection.php';
 
 require_once 'helpers/database.php';
+require_once 'helpers/FormTypes.php';
+
+$formTypes = FormTypes::getFormTypes($con);
+$formTargets = FormTypes::getFormTargets($con);
 
 // Get evaluation counts per form type
 $formTypeCounts = fetchData($con, 
@@ -28,7 +32,7 @@ $formTypeCounts = fetchData($con,
 
 // Create form type statistics cards
 $formStatisticsCards = [];
-foreach (FORM_TYPES as $typeKey => $formType) {
+foreach ($formTypes as $typeKey => $formType) {
     $count = 0;
     foreach ($formTypeCounts as $ftc) {
         if ($ftc['FormType'] === $typeKey) {
@@ -40,7 +44,7 @@ foreach (FORM_TYPES as $typeKey => $formType) {
     $formStatisticsCards[] = [
         "name" => $formType['name'],
         "statistics" => $count,
-        "icon" => str_replace('./assets/icons/', '', $formType['icon']),
+        "icon" => $formType['icon'],
         "link" => "./statistics.php?form_type=".$typeKey
     ];
 }
@@ -242,11 +246,7 @@ $enhancedStatisticsCards = [
                         <div class="card-name"><?php echo htmlspecialchars($card['name']); ?></div>
                     </div>
                     <div class="icon-box">
-                        <?php if (str_contains($card['icon'], 'svg')): ?>
-                            <img src="./assets/icons/<?php echo htmlspecialchars($card['icon']); ?>" alt="icon">
-                        <?php else: ?>
                             <i class="<?php echo htmlspecialchars($card['icon']); ?>"></i>
-                        <?php endif; ?>
                     </div>
                 </div>
             <?php endforeach; ?>
@@ -306,12 +306,12 @@ $enhancedStatisticsCards = [
                                     </td>
                                     <td>
                                         <div class="type-badge">
-                                            <?php echo FORM_TYPES[$formStat['FormType']]['name'] ?? 'غير محدد'; ?>
+                                            <?php echo $formTypes[$formStat['FormType']]['name'] ?? 'غير محدد'; ?>
                                         </div>
                                     </td>
                                     <td>
                                         <div class="target-badge">
-                                            <?php echo FORM_TARGETS[$formStat['FormTarget']]['name'] ?? 'غير محدد'; ?>
+                                            <?php echo $formTargets[$formStat['FormTarget']]['name'] ?? 'غير محدد'; ?>
                                         </div>
                                     </td>
                                     <td>

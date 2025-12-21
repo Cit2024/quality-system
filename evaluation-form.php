@@ -5,7 +5,6 @@ require_once 'config/dbConnectionCit.php';
 require_once 'config/DbConnection.php';
 require_once 'helpers/units.php';
 require_once 'components/answer_types/floating-input.php';
-require_once 'forms/form_constants.php';
 
 
 // Validate required parameters
@@ -14,26 +13,30 @@ if (!isset($_GET['evaluation'], $_GET['Evaluator'])) {
     die("Missing required parameters");
 }
 
-// Retrieve and sanitize the data from the URL or Session
-$Semester = $_SESSION['Semester'] ?? (!empty($_GET['Semester']) ? htmlspecialchars(trim($_GET['Semester'])) : null);
-$IDStudent = $_SESSION['IDStudent'] ?? (!empty($_GET['IDStudent']) ? htmlspecialchars(trim($_GET['IDStudent'])) : null);
-$IDCourse = $_SESSION['IDCourse'] ?? (!empty($_GET['IDCourse']) ? htmlspecialchars(trim($_GET['IDCourse'])) : null);
-$IDGroup = $_SESSION['IDGroup'] ?? (!empty($_GET['IDGroup']) ? htmlspecialchars(trim($_GET['IDGroup'])) : null);
-
-$Evaluator = htmlspecialchars(trim($_GET['Evaluator']));
-$TypeEvaluation = strtolower(trim($_GET['evaluation']));
-
-// Validate against constants
-if (!array_key_exists($Evaluator, FORM_TARGETS)) {
+// Validate against Database Types
+// Check Evaluator Type
+$stmt = $con->prepare("SELECT ID FROM EvaluatorTypes WHERE Slug = ?");
+$stmt->bind_param("s", $Evaluator);
+$stmt->execute();
+$stmt->store_result();
+if ($stmt->num_rows === 0) {
+    $stmt->close();
     header("HTTP/1.1 400 Bad Request");
     die("Invalid evaluator type");
 }
+$stmt->close();
 
-if (!array_key_exists($TypeEvaluation, FORM_TYPES)) {
+// Check Form Type
+$stmt = $con->prepare("SELECT ID FROM FormTypes WHERE Slug = ?");
+$stmt->bind_param("s", $TypeEvaluation);
+$stmt->execute();
+$stmt->store_result();
+if ($stmt->num_rows === 0) {
+    $stmt->close();
     header("HTTP/1.1 400 Bad Request");
     die("Invalid evaluation type");
 }
-
+$stmt->close();
 
 // Initialize form variables
 $form_exists = false;
@@ -41,101 +44,7 @@ $form_message = '';
 $form_by_type = [];
 $sections = [];
 
-if ($Evaluator == "student") {
-    // Get student information
-    $stmt = $conn_cit->prepare("SELECT KidNo, KesmNo FROM sprofiles WHERE KidNo = ?");
-    $stmt->bind_param("s", $IDStudent);
-    $stmt->execute();
-    $stmt->bind_result($kidNo, $kesmNo);
-    $student_info = [];
-    if ($stmt->fetch()) {
-        $student_info = [
-            'KidNo' => $kidNo,
-            'KesmNo' => $kesmNo,
-        ];
-    }
-    $stmt->free_result();
-    $stmt->close();
-    
-    if (empty($student_info)) {
-        die("Error: Student not found.");
-    }
-    
-    // Get department name
-    $IDDepartment = $student_info['KesmNo'];
-    $stmt = $conn_cit->prepare("SELECT did, Depname, dname FROM divitions WHERE KesmNo = ?");
-    $stmt->bind_param("s", $IDDepartment);
-    $stmt->execute();
-    $stmt->bind_result($divId, $depName, $dName);
-    $deparment_student_name = [];
-    if ($stmt->fetch()) {
-        $deparment_student_name = [
-            'did' => $divId,
-            'Depname' => $depName,
-            'dname' => $dName,
-        ];
-    }
-    $stmt->close();
-    
-    // Get course information
-    $stmt = $conn_cit->prepare("SELECT MadaName, MadaNo FROM mawad WHERE MadaNo = ?");
-    $stmt->bind_param("s", $IDCourse);
-    $stmt->execute();
-    $stmt->bind_result($MadaName, $MadaNo);
-    $course_info = [];
-    if ($stmt->fetch()) {
-        $course_info = [
-            'MadaNo' => $MadaNo,
-            'MadaName' => $MadaName,
-        ];
-    }
-    $stmt->close();
-    
-    // Get semester name
-    $stmt = $conn_cit->prepare("SELECT ZamanName FROM zaman WHERE ZamanNo = ?");
-    $stmt->bind_param("s", $Semester);
-    $stmt->execute();
-    $stmt->bind_result($ZamanName);
-    $semester_name = [];
-    if ($stmt->fetch()) {
-        $semester_name = [
-            'ZamanName' => $ZamanName
-        ];
-    }
-    $stmt->close();
-    
-    // Get teacher ID
-    $stmt = $conn_cit->prepare("SELECT TNo FROM coursesgroups WHERE ZamanNo = ? AND MadaNo = ? AND GNo = ?");
-    $stmt->bind_param("sss", $Semester, $IDCourse, $IDGroup);
-    $stmt->execute();
-    $stmt->bind_result($TNo);
-    $teacher_id_result = [];
-    if ($stmt->fetch()) {
-        $teacher_id_result = [
-            'TNo' => $TNo
-        ];
-    }
-    $stmt->close();
-    
-    $teacher_id = $teacher_id_result['TNo'] ?? null;
-    
-    // Get teacher name
-    if ($teacher_id) {
-        $stmt = $conn_cit->prepare("SELECT name FROM regteacher WHERE id = ?");
-        $stmt->bind_param("s", $teacher_id);
-        $stmt->execute();
-        $stmt->bind_result($name);
-        $teacher_name = [];
-        if ($stmt->fetch()) {
-            $teacher_name = [
-                'name' => $name
-            ];
-        }
-        $stmt->close();
-    }
-}
-
-// Dynamic form query using prepared statements
+// 1. Fetch Form First to know what fields are required
 try {
     $stmt = $con->prepare("
         SELECT ID, note, FormTarget, password 
@@ -162,40 +71,61 @@ try {
     die("Database error: " . $e->getMessage());
 }
 
-// --- Authorization Check ---
+// 2. Dynamic Parameter Validation
 if ($form_exists) {
     $formId = $form_by_type['ID'];
     
-    // Check if form has password or access fields
-    $requiresAuth = false;
-    if (!empty($form_by_type['password'])) {
-        $requiresAuth = true;
-    } else {
-        // Check for access fields
-        $stmt = $con->prepare("SELECT COUNT(*) as count FROM FormAccessFields WHERE FormID = ?");
-        $stmt->bind_param("i", $formId);
-        $stmt->execute();
-        $res = $stmt->get_result()->fetch_assoc();
-        if ($res['count'] > 0) {
-            $requiresAuth = true;
-        }
-        $stmt->close();
-    }
+    // Fetch Access Fields for this form
+    $stmt = $con->prepare("SELECT Label, Slug, IsRequired, FieldType FROM FormAccessFields WHERE FormID = ? ORDER BY OrderIndex ASC");
+    $stmt->bind_param("i", $formId);
+    $stmt->execute();
+    $fieldsResult = $stmt->get_result();
     
-    if ($requiresAuth) {
-        // Check if authorized in session
-        if (!isset($_SESSION['form_auth_' . $formId])) {
-            // Redirect to login
-            $query = http_build_query($_GET);
-            // Add ID to query if not present (it might not be in GET for evaluation-form, as it uses type/target)
-            // But wait, evaluation-form finds the form by type/target.
-            // We need to pass the ID to login-form.php
-            header("Location: login-form.php?id=$formId&" . $query);
-            exit();
+    $missingParams = [];
+    $redirectNeeded = false;
+    $access_fields = [];
+    
+    while ($field = $fieldsResult->fetch_assoc()) {
+        $access_fields[] = $field;
+        $slug = $field['Slug'];
+        $isRequired = $field['IsRequired'];
+        
+        // Check if value exists in GET or SESSION
+        // We use the Slug as the variable name (e.g., if Slug is 'IDStudent', we look for $_GET['IDStudent'])
+        $value = null;
+        if (!empty($_GET[$slug])) {
+            $value = htmlspecialchars(trim($_GET[$slug]));
+        } elseif (isset($_SESSION[$slug])) {
+            $value = $_SESSION[$slug];
         }
+        
+        // Dynamically assign variable with the name of the Slug
+        // This ensures backward compatibility if existing code uses variables like $IDStudent
+        // We capitalize the first letter to match convention if needed, strictly speaking, PHP variables are case sensitive.
+        // The user's legacy code uses $Semester, $IDStudent (PascalCase).
+        // We should assume the Slug in DB matches the variable name expected by the legacy code (e.g. "IDStudent").
+        if ($slug) {
+            $$slug = $value;
+        }
+
+        if ($isRequired && empty($value)) {
+            $missingParams[] = $field['Label'];
+            $redirectNeeded = true;
+        }
+    }
+    $stmt->close();
+    
+    // Also check for Form Password (if set) and authentication session
+    $hasPassword = !empty($form_by_type['password']);
+    $isAuthenticated = isset($_SESSION['form_auth_' . $formId]);
+
+    if (($redirectNeeded || ($hasPassword && !$isAuthenticated))) {
+        // Redirect to login-form.php
+        $query = http_build_query($_GET);
+        header("Location: login-form.php?id=$formId&" . $query);
+        exit();
     }
 }
-// ---------------------------
     
 // If form exists, get its sections and questions
 if ($form_exists) {
@@ -290,10 +220,13 @@ if ($form_exists) {
         <input type="hidden" name="evaluation_type" value="<?php echo $TypeEvaluation; ?>">
         
         <!-- Pass Context Data -->
-        <?php if (isset($Semester) && $Semester): ?><input type="hidden" name="Semester" value="<?= htmlspecialchars($Semester) ?>"><?php endif; ?>
-        <?php if (isset($IDStudent) && $IDStudent): ?><input type="hidden" name="IDStudent" value="<?= htmlspecialchars($IDStudent) ?>"><?php endif; ?>
-        <?php if (isset($IDCourse) && $IDCourse): ?><input type="hidden" name="IDCourse" value="<?= htmlspecialchars($IDCourse) ?>"><?php endif; ?>
-        <?php if (isset($IDGroup) && $IDGroup): ?><input type="hidden" name="IDGroup" value="<?= htmlspecialchars($IDGroup) ?>"><?php endif; ?>
+        <!-- Pass Context Data (Dynamic) -->
+        <?php foreach ($access_fields as $field): 
+            $slug = $field['Slug'];
+            if ($slug && isset($$slug) && $$slug): ?>
+                <input type="hidden" name="<?= htmlspecialchars($slug) ?>" value="<?= htmlspecialchars($$slug) ?>">
+            <?php endif; 
+        endforeach; ?>
         
         <!-- Pass Session Data as Hidden Fields for ResponseHandler -->
         <?php 

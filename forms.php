@@ -15,7 +15,11 @@ require_once 'helpers/database.php';
 // Get trimText, formatBilingualText function
 require_once 'helpers/units.php';
 
-require_once 'forms/form_constants.php';
+// require_once 'forms/form_constants.php'; // Removed
+require_once 'helpers/FormTypes.php';
+
+$formTypes = FormTypes::getFormTypes($con);
+$formTargets = FormTypes::getFormTargets($con);
 
 // Fetch all forms
 $forms = fetchData($con, "SELECT * FROM Form");
@@ -93,27 +97,27 @@ $stats = fetchData($con, "SELECT COUNT(ID) AS total_forms FROM Form")[0] ?? ['to
 
                                         <div class="evaluate-evaluated-container">
                                             <div class="evaluate">
-                                                <img src="<?= FORM_TARGETS[$form['FormTarget']]['icon'] ?? './assets/icons/user-check.svg' ?>" alt="Evaluator" />
+                                                <i class="<?= $formTargets[$form['FormTarget']]['icon'] ?? 'fa-solid fa-user-check' ?>"></i>
                                                 <?php
                                                 echo match($form['FormTarget'] ?? '') {
-                                                    'student' => FORM_TARGETS['student']['name'],
-                                                    'teacher' => FORM_TARGETS['teacher']['name'],
-                                                    'admin' => FORM_TARGETS['admin']['name'],
-                                                    'alumni' => FORM_TARGETS['alumni']['name'],
-                                                    'employer' => FORM_TARGETS['employer']['name'],
+                                                    'student' => $formTargets['student']['name'],
+                                                    'teacher' => $formTargets['teacher']['name'],
+                                                    'admin' => $formTargets['admin']['name'],
+                                                    'alumni' => $formTargets['alumni']['name'],
+                                                    'employer' => $formTargets['employer']['name'],
                                                     default => 'غير معرف'
                                                 };
                                                 ?>
                                             </div>
                                             <div class="evaluated">
-                                                <img src="<?= FORM_TYPES[$form['FormType']]['icon'] ?? './assets/icons/clipboard-list.svg' ?>" alt="Evaluated" />
+                                                <i class="<?= $formTypes[$form['FormType']]['icon'] ?? 'fa-solid fa-clipboard-list' ?>"></i>
                                                 <?php
                                                 echo match($form['FormType'] ?? '') {
-                                                    'course_evaluation' => FORM_TYPES['course_evaluation']['name'],
-                                                    'teacher_evaluation' => FORM_TYPES['teacher_evaluation']['name'],
-                                                    'program_evaluation' => FORM_TYPES['program_evaluation']['name'],
-                                                    'facility_evaluation' => FORM_TYPES['facility_evaluation']['name'],
-                                                    'leaders_evaluation' => FORM_TYPES['leaders_evaluation']['name'],
+                                                    'course_evaluation' => $formTypes['course_evaluation']['name'],
+                                                    'teacher_evaluation' => $formTypes['teacher_evaluation']['name'],
+                                                    'program_evaluation' => $formTypes['program_evaluation']['name'],
+                                                    'facility_evaluation' => $formTypes['facility_evaluation']['name'],
+                                                    'leaders_evaluation' => $formTypes['leaders_evaluation']['name'],
                                                     default => 'غير معرف'
                                                 };
                                                 ?>

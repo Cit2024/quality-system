@@ -10,12 +10,16 @@ if (!isset($_SESSION['teacher_id'])) {
 }
 
 include 'components/header.php';
-include 'forms/form_constants.php';
+// include 'forms/form_constants.php'; // Removed
 
 // Include database connections
 require_once 'config/dbConnectionCit.php';
 require_once 'config/DbConnection.php';
 include 'helpers/database.php';
+require_once 'helpers/FormTypes.php';
+
+$formTypes = FormTypes::getFormTypes($con);
+$formTargets = FormTypes::getFormTargets($con);
 
 
 $teacher_id = $_SESSION['teacher_id'];
@@ -23,8 +27,8 @@ $teacher_name = $_SESSION['teacher_name'] ?? 'Teacher';
 
 // Create filtered form types array
 $FILTERED_FORM_TYPES = [
-    'course_evaluation' => FORM_TYPES['course_evaluation'],
-    'teacher_evaluation' => FORM_TYPES['teacher_evaluation']
+    'course_evaluation' => $formTypes['course_evaluation'],
+    'teacher_evaluation' => $formTypes['teacher_evaluation']
 ];
 ?>
 
@@ -74,7 +78,7 @@ $FILTERED_FORM_TYPES = [
                     <div class="sub-tabs">
                         <?php foreach ($FILTERED_FORM_TYPES as $type => $typeData): ?>
                             <button class="sub-tab-button" data-type="<?= $type ?>">
-                                <img src="<?= $typeData['icon'] ?>" class="sub-tab-icon">
+                                <i class="<?= $typeData['icon'] ?> sub-tab-icon"></i>
                                 <?= $typeData['name'] ?>
                             </button>
                         <?php endforeach; ?>
@@ -99,8 +103,8 @@ $FILTERED_FORM_TYPES = [
 
     <!-- ==================== JavaScript ==================== -->
     <script>
-        window.FORM_TYPES = <?= json_encode(FORM_TYPES) ?>;
-        window.FORM_TARGETS = <?= json_encode(FORM_TARGETS) ?>;
+        window.FORM_TYPES = <?= json_encode($formTypes) ?>;
+        window.FORM_TARGETS = <?= json_encode($formTargets) ?>;
         window.TEACHER_ID = <?= json_encode($teacher_id) ?>;
     </script>
     <script src="./scripts/lib/utils.js"></script>
