@@ -1,25 +1,29 @@
 <?php
 // statistics/router.php (corrected)
 session_start();
-require_once __DIR__.'/../forms/form_constants.php';
+require_once __DIR__.'/../config/DbConnection.php';
+require_once __DIR__.'/../helpers/FormTypes.php';
+
+$formTypes = FormTypes::getFormTypes($con);
+$formTargets = FormTypes::getFormTargets($con);
 
 // Sanitize inputs
 $target = preg_replace('/[^a-z_]/', '', $_GET['target'] ?? 'student');
 $type = preg_replace('/[^a-z_]/', '', $_GET['type'] ?? 'course_evaluation');
 
-// Validate against constants
-if (!isset(FORM_TARGETS[$target])) {
+// Validate against variables
+if (!isset($formTargets[$target])) {
     header("HTTP/1.1 400 Bad Request");
     exit("Invalid evaluation target");
 }
 
-if (!isset(FORM_TYPES[$type])) {
+if (!isset($formTypes[$type])) {
     header("HTTP/1.1 400 Bad Request");
     exit("Invalid form type");
 }
 
 // Check allowed combinations
-if (!in_array($target, FORM_TYPES[$type]['allowed_targets'], true)) {
+if (!in_array($target, $formTypes[$type]['allowed_targets'], true)) {
     header("HTTP/1.1 403 Forbidden");
     exit("Invalid target-type combination");
 }

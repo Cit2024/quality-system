@@ -3,7 +3,8 @@
 require_once '../config/dbConnectionCit.php';
 require_once '../config/DbConnection.php';
 require_once '../helpers/database.php';
-require_once '../forms/form_constants.php';
+// require_once '../forms/form_constants.php'; // Removed
+require_once '../helpers/FormTypes.php';
 
 header('Content-Type: application/json');
 
@@ -45,7 +46,9 @@ class TeacherStatisticsHandler
         if (!is_numeric($teacherId)) {
             throw new InvalidArgumentException('Invalid teacher ID');
         }
-        if (!isset(FORM_TYPES[$formType])) {
+
+        $formTypes = FormTypes::getFormTypes($this->con);
+        if (!isset($formTypes[$formType])) {
             throw new InvalidArgumentException('Invalid form type');
         }
     }

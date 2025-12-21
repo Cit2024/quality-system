@@ -3,7 +3,8 @@
 require_once '../config/dbConnectionCit.php';
 require_once '../config/DbConnection.php';
 require_once '../helpers/database.php';
-require_once '../forms/form_constants.php';
+// require_once '../forms/form_constants.php'; // Removed
+require_once '../helpers/FormTypes.php';
 
 header('Content-Type: application/json');
 
@@ -38,10 +39,13 @@ class StatisticsHandler {
     }
 
     private function validateInput($formTarget, $formType) {
-        if (!isset(FORM_TARGETS[$formTarget])) {
+        $formTargets = FormTypes::getFormTargets($this->con);
+        $formTypes = FormTypes::getFormTypes($this->con);
+
+        if (!isset($formTargets[$formTarget])) {
             throw new InvalidArgumentException('Invalid form target');
         }
-        if (!isset(FORM_TYPES[$formType])) {
+        if (!isset($formTypes[$formType])) {
             throw new InvalidArgumentException('Invalid form type');
         }
     }
