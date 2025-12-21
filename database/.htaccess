@@ -1,0 +1,18 @@
+# ===================================================================
+# Database Directory Protection
+# ===================================================================
+# Deny all access to database files and migrations
+# ===================================================================
+
+# Deny access to this entire directory
+Order Deny,Allow
+Deny from all
+
+# Prevent directory listing
+Options -Indexes
+
+# Additional protection for SQL files
+<FilesMatch "\.(sql|db|sqlite)$">
+    Order Allow,Deny
+    Deny from all
+</FilesMatch>
