@@ -22,6 +22,38 @@ if (!array_key_exists($newType, FORM_TYPES)) {
     exit();
 }
 
+// Get current FormTarget to validate combination
+$checkStmt = mysqli_prepare($con, "SELECT FormTarget FROM Form WHERE ID = ?");
+mysqmi_stmt_bind_param($checkStmt, 'i', $formId);
+mysqli_stmt_execute($checkStmt);
+$result = mysqli_stmt_get_result($checkStmt);
+$currentForm = mysqli_fetch_assoc($result);
+mysqli_stmt_close($checkStmt);
+
+if (!$currentForm) {
+    echo json_encode(['status' => 'error', 'message' => 'النموذج غير موجود']);
+    exit();
+}
+
+// Validate that the new type + current target combination is allowed
+$validateStmt = mysqli_prepare($con, "
+    SELECT COUNT(*) as count
+    FROM FormTypes ft
+    JOIN FormType_EvaluatorType fte ON ft.ID = fte.FormTypeID
+    JOIN EvaluatorTypes et ON fte.EvaluatorTypeID = et.ID
+    WHERE ft.Slug = ? AND et.Slug = ?
+");
+mysqli_stmt_bind_param($validateStmt, 'ss', $newType, $currentForm['FormTarget']);
+mysqli_stmt_execute($validateStmt);
+$validateResult = mysqli_stmt_get_result($validateStmt);
+$isValid = mysqli_fetch_assoc($validateResult)['count'] > 0;
+mysqli_stmt_close($validateStmt);
+
+if (!$isValid) {
+    echo json_encode(['status' => 'error', 'message' => 'هذا النوع غير متوافق مع المُقيِّم الحالي']);
+    exit();
+}
+
 // Update the form type in the database
 $query = "UPDATE Form SET FormType = ? WHERE ID = ?";
 $stmt = mysqli_prepare($con, $query);

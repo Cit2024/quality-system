@@ -10,7 +10,11 @@ if (!isset($_SESSION['admin_id'])) {
 
 // Include the database connection
 include '.././config/DbConnection.php';
-include 'form_constants.php'; 
+// include 'form_constants.php'; // Removed
+require_once '../helpers/FormTypes.php';
+
+$formTypes = FormTypes::getFormTypes($con);
+$formTargets = FormTypes::getFormTargets($con); 
 
 // Handle API Requests (GET)
 if ($_SERVER['REQUEST_METHOD'] === 'GET' && isset($_GET['action'])) {
@@ -652,8 +656,8 @@ if (!$sections_result) {
                             <input type="checkbox" id="form-status-toggle" <?php echo $form['FormStatus'] === 'published' ? 'checked' : ''; ?>>
                             <div class="slider">
                                 <div class="circle">
-                                    <img src=".././assets/icons/cross.svg" class="cross" alt="Cross Icon" />
-                                    <img src=".././assets/icons/checkmark.svg" class="checkmark" alt="Checkmark Icon" />
+                                    <i class="fa-solid fa-xmark cross"></i>
+                                    <i class="fa-solid fa-check checkmark"></i>
                                 </div>
                             </div>
                         </label>
@@ -661,10 +665,10 @@ if (!$sections_result) {
                         <!-- Form Status -->
                         <div class="form-status">
                             <?php if ($form['FormStatus'] === 'published'): ?>
-                                <img src=".././assets/icons/badge-check.svg" alt="Published" />
+                                <i class="fa-solid fa-badge-check"></i>
                                 <span>منشور</span>
                             <?php else: ?>
-                                <img src=".././assets/icons/badge-alert.svg" alt="Draft" />
+                                <i class="fa-solid fa-triangle-exclamation"></i>
                                 <span>مسودة</span>
                             <?php endif; ?>
                         </div>
@@ -675,11 +679,11 @@ if (!$sections_result) {
                         <span>المُقيِّم : </span>
                         <div class="custom-select-wrapper form-target-control" id="target-select-wrapper">
                             <div class="custom-select-trigger js-custom-select-trigger" data-type="target">
-                                <span id="target-selected-text"><?= FORM_TARGETS[$form['FormTarget']]['name'] ?? 'اختر' ?></span>
+                                <span id="target-selected-text"><?= $formTargets[$form['FormTarget']]['name'] ?? 'اختر' ?></span>
                                 <i class="fa-solid fa-chevron-down"></i>
                             </div>
                             <div class="custom-select-options" id="target-options">
-                                <?php foreach (FORM_TARGETS as $key => $target): ?>
+                                <?php foreach ($formTargets as $key => $target): ?>
                                     <div class="custom-option js-custom-option <?= $key === $form['FormTarget'] ? 'selected' : '' ?>" 
                                          data-type="target" 
                                          data-value="<?= $key ?>" 
@@ -704,11 +708,11 @@ if (!$sections_result) {
                         <span>نوع التقييم : </span>
                         <div class="custom-select-wrapper form-type-control" id="type-select-wrapper">
                             <div class="custom-select-trigger js-custom-select-trigger" data-type="type">
-                                <span id="type-selected-text"><?= FORM_TYPES[$form['FormType']]['name'] ?? 'اختر' ?></span>
+                                <span id="type-selected-text"><?= $formTypes[$form['FormType']]['name'] ?? 'اختر' ?></span>
                                 <i class="fa-solid fa-chevron-down"></i>
                             </div>
                             <div class="custom-select-options" id="type-options">
-                                <?php foreach (FORM_TYPES as $key => $type): ?>
+                                <?php foreach ($formTypes as $key => $type): ?>
                                     <div class="custom-option js-custom-option <?= $key === $form['FormType'] ? 'selected' : '' ?>" 
                                          data-type="type"
                                          data-value="<?= $key ?>" 
@@ -927,10 +931,16 @@ if (!$sections_result) {
 
                 <div class="form-group">
                     <label>الأيقونة</label>
-                    <div class="icon-selector">
-                        <!-- Icons will be injected here -->
+                    <input type="text" id="iconSearch" placeholder="ابحث عن أيقونة..." style="width: 100%; padding: 8px; margin-bottom: 10px; border: 1px solid #ddd; border-radius: 4px;">
+                    <div class="icon-selector" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(50px, 1fr)); gap: 8px; max-height: 300px; overflow-y: auto; border: 1px solid #ddd; padding: 10px; border-radius: 4px; background: #f9f9f9;">
+                        <div style="grid-column: 1 / -1; text-align: center; padding: 20px; color: #999;">
+                            <i class="fa-solid fa-spinner fa-spin"></i> جاري التحميل...
+                        </div>
                     </div>
                     <input type="hidden" id="typeIcon" name="icon" required>
+                    <div id="selectedIconPreview" style="margin-top: 10px; padding: 10px; border: 1px solid #ddd; border-radius: 4px; display: none; background: #fff;">
+                        <strong>الأيقونة المختارة:</strong> <i id="selectedIconDisplay" class="" style="font-size: 20px; margin: 0 10px;"></i> <span id="selectedIconName"></span>
+                    </div>
                 </div>
 
                 <div class="form-group">
@@ -999,31 +1009,13 @@ if (!$sections_result) {
         };
         
         // Define TYPE_QUESTION for question type modal
-        window.TYPE_QUESTION = {
-            'multiple_choice': {
-                name: 'إختيار من متعدد',
-                icon: 'assets/icons/list-check.svg'
-            },
-            'true_false': {
-                name: 'صح/خطأ',
-                icon: 'assets/icons/square-check.svg'
-            },
-            'evaluation': {
-                name: 'تقييم',
-                icon: 'assets/icons/star.svg'
-            },
-            'essay': {
-                name: 'مقالي',
-                icon: 'assets/icons/quote.svg'
-            }
-        };
-        
-        console.log("Form Config initialized:", window.formConfig);
-        console.log("TYPE_QUESTION initialized:", window.TYPE_QUESTION);
+        // Define TYPE_QUESTION for question type modal
+        window.TYPE_QUESTION = <?= json_encode(FormTypes::TYPE_QUESTION) ?>;
+
     </script>
-    <script src="../scripts/forms.js"></script>
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/printThis/1.15.0/printThis.min.js"></script>
+    <script src="../scripts/forms.js"></script>
 </body>
 
 </html>

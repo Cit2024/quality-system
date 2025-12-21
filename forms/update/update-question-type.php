@@ -8,7 +8,7 @@ if (!isset($_SESSION['admin_id'])) {
 
 include '../../config/DbConnection.php';
 
-include '../form_constants.php';
+include '../../helpers/FormTypes.php';
 
 //  Data verification
 if (!isset($_POST['id'], $_POST['type'])) {
@@ -19,7 +19,7 @@ if (!isset($_POST['id'], $_POST['type'])) {
 $questionId = $_POST['id'];
 $newType = $_POST['type'];
 
-if(!array_key_exists($newType, TYPE_QUESTION)) {
+if(!array_key_exists($newType, FormTypes::TYPE_QUESTION)) {
     echo json_encode(['status' => 'error', 'message' => 'نوع السؤال غير صالح']);
     exit();
 }
