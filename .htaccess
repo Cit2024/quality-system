@@ -1,0 +1,108 @@
+# ===================================================================
+# Quality System - Main .htaccess Configuration
+# ===================================================================
+# Purpose: Protect sensitive files and directories from direct access
+# ===================================================================
+
+# Deny access to documentation files
+<FilesMatch "^(README\.md|ARCHITECTURE\.md|folder-structure\.md|project-structure\.txt)$">
+    Order Allow,Deny
+    Deny from all
+</FilesMatch>
+
+# Deny access to git files and folders
+<FilesMatch "^\.git">
+    Order Allow,Deny
+    Deny from all
+</FilesMatch>
+
+# Deny access to .env and configuration files
+<FilesMatch "\.(env|ini|log|sh|sql)$">
+    Order Allow,Deny
+    Deny from all
+</FilesMatch>
+
+# Deny access to backup and temporary files
+<FilesMatch "~$">
+    Order Allow,Deny
+    Deny from all
+</FilesMatch>
+
+# Protect .htaccess itself
+<Files .htaccess>
+    Order Allow,Deny
+    Deny from all
+</Files>
+
+# Disable directory browsing
+Options -Indexes
+
+# Prevent access to hidden files (starting with .)
+<FilesMatch "^\.">
+    Order Allow,Deny
+    Deny from all
+</FilesMatch>
+
+# Set default charset
+AddDefaultCharset UTF-8
+
+# Enable error pages (optional - customize as needed)
+# ErrorDocument 403 /error-403.php
+# ErrorDocument 404 /error-404.php
+
+# Enable mod_rewrite for clean URLs (if needed)
+# RewriteEngine On
+# RewriteCond %{REQUEST_FILENAME} !-f
+# RewriteCond %{REQUEST_FILENAME} !-d
+# RewriteRule ^(.*)$ index.php [QSA,L]
+
+# Security Headers
+<IfModule mod_headers.c>
+    # Prevent clickjacking
+    Header always set X-Frame-Options "SAMEORIGIN"
+    
+    # XSS Protection
+    Header always set X-XSS-Protection "1; mode=block"
+    
+    # Prevent MIME sniffing
+    Header always set X-Content-Type-Options "nosniff"
+    
+    # Referrer Policy
+    Header always set Referrer-Policy "strict-origin-when-cross-origin"
+</IfModule>
+
+# PHP Security Settings (if applicable)
+<IfModule mod_php.c>
+    # Disable dangerous PHP functions
+    php_flag display_errors Off
+    php_flag log_errors On
+    php_value error_log /var/log/php_errors.log
+    
+    # Limit file upload size (adjust as needed)
+    php_value upload_max_filesize 10M
+    php_value post_max_size 10M
+    
+    # Session security
+    php_flag session.cookie_httponly On
+    php_flag session.cookie_secure On
+    php_value session.cookie_samesite Strict
+</IfModule>
+
+# Compression for better performance
+<IfModule mod_deflate.c>
+    AddOutputFilterByType DEFLATE text/html text/plain text/xml text/css text/javascript application/javascript
+</IfModule>
+
+# Browser Caching
+<IfModule mod_expires.c>
+    ExpiresActive On
+    ExpiresByType image/jpg "access plus 1 year"
+    ExpiresByType image/jpeg "access plus 1 year"
+    ExpiresByType image/gif "access plus 1 year"
+    ExpiresByType image/png "access plus 1 year"
+    ExpiresByType image/svg+xml "access plus 1 year"
+    ExpiresByType text/css "access plus 1 month"
+    ExpiresByType application/javascript "access plus 1 month"
+    ExpiresByType application/x-javascript "access plus 1 month"
+    ExpiresByType text/javascript "access plus 1 month"
+</IfModule>
