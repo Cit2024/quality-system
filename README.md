@@ -66,6 +66,7 @@ This document provides an overview, techniques used, setup, operational guidance
   - Bilingual text support via helper (e.g., formatBilingualText) to render Arabic/English where provided.
   - Data attributes (data-question-id, data-question-type) for targeted behavior without heavy frameworks.
   - CSS styling with local stylesheets and Font Awesome icons for UI elements.
+  - Interactive icon picker for visual icon selection in admin UI.
 
 - Information Flow
   - PHP injects configuration values into the browser (e.g., window.FORM_TYPES, window.FORM_TARGETS).
@@ -108,7 +109,15 @@ This document provides an overview, techniques used, setup, operational guidance
 - /styles
   - evaluation-form.css
 - /assets
-  - /icons (e.g., college.png, SVG logos)
+  - /icons (SVG icons for legacy compatibility)
+  - /fonts (Arabic font files for RTL support)
+- /database
+  - /migrations (database schema updates)
+    - 005_cleanup_form_table.sql (removes duplicate columns)
+    - 006_add_performance_indexes.sql (optimizes queries)
+    - 007_sync_to_complete_schema.sql (schema synchronization)
+    - 008_populate_type_relationships.sql (Form-Evaluator combinations)
+    - 009_convert_icons_to_fontawesome.sql (icon system upgrade)
 
 Note: Some file names and locations may vary slightly depending on your deployment; align with your environment.
 
@@ -244,6 +253,14 @@ Recommendations:
 - Avoid hardcoding absolute URLs; rely on server variables for base URL derivation and support reverse proxies.
 
 ---
+
+## Recent Enhancements (2025-12-21)
+
+- **Icon System Upgrade**: Migrated from SVG file paths to Font Awesome class names for easier maintenance
+- **Visual Icon Picker**: Interactive grid-based icon selector with search in admin UI (60+ icons)
+- **Type Validation**: FormType_EvaluatorType relationship enforcement prevents invalid combinations
+- **Performance Indexes**: Database optimization for faster queries on frequently accessed columns
+- **Dynamic Metadata**: FormAccessFields system with Slug-based field management
 
 ## Future Enhancements (Suggested)
 

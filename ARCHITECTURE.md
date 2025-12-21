@@ -158,18 +158,21 @@
 │  │ ├─ ID (PK), FormID (FK)                                  │ │
 │  │ ├─ Label (Arabic Name)                                   │ │
 │  │ ├─ Slug (URL Param)                                      │ │
-│  │ └─ FieldType, IsRequired                                 │ │
+│  │ └─ FieldType, IsRequired, OrderIndex                     │ │
 │  └──────────────────────────────────────────────────────────┘ │
 │                                                               │
 │  Features:                                                    │
 │  • Create new form types and evaluator types via admin UI     │
+│  • Visual icon picker with 60+ Font Awesome icons             │
 │  • Edit existing types (name, slug, icon)                     │
 │  • Delete types (with usage validation)                       │
 │  • Manage allowed targets (which evaluators can use which     │
-│    form types)                                                │
+│    form types) - ENFORCED via validation                      │
+│  • Icon system uses Font Awesome classes (fa-solid fa-*)      │
 │  • Database-driven constants (no code changes needed)         │
 │  • Set password protection per form                           │
 │  • Define custom registration fields per form                 │
+│  • FormType_EvaluatorType validation prevents invalid combos  │
 │  • All logic self-contained in edit-form.php (no admin/api)   │
 │                                                               │
 └───────────────────────────────────────────────────────────────┘
@@ -186,13 +189,24 @@
 │     - Instantiates ResponseHandler                             │
 │                                                                │
 │  2. Core Logic: helpers/ResponseHandler.php                    │
-│     - validateAccessFields(): Checks FormAccessFields          │
+│     - validateAndCollectMetadata(): Checks FormAccessFields    │
+│       using Slug-based keys from POST data                     │
 │     - enrichStudentMetadata(): Auto-finds Teacher ID           │
+│     - isDuplicate(): Prevents duplicate submissions            │
 │     - saveAnswers(): Saves to EvaluationResponses              │
 │                                                                │
 │  3. Dynamic Metadata                                           │
 │     - No hardcoded columns (except standard ones)              │
+│     - Fields identified by Slug column                         │
 │     - All registration fields saved in JSON `Metadata`         │
+│     - Backward compatible: accepts field_ID or Slug inputs     │
+│                                                                │
+│  4. Type Validation (Added 2025-12-21)                         │
+│     - update-form-type.php validates new type with existing    │
+│       target against FormType_EvaluatorType                    │
+│     - update-form-target.php validates new target with         │
+│       existing type against FormType_EvaluatorType             │
+│     - Prevents invalid form configurations                     │
 │                                                                │
 └────────────────────────────────────────────────────────────────┘
 ```
@@ -400,5 +414,54 @@ Employer       ──▶  Direct link
 
 ---
 
+## Recent System Changes (Dec 2025)
+
+### Database Migrations
+
+**005_cleanup_form_table.sql**
+- Removed unused `FormTypeID` and `EvaluatorTypeID` columns from Form table
+- System uses legacy `FormType` (string) and `FormTarget` (string) columns
+
+**006_add_performance_indexes.sql**
+- Added indexes on frequently queried columns
+- Optimized Form, Section, Question, FormAccessFields queries
+- Improved EvaluationResponses aggregation performance
+
+**007_sync_to_complete_schema.sql**
+- Synchronizes existing database with complete schema
+- Safe for databases with existing data
+- Adds missing tables: FormTypes, EvaluatorTypes, FormType_EvaluatorType
+
+**008_populate_type_relationships.sql**
+- Populates FormType_EvaluatorType with valid combinations
+- Defines allowed evaluator types for each form type
+- Enables validation enforcement
+
+**009_convert_icons_to_fontawesome.sql**
+- Converts icon storage from SVG paths to Font Awesome classes
+- Example: `./assets/icons/book-solid.svg` → `fa-solid fa-book-bookmark`
+- Enables visual icon picker in admin UI
+
+### Icon System Upgrade
+- **Storage**: Font Awesome class names instead of file paths
+- **Display**: `<i class="fa-solid fa-*">` instead of `<img src="...">` 
+- **Admin UI**: Interactive icon picker with search (60+ icons)
+- **Files Modified**: statistics.php, forms.php, dashboard.php, edit-form.php
+
+### Validation Enforcement
+- **FormType_EvaluatorType**: Prevents invalid form/evaluator combinations
+- **update-form-type.php**: Validates type changes
+- **update-form-target.php**: Validates target changes
+- **Error Messages**: Arabic feedback for invalid combinations
+
+### Dynamic Metadata System
+- **FormAccessFields**: Slug column added for consistent naming
+- **ResponseHandler**: Accepts both `field_ID` and Slug inputs
+- **login-form.php**: Stores values using Slug keys in session
+- **evaluation-form.php**: Compatible with Slug-based system
+
+---
+
 **Created**: 2025-11-28  
+**Last Updated**: 2025-12-21  
 **Developer**: Mohamed Fouad Bala
