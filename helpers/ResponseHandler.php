@@ -62,24 +62,27 @@ class ResponseHandler {
         $result = $stmt->get_result();
 
         while ($field = $result->fetch_assoc()) {
-            $fieldName = 'field_' . $field['ID']; // The input name in the HTML form
+            // Use Slug if available, fallback to Label
+            $fieldKey = !empty($field['Slug']) ? $field['Slug'] : $field['Label'];
+            
+            // Try multiple possible input names:
+            // 1. Direct slug name (from evaluation-form hidden inputs)
+            // 2. field_ID pattern (from login-form inputs)
+            $value = null;
+            if (isset($postData[$fieldKey])) {
+                $value = trim($postData[$fieldKey]);
+            } elseif (isset($postData['field_' . $field['ID']])) {
+                $value = trim($postData['field_' . $field['ID']]);
+            }
             
             // Check if required
-            if ($field['IsRequired'] && empty($postData[$fieldName])) {
+            if ($field['IsRequired'] && empty($value)) {
                 throw new Exception("Field '{$field['Label']}' is required");
             }
 
-            // Collect value
-            if (isset($postData[$fieldName])) {
-                $metadata[$field['Label']] = htmlspecialchars(trim($postData[$fieldName]));
-            }
-        }
-
-        // Also collect standard fields if present (backward compatibility/standard fields)
-        $standardFields = ['IDStudent', 'IDCourse', 'IDGroup', 'Semester', 'GraduationYear', 'Job', 'Specialization', 'GraduateName'];
-        foreach ($standardFields as $key) {
-            if (!empty($postData[$key])) {
-                $metadata[$key] = htmlspecialchars(trim($postData[$key]));
+            // Collect value with Slug as the key
+            if (!empty($value)) {
+                $metadata[$fieldKey] = htmlspecialchars($value);
             }
         }
 
