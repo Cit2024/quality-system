@@ -1,0 +1,92 @@
+{
+  "program_evaluation": {
+    "student": {
+      "metadata_filters": {
+        "semester": {
+          "type": "int",
+          "param": "semester",
+          "bind_type": "i"
+        }
+      },
+      "where_conditions": [
+        "er.Semester = ?"
+      ],
+      "entity_lookup": null,
+      "statistics_modules": [
+        "participation",
+        "department_breakdown",
+        "historical_trending"
+      ],
+      "view_template": "program_evaluation.php",
+      "page_title": "تقييم البرنامج"
+    }
+  },
+  "facility_evaluation": {
+    "student": {
+      "metadata_filters": {
+        "semester": {
+          "type": "int",
+          "param": "semester",
+          "bind_type": "i"
+        }
+      },
+      "where_conditions": [
+        "er.Semester = ?"
+      ],
+      "entity_lookup": null,
+      "statistics_modules": [
+        "participation",
+        "department_breakdown",
+        "historical_trending"
+      ],
+      "view_template": "program_evaluation.php",
+      "page_title": "تقييم المرافق"
+    }
+  },
+  "course_evaluation": {
+    "student": {
+      "metadata_filters": {
+        "semester": {
+          "type": "int",
+          "param": "semester",
+          "bind_type": "i"
+        },
+        "course_id": {
+          "type": "string",
+          "param": "courseId",
+          "bind_type": "s",
+          "json_path": "$.course_id"
+        }
+      },
+      "where_conditions": [
+        "er.Semester = ?",
+        "JSON_EXTRACT(er.Metadata, '$.course_id') = ?"
+      ],
+      "entity_lookup": {
+        "type": "course",
+        "query": "SELECT m.MadaName, m.MadaNo FROM mawad m WHERE m.MadaNo = ?",
+        "params": ["course_id"],
+        "bind_types": "s"
+      },
+      "statistics_modules": [
+        "participation",
+        "department_breakdown",
+        "course_specific",
+        "historical_trending"
+      ],
+      "custom_modules": [
+        "teacher_lookup",
+        "enrolled_students_count"
+      ],
+      "view_template": "course_evaluation.php",
+      "page_title": "تقييم المقرر"
+    }
+  },
+  "teacher_evaluation": {
+    "student": {
+      "use_custom_file": true,
+      "custom_path": "statistics/analytics/custom/teacher_evaluation_student.php",
+      "reason": "Complex multi-course aggregation requires custom logic"
+    }
+  }
+}
