@@ -240,25 +240,29 @@ $participants = $stats['participants'] ?? 0;
 
     <?php if (isset($viewData['evaluator'])): ?>
         <script>
-            document.getElementById('period-selector').addEventListener('change', async (e) => {
-                const selectedPeriod = e.target.value;
-                const participantsElement = document.getElementById('participants-count');
+            // Only attach event listener if element exists
+            const periodSelector = document.getElementById('period-selector');
+            if (periodSelector) {
+                periodSelector.addEventListener('change', async (e) => {
+                    const selectedPeriod = e.target.value;
+                    const participantsElement = document.getElementById('participants-count');
 
-                try {
-                    const response = await fetch(`./analytics/targets/alumni/types/get_participants.php?period=${selectedPeriod}`);
-                    const data = await response.json();
+                    try {
+                        const response = await fetch(`./analytics/targets/alumni/types/get_participants.php?period=${selectedPeriod}`);
+                        const data = await response.json();
 
-                    if (data.success && data.count) {
-                        console.log("data count : ", data.count);
-                        participantsElement.textContent = data.count;
-                    } else {
-                        throw new Error(data.error || 'فشل تحديث البيانات');
+                        if (data.success && data.count) {
+                            console.log("data count : ", data.count);
+                            participantsElement.textContent = data.count;
+                        } else {
+                            throw new Error(data.error || 'فشل تحديث البيانات');
+                        }
+                    } catch (error) {
+                        console.error('Error:', error);
+                        alert('حدث خطأ أثناء تحديث البيانات');
                     }
-                } catch (error) {
-                    console.error('Error:', error);
-                    alert('حدث خطأ أثناء تحديث البيانات');
-                }
-            });
+                });
+            }
         </script>
     <?php endif; ?>
 </body>
