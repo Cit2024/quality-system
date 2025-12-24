@@ -8,9 +8,7 @@
           "bind_type": "i"
         }
       },
-      "where_conditions": [
-        "er.Semester = ?"
-      ],
+      "where_conditions": ["er.Semester = ?"],
       "entity_lookup": null,
       "statistics_modules": [
         "participation",
@@ -19,6 +17,20 @@
       ],
       "view_template": "program_evaluation.php",
       "page_title": "تقييم البرنامج"
+    },
+    "alumni": {
+      "metadata_filters": {
+        "semester": {
+          "type": "int",
+          "param": "semester",
+          "bind_type": "i"
+        }
+      },
+      "where_conditions": ["er.Semester = ?"],
+      "entity_lookup": null,
+      "statistics_modules": ["department_breakdown", "historical_trending"],
+      "view_template": "program_evaluation.php",
+      "page_title": "تقييم البرنامج (الخريجين)"
     }
   },
   "facility_evaluation": {
@@ -30,9 +42,7 @@
           "bind_type": "i"
         }
       },
-      "where_conditions": [
-        "er.Semester = ?"
-      ],
+      "where_conditions": ["er.Semester = ?"],
       "entity_lookup": null,
       "statistics_modules": [
         "participation",
@@ -41,6 +51,34 @@
       ],
       "view_template": "program_evaluation.php",
       "page_title": "تقييم المرافق"
+    },
+    "employer": {
+      "metadata_filters": {
+        "semester": {
+          "type": "int",
+          "param": "semester",
+          "bind_type": "i"
+        }
+      },
+      "where_conditions": ["er.Semester = ?"],
+      "entity_lookup": null,
+      "statistics_modules": ["historical_trending"],
+      "view_template": "program_evaluation.php",
+      "page_title": "تقييم المرافق (أرباب العمل)"
+    },
+    "teacher": {
+      "metadata_filters": {
+        "semester": {
+          "type": "int",
+          "param": "semester",
+          "bind_type": "i"
+        }
+      },
+      "where_conditions": ["er.Semester = ?"],
+      "entity_lookup": null,
+      "statistics_modules": ["historical_trending"],
+      "view_template": "program_evaluation.php",
+      "page_title": "تقييم المرافق (أعضاء هيئة التدريس)"
     }
   },
   "course_evaluation": {
@@ -74,10 +112,7 @@
         "course_specific",
         "historical_trending"
       ],
-      "custom_modules": [
-        "teacher_lookup",
-        "enrolled_students_count"
-      ],
+      "custom_modules": ["teacher_lookup", "enrolled_students_count"],
       "view_template": "course_evaluation.php",
       "page_title": "تقييم المقرر"
     }
