@@ -1,0 +1,88 @@
+# Package Exclusion List
+# Files and directories to exclude from production packages
+
+# ================================================
+# Version Control
+# ================================================
+.git/
+.gitignore
+.gitattributes
+.github/
+
+# ================================================
+# IDE & Editors
+# ================================================
+.vscode/
+.idea/
+*.code-workspace
+*.sublime-project
+*.sublime-workspace
+
+# ================================================
+# Development & Testing
+# ================================================
+tests/
+phpunit.xml
+phpunit.xml.dist
+.phpunit.result.cache
+composer.lock
+node_modules/
+package-lock.json
+vendor/phpunit/
+
+# ================================================
+# Documentation (exclude detailed docs, keep essential)
+# ================================================
+README.md
+ARCHITECTURE.md
+DEVELOPMENT.md
+*.md
+.gemini/
+
+# ================================================
+# Build & Package
+# ================================================
+scripts/package.ps1
+.packageignore
+releases/
+
+# ================================================
+# Temporary & Cache
+# ================================================
+*.log
+logs/*
+!logs/.htaccess
+temp/*
+!temp/.htaccess
+cache/*
+!cache/.htaccess
+backups/*
+!backups/daily/
+!backups/weekly/
+!backups/monthly/
+!backups/logs/
+
+# ================================================
+# Environment & Config
+# ================================================
+.env.local
+.env.example
+.editorconfig
+
+# ================================================
+# OS Files
+# ================================================
+.DS_Store
+Thumbs.db
+desktop.ini
+*.swp
+*~
+._*
+
+# ================================================
+# Temporary Files
+# ================================================
+*.tmp
+*.bak
+*.old
+*.orig
