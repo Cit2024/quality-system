@@ -1,0 +1,36 @@
+{
+    "name": "quality-system/evaluation-platform",
+    "description": "Model-driven evaluation builder with link-based participation",
+    "type": "project",
+    "require": {
+        "php": ">=8.0",
+        "ext-mysqli": "*",
+        "ext-json": "*",
+        "ext-mbstring": "*"
+    },
+    "require-dev": {
+        "phpunit/phpunit": "^10.0"
+    },
+    "autoload": {
+        "psr-4": {
+            "QualitySystem\\": "src/",
+            "QualitySystem\\Tests\\": "tests/"
+        },
+        "files": [
+            "helpers/exceptions.php",
+            "helpers/error_handler.php",
+            "helpers/csrf.php",
+            "helpers/audit_log.php",
+            "config/constants.php"
+        ]
+    },
+    "scripts": {
+        "test": "phpunit",
+        "test-coverage": "phpunit --coverage-html coverage"
+    },
+    "config": {
+        "optimize-autoloader": true,
+        "preferred-install": "dist",
+        "sort-packages": true
+    }
+}
