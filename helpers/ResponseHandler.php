@@ -1,5 +1,8 @@
 <?php
 
+require_once __DIR__ . '/exceptions.php';
+require_once __DIR__ . '/../config/constants.php';
+
 class ResponseHandler {
     private $con;
     private $conn_cit;
@@ -10,10 +13,11 @@ class ResponseHandler {
     }
 
     public function handleSubmission($postData) {
+        $this->con->begin_transaction();
         try {
             // 1. Basic Validation
             if (empty($postData['form_id'])) {
-                throw new Exception("Form ID is missing");
+                throw new ValidationException("Form ID is missing");
             }
             $formId = (int)$postData['form_id'];
 
@@ -24,7 +28,7 @@ class ResponseHandler {
             $form = $stmt->get_result()->fetch_assoc();
             
             if (!$form) {
-                throw new Exception("Form not found or not published");
+                throw new NotFoundException("Form not found or not published");
             }
 
             // 3. Validate Dynamic Access Fields
@@ -36,17 +40,28 @@ class ResponseHandler {
                 $metadata = $this->enrichStudentMetadata($metadata, $postData);
             }
 
-            // 5. Check for Duplicates
+            // 5. Check for Duplicates (Now uses FOR UPDATE inside transaction)
             if ($this->isDuplicate($form, $metadata)) {
-                throw new Exception("Duplicate submission detected");
+                $this->con->rollback();
+                throw new DuplicateException("لقد قمت بإرسال هذا التقييم مسبقاً");
             }
 
             // 6. Process and Save Answers
             $this->saveAnswers($form, $metadata, $postData['question'] ?? []);
-
+            
+            $this->con->commit();
             return ['success' => true];
 
+        } catch (mysqli_sql_exception $e) {
+            $this->con->rollback();
+            // Check for duplicate entry error (1062)
+            if ($e->getCode() == 1062) {
+                 return ['success' => false, 'message' => "لقد قمت بإرسال هذا التقييم مسبقاً"];
+            }
+            error_log("Database Error: " . $e->getMessage());
+            return ['success' => false, 'message' => "Database error occurred"];
         } catch (Exception $e) {
+            $this->con->rollback();
             error_log("Submission Error: " . $e->getMessage());
             return ['success' => false, 'message' => $e->getMessage()];
         }
@@ -76,18 +91,35 @@ class ResponseHandler {
             }
             
             // Check if required
-            if ($field['IsRequired'] && empty($value)) {
+            if ($field['IsRequired'] && (is_null($value) || $value === '')) {
                 throw new Exception("Field '{$field['Label']}' is required");
             }
 
-            // Collect value with Slug as the key
+            // Sanitization and Validation
             if (!empty($value)) {
-                $metadata[$fieldKey] = htmlspecialchars($value);
+                // Sanitize all string inputs
+                $sanitizedValue = htmlspecialchars($value, ENT_QUOTES, 'UTF-8');
+                
+                // Specific validation for ID fields
+                if (strpos(strtolower($fieldKey), 'id') !== false || 
+                    strpos(strtolower($fieldKey), '_id') !== false) {
+                    if (!ctype_digit((string)$value)) {
+                        throw new Exception("Field '{$field['Label']}' must be a valid number");
+                    }
+                }
+
+                $metadata[$fieldKey] = $sanitizedValue;
             }
         }
 
+        // Add System Metadata
         $metadata['ip_address'] = $_SERVER['REMOTE_ADDR'];
         $metadata['submission_date'] = date('Y-m-d H:i:s');
+        
+        // Validate total JSON size
+        if (strlen(json_encode($metadata)) > METADATA_SIZE_LIMIT) {
+             throw new Exception("Metadata size exceeds limit");
+        }
 
         return $metadata;
     }
@@ -130,12 +162,13 @@ class ResponseHandler {
         // Define unique constraints based on form target
         if ($form['FormTarget'] === 'student') {
             // Unique per Student + Course + Semester + FormType
-            $stmt = $this->con->prepare("SELECT ID FROM EvaluationResponses 
+            // We verify if ANY answer exists for this combination
+            $stmt = $this->con->prepare("SELECT 1 FROM EvaluationResponses 
                 WHERE FormType = ? 
-                AND Metadata->>'$.IDStudent' = ? 
-                AND Metadata->>'$.IDCourse' = ? 
+                AND IDStudent = ? 
+                AND IDCourse = ? 
                 AND Semester = ? 
-                LIMIT 1");
+                LIMIT 1 FOR UPDATE");
             
             $semester = $metadata['Semester'] ?? '';
             $studentId = $metadata['IDStudent'] ?? '';
@@ -143,57 +176,54 @@ class ResponseHandler {
 
             $stmt->bind_param("ssss", $form['FormType'], $studentId, $courseId, $semester);
             $stmt->execute();
-            return $stmt->fetch() ? true : false;
+            $result = $stmt->fetch();
+            $stmt->close();
+            
+            return $result ? true : false;
         }
         
-        // For other types, we might want to allow multiple or check other fields
-        // For now, default to no duplicate check for generic forms unless specified
         return false;
     }
 
     private function saveAnswers($form, $metadata, $answers) {
         require_once __DIR__ . '/../evaluation/config/answer_processor.php';
 
-        $this->con->begin_transaction();
-        try {
-            $metadataJson = json_encode($metadata, JSON_UNESCAPED_UNICODE);
-            $semester = $metadata['Semester'] ?? null;
+        // Transaction is now handled by the caller (handleSubmission)
+        
+        $metadataJson = json_encode($metadata, JSON_UNESCAPED_UNICODE);
+        $semester = $metadata['Semester'] ?? null;
 
-            $stmt = $this->con->prepare("INSERT INTO EvaluationResponses (FormType, FormTarget, QuestionID, AnswerValue, Metadata, Semester) VALUES (?, ?, ?, ?, ?, ?)");
+        $stmt = $this->con->prepare("INSERT INTO EvaluationResponses (FormType, FormTarget, QuestionID, AnswerValue, Metadata, Semester) VALUES (?, ?, ?, ?, ?, ?)");
 
-            foreach ($answers as $questionId => $response) {
-                $questionId = (int)$questionId;
-                
-                // Get Question Details
-                $qStmt = $this->con->prepare("SELECT TypeQuestion, Choices FROM Question WHERE ID = ?");
-                $qStmt->bind_param("i", $questionId);
-                $qStmt->execute();
-                $questionData = $qStmt->get_result()->fetch_assoc();
-                $qStmt->close();
+        foreach ($answers as $questionId => $response) {
+            $questionId = (int)$questionId;
+            
+            // Get Question Details
+            // Note: Optimally, we should fetch all question details in one go, but keeping this logic for now
+            $qStmt = $this->con->prepare("SELECT TypeQuestion, Choices FROM Question WHERE ID = ?");
+            $qStmt->bind_param("i", $questionId);
+            $qStmt->execute();
+            $questionData = $qStmt->get_result()->fetch_assoc();
+            $qStmt->close();
 
-                if (!$questionData) continue;
+            if (!$questionData) continue;
 
-                // Process Answer
-                $answerValue = processAnswerResponse($questionData, $response);
-                if (!$answerValue) continue;
+            // Process Answer
+            $answerValue = processAnswerResponse($questionData, $response);
+            if (!$answerValue) continue;
 
-                $answerJson = encodeAnswerValue($answerValue);
+            $answerJson = encodeAnswerValue($answerValue);
 
-                $stmt->bind_param("ssisss", 
-                    $form['FormType'], 
-                    $form['FormTarget'], 
-                    $questionId, 
-                    $answerJson, 
-                    $metadataJson, 
-                    $semester
-                );
-                $stmt->execute();
-            }
-
-            $this->con->commit();
-        } catch (Exception $e) {
-            $this->con->rollback();
-            throw $e;
+            $stmt->bind_param("ssisss", 
+                $form['FormType'], 
+                $form['FormTarget'], 
+                $questionId, 
+                $answerJson, 
+                $metadataJson, 
+                $semester
+            );
+            $stmt->execute();
         }
+        $stmt->close();
     }
 }
