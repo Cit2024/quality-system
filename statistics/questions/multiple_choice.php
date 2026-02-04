@@ -1,4 +1,5 @@
 <?php
+require_once __DIR__ . '/../../../config/constants.php';
 /**
  * Displays multiple choice question analytics
  * @param array $questionData {
@@ -55,7 +56,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 legend: { display: false },
                 tooltip: {
                     callbacks: {
-                        label: ctx => `${ctx.parsed.y} (${((ctx.parsed.y/<?= $questionData['total'] ?>)*100).toFixed(1)}%)`
+                        label: ctx => `${ctx.parsed.y} (${((ctx.parsed.y/<?= $questionData['total'] ?>)*100).toFixed(PERCENTAGE_PRECISION)}%)`
                     }
                 }
             },

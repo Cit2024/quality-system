@@ -1,4 +1,5 @@
 <?php
+require_once __DIR__ . '/../../../config/constants.php';
 /**
  * Displays true/false question analytics
  * @param array $questionData {
@@ -38,7 +39,7 @@ $titleParts = split_arabic_english($questionData['question']);
                 <span class="label"><?= ucfirst($label) ?>:</span>
                 <span class="count"><?= $count ?></span>
                 <span class="percentage">
-                    (<?= number_format(($count / $questionData['total']) * 100, 1) ?>%)
+                    (<?= number_format(($count / $questionData['total']) * 100, PERCENTAGE_PRECISION) ?>%)
                 </span>
             </div>
         <?php endforeach; ?>
@@ -62,7 +63,7 @@ document.addEventListener('DOMContentLoaded', function() {
             plugins: {
                 tooltip: {
                     callbacks: {
-                        label: ctx => `${ctx.label}: ${ctx.raw} (${((ctx.raw/<?= $questionData['total'] ?>)*100).toFixed(1)}%)`
+                        label: ctx => `${ctx.label}: ${ctx.raw} (${((ctx.raw/<?= $questionData['total'] ?>)*100).toFixed(PERCENTAGE_PRECISION)}%)`
                     }
                 }
             }
