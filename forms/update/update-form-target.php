@@ -1,5 +1,5 @@
 <?php
-session_start();
+require_once __DIR__ . '/../../config/session.php';
 
 // Check if the admin is logged in
 if (!isset($_SESSION['admin_id'])) {
@@ -9,15 +9,20 @@ if (!isset($_SESSION['admin_id'])) {
 
 // Include the database connection
 include '../../config/DbConnection.php';
+require_once '../../helpers/csrf.php';
 
-include '../form_constants.php';
+verifyCSRFOrDie();
+
+require_once '../../helpers/FormTypes.php';
 
 // Get the form data from the POST request
 $formId = $_POST['id'];
 $newTarget = $_POST['target'];
 
+$formTargets = FormTypes::getFormTargets($con);
+
 // Validate the target
-if (!array_key_exists($newTarget, FORM_TARGETS)) {
+if (!array_key_exists($newTarget, $formTargets)) {
     echo json_encode(['status' => 'error', 'message' => 'هذا المُقيِّم غير صالح']);
     exit();
 }

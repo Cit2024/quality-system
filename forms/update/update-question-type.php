@@ -1,5 +1,5 @@
 <?php
-session_start();
+require_once __DIR__ . '/../../config/session.php';
 
 if (!isset($_SESSION['admin_id'])) {
     echo json_encode(['status' => 'error', 'message' => 'Unauthorized']);
@@ -7,6 +7,9 @@ if (!isset($_SESSION['admin_id'])) {
 }
 
 include '../../config/DbConnection.php';
+require_once '../../helpers/csrf.php';
+
+verifyCSRFOrDie();
 
 include '../../helpers/FormTypes.php';
 

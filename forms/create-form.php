@@ -1,17 +1,34 @@
 <?php
-session_start();
-
-// Check if the admin is logged in and has permission to create forms
-if (!isset($_SESSION['admin_id']) || !$_SESSION['permissions']['isCanCreate']) {
-    header("Location: login.php");
-    exit();
-}
+require_once __DIR__ . '/../config/session.php';
 
 // Include the database connection
 include '.././config/DbConnection.php';
+require_once '../helpers/csrf.php';
+require_once '../helpers/permissions.php';
+
+// Check if the admin is logged in and has permission to create forms
+if (!isset($_SESSION['admin_id'])) {
+    header("Location: ../login.php");
+    exit();
+}
+
+// Verify admin status and refresh permissions
+if (!verifyAdminStatus($con)) {
+    session_destroy();
+    header("Location: ../login.php");
+    exit();
+}
+
+// Require create permission
+requirePermission($con, 'isCanCreate', '../dashboard.php');
+
+// Include the database connection
+include '.././config/DbConnection.php';
+require_once '../helpers/csrf.php';
 
 // Handle form submission
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
+    verifyCSRFOrDie();
     $title = mysqli_real_escape_string($con, $_POST['title']);
     $description = mysqli_real_escape_string($con, $_POST['description']);
 
@@ -61,6 +78,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 
             <!-- Form Creation Form -->
             <form method="POST" action="">
+                <input type="hidden" name="csrf_token" value="<?= generateCSRFToken() ?>">
                 <!-- Form Title -->
                 <div class="input-group">
                     <label for="title">عنوان النموذج:</label>

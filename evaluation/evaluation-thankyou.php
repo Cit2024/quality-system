@@ -1,6 +1,6 @@
 <?php
 
-session_start();
+require_once __DIR__ . '/../config/session.php';
 
 $success = isset($_GET['success']) && $_GET['success'] == 1;
 

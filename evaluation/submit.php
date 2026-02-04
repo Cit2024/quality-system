@@ -1,9 +1,10 @@
 <?php
 // evaluation/submit.php
-session_start();
+require_once __DIR__ . '/../config/session.php';
 require_once '../config/DbConnection.php';
 require_once '../config/dbConnectionCit.php'; // Needed for student/teacher lookup
 require_once '../helpers/ResponseHandler.php';
+require_once '../helpers/csrf.php';
 
 // Enable error logging
 ini_set('display_errors', 0);
@@ -14,6 +15,8 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     header("Location: ../index.php");
     exit();
 }
+
+verifyCSRFOrDie();
 
 $handler = new ResponseHandler($con, $conn_cit);
 $result = $handler->handleSubmission($_POST);

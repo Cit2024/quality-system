@@ -1,17 +1,13 @@
 <?php
 // ./forms/edit-form.php
-session_start();
+require_once __DIR__ . '/../config/session.php';
+require_once __DIR__ . '/../config/DbConnection.php';
+require_once __DIR__ . '/../helpers/FormTypes.php';
+require_once __DIR__ . '/../helpers/csrf.php';
+require_once __DIR__ . '/../helpers/error_handler.php';
+require_once __DIR__ . '/../helpers/permissions.php';
 
-// Check if the admin is logged in
-if (!isset($_SESSION['admin_id'])) {
-    header("Location: .././login.php");
-    exit();
-}
-
-// Include the database connection
-include '.././config/DbConnection.php';
-// include 'form_constants.php'; // Removed
-require_once '../helpers/FormTypes.php';
+try {
 
 $formTypes = FormTypes::getFormTypes($con);
 $formTargets = FormTypes::getFormTargets($con); 
@@ -62,6 +58,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET' && isset($_GET['action'])) {
 
 // Handle API Requests (POST)
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
+    verifyCSRFOrDie();
     header('Content-Type: application/json');
     $response = ['success' => false, 'message' => 'Invalid action'];
     
@@ -76,7 +73,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
             $icon = trim($_POST['icon'] ?? '');
             
             if (empty($name) || empty($slug) || empty($icon)) {
-                throw new Exception('جميع الحقول مطلوبة');
+                throw new ValidationException('جميع الحقول مطلوبة');
             }
             
             $table = $category === 'target' ? 'EvaluatorTypes' : 'FormTypes';
@@ -85,7 +82,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
             $stmt = $con->prepare("SELECT ID FROM $table WHERE Slug = ?");
             $stmt->bind_param('s', $slug);
             $stmt->execute();
-            if ($stmt->get_result()->num_rows > 0) throw new Exception('المعرف موجود بالفعل');
+            if ($stmt->get_result()->num_rows > 0) throw new DuplicateException('المعرف موجود بالفعل');
             $stmt->close();
             
             // Insert
@@ -247,7 +244,7 @@ $fields_query = "SELECT * FROM FormAccessFields WHERE FormID = $formId ORDER BY 
 $fields_result = mysqli_query($con, $fields_query);
 
 if (!$sections_result) {
-    die("Database error: " . mysqli_error($con));
+    throw new DatabaseException("Database error: " . mysqli_error($con));
 }
 ?>
 
@@ -258,6 +255,7 @@ if (!$sections_result) {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>تعديل النموذج</title>
+    <meta name="csrf-token" content="<?= generateCSRFToken() ?>">
     <link rel="stylesheet" href="../styles/forms.css">
     <link rel="stylesheet" href="../components/ComponentsStyles.css">
     <link rel="icon" href=".././assets/icons/college.png">
@@ -633,7 +631,7 @@ if (!$sections_result) {
     <div class="view-container">
         <!-- Back Button -->
         <div class="back-button" onclick="window.location.href='../forms.php'" data-printthis-ignore>
-            <img src=".././assets/icons/chevron-right.svg" alt="Back" />
+            <i class="fa-solid fa-chevron-right" aria-label="Back"></i>
             <span>رجوع</span>
         </div>
 
@@ -743,7 +741,7 @@ if (!$sections_result) {
                     <button class="download-form-button" data-printthis-ignore 
                         data-form-id="<?php echo $form['ID']; ?>"
                         data-form-title="<?php echo htmlspecialchars($form['Title'], ENT_QUOTES, 'UTF-8'); ?>">
-                        <img src=".././assets/icons/file-down.svg" alt="download" />
+                        <i class="fa-solid fa-file-arrow-down" aria-label="download"></i>
                         تنزيل النموذج
                     </button>
                 </div>
@@ -803,7 +801,7 @@ if (!$sections_result) {
                 </pre>
             <?php else : ?>
                 <div class="add-note-button">
-                    <img src="../assets/icons/plus-circle.svg" alt="Add Note" />
+                    <i class="fa-solid fa-circle-plus" aria-label="Add Note"></i>
                     إضافة ملاحظة
                 </div>
             <?php endif; ?>
@@ -817,7 +815,7 @@ if (!$sections_result) {
                     <div class="section-header">
                         <!-- Delete Button -->
                         <span class="delete-section" data-section-id="<?php echo $section['ID']; ?>" data-printthis-ignore>
-                            <img src=".././assets/icons/trash.svg" alt="Delete Section" />
+                            <i class="fa-solid fa-trash" aria-label="Delete Section"></i>
                         </span>
 
                         <!-- Editable Section Title -->
@@ -825,12 +823,12 @@ if (!$sections_result) {
 
                         <!-- Copy Plus Button -->
                         <span class="copy-plus" data-section-id="<?php echo $section['ID']; ?>" data-printthis-ignore>
-                            <img src=".././assets/icons/plus-circle.svg" alt="Add Default Question" />
+                            <i class="fa-solid fa-circle-plus" aria-label="Add Default Question"></i>
                         </span>
 
                         <!-- Chevron Icon -->
                         <span class="chevron" data-printthis-ignore>
-                            <img src=".././assets/icons/chevron-down.svg" alt="Chevron down icon" />
+                            <i class="fa-solid fa-chevron-down" aria-label="Chevron down icon"></i>
                         </span>
                     </div>
 
@@ -849,7 +847,7 @@ if (!$sections_result) {
                                 <div class="question-title-row">
                                     <!-- Delete Button -->
                                     <span class="delete-question" data-question-id="<?php echo $question['ID']; ?>" data-printthis-ignore>
-                                        <img src=".././assets/icons/trash.svg" alt="Delete Question" />
+                                        <i class="fa-solid fa-trash" aria-label="Delete Question"></i>
                                     </span>
                                     <!-- Question Title -->
                                     <p class="editable-question" data-id="<?php echo $question['ID']; ?>" data-field="TitleQuestion"><?php echo $question['TitleQuestion']; ?></p>
@@ -1017,5 +1015,9 @@ if (!$sections_result) {
     <script src="https://cdnjs.cloudflare.com/ajax/libs/printThis/1.15.0/printThis.min.js"></script>
     <script src="../scripts/forms.js"></script>
 </body>
-
 </html>
+<?php
+} catch (Exception $e) {
+    handleException($e, isAjaxRequest());
+}
+?>

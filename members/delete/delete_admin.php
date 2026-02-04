@@ -1,6 +1,9 @@
 <?php
 // members/delete/delete_admin.php
 include '../../config/DbConnection.php';
+require_once '../../helpers/csrf.php';
+
+verifyCSRFOrDie();
 
 // Set the Content-Type header to JSON
 header('Content-Type: application/json');
@@ -8,8 +11,8 @@ header('Content-Type: application/json');
 // Clear any previous output
 ob_clean();
 
-if (isset($_GET['id'])) {
-    $adminId = $_GET['id'];
+if (isset($_POST['id'])) {
+    $adminId = $_POST['id'];
 
     // Mark the admin as deleted
     $query = "UPDATE Admin SET is_deleted = 1 WHERE ID = ?";

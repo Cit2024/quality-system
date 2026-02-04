@@ -1,6 +1,9 @@
 <?php
-session_start();
+require_once __DIR__ . '/../../config/session.php';
 include '../../config/DbConnection.php';
+require_once '../../helpers/csrf.php';
+
+verifyCSRFOrDie();
 
 // Use POST data instead of JSON input
 $questionId = $_POST['questionId'];

@@ -1,17 +1,20 @@
 <?php
 // pages/members/create-admin.php
-session_start();
+require_once __DIR__ . '/../config/session.php';
 
 $currentPage = 'members'; // Set the current page for active link highlighting
 
 // Include the database connection
 include '.././config/DbConnection.php';
+require_once '../helpers/csrf.php';
 
 
 // Handle form submission
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    verifyCSRFOrDie();
     // Generate a random 6-character password (letters and numbers)
     $password = substr(str_shuffle('abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789'), 0, 6);
+    $hashedPassword = password_hash($password, PASSWORD_ARGON2ID);
 
     // Prepare the SQL query
     $username = 'cit_' . $_POST['username']; // Prefix the username with "cit_"
@@ -24,7 +27,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $query = "INSERT INTO Admin (username, password, isCanCreate, isCanDelete, isCanUpdate, isCanRead, isCanGetAnalysis) 
               VALUES (?, ?, ?, ?, ?, ?, ?)";
     $stmt = mysqli_prepare($con, $query);
-    mysqli_stmt_bind_param($stmt, 'ssiiiii', $username, $password, $isCanCreate, $isCanDelete, $isCanUpdate, $isCanRead, $isCanGetAnalysis);
+    mysqli_stmt_bind_param($stmt, 'ssiiiii', $username, $hashedPassword, $isCanCreate, $isCanDelete, $isCanUpdate, $isCanRead, $isCanGetAnalysis);
 
     if (mysqli_stmt_execute($stmt)) {
         $successMessage = "تم إنشاء المستخدم بنجاح!";
@@ -56,7 +59,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         <!-- Back Button -->
         <div class="back-button" onclick="window.location.href='../members.php'">
             <span>رجوع</span>
-            <img src=".././assets/icons/chevron-right.svg" alt="Back" />
+            <i class="fa-solid fa-chevron-right" aria-label="Back"></i>
         </div>
 
         <!-- ==================== Create Admin Form ==================== -->
@@ -79,6 +82,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             <?php endif; ?>
 
             <form method="POST" action="">
+                <input type="hidden" name="csrf_token" value="<?= generateCSRFToken() ?>">
                 <div class="container-input">
 
                     <!-- Username -->
@@ -88,7 +92,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                             <span>cit_</span>
                             <input type="text" id="username" name="username" placeholder="Admin.."  required>
                             <button type="button" class="copy-button" onclick="copyUsername()">
-                                <img src=".././assets/icons/copy.svg" alt="Copy Username">
+                                <i class="fa-solid fa-copy"></i>
                             </button>
                         </div>
                     </div>
@@ -99,10 +103,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         <div class="password-input-container">
                             <input type="text" id="password" name="password" class="password-input" value="<?php echo isset($generatedPassword) ? $generatedPassword : ''; ?>" readonly>
                             <button type="button" class="regenerate-password-button" onclick="regeneratePassword()">
-                                <img src=".././assets/icons/rotate-ccw.svg" alt="Regenerate Password">
+                                <i class="fa-solid fa-rotate-right"></i>
                             </button>
                             <button type="button" class="copy-button" onclick="copyPassword()">
-                                <img src=".././assets/icons/copy.svg" alt="Copy Password">
+                                <i class="fa-solid fa-copy"></i>
                             </button>
                         </div>
                     </div>

@@ -1,14 +1,34 @@
 <?php
-session_start();
+require_once __DIR__ . '/../../config/session.php';
 
-// Check if the admin is logged in and has permission to delete forms
-if (!isset($_SESSION['admin_id']) || !$_SESSION['permissions']['isCanDelete']) {
+// Include the database connection
+include '../../config/DbConnection.php';
+require_once '../../helpers/csrf.php';
+require_once '../../helpers/permissions.php';
+
+// Check if the admin is logged in
+if (!isset($_SESSION['admin_id'])) {
     echo json_encode(["status" => "error", "message" => "Unauthorized access"]);
+    exit();
+}
+
+// Verify admin status and refresh permissions
+if (!verifyAdminStatus($con)) {
+    echo json_encode(["status" => "error", "message" => "Admin account no longer valid"]);
+    exit();
+}
+
+// Require delete permission
+if (!hasPermission($con, 'isCanDelete')) {
+    echo json_encode(["status" => "error", "message" => "Insufficient permissions"]);
     exit();
 }
 
 // Include the database connection
 include '../../config/DbConnection.php';
+require_once '../../helpers/csrf.php';
+
+verifyCSRFOrDie();
 
 // Get the form ID from the POST request and sanitize it
 $formId = intval($_POST['id']);

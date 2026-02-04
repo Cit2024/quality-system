@@ -1,5 +1,5 @@
 <?php
-session_start();
+require_once __DIR__ . '/../../config/session.php';
 
 // Check if the admin is logged in
 if (!isset($_SESSION['admin_id'])) {
@@ -9,22 +9,28 @@ if (!isset($_SESSION['admin_id'])) {
 
 // Include the database connection
 include '../../config/DbConnection.php';
+require_once '../../helpers/csrf.php';
 
-include '../form_constants.php';
+verifyCSRFOrDie();
+
+
+require_once '../../helpers/FormTypes.php';
 
 // Get the form data from the POST request
 $formId = $_POST['id'];
 $newType = $_POST['type'];
 
+$formTypes = FormTypes::getFormTypes($con);
+
 // Validate the type
-if (!array_key_exists($newType, FORM_TYPES)) { 
+if (!array_key_exists($newType, $formTypes)) { 
     echo json_encode(['status' => 'error', 'message' => 'نوع النموذج غير صالح']);
     exit();
 }
 
 // Get current FormTarget to validate combination
 $checkStmt = mysqli_prepare($con, "SELECT FormTarget FROM Form WHERE ID = ?");
-mysqmi_stmt_bind_param($checkStmt, 'i', $formId);
+mysqli_stmt_bind_param($checkStmt, 'i', $formId);
 mysqli_stmt_execute($checkStmt);
 $result = mysqli_stmt_get_result($checkStmt);
 $currentForm = mysqli_fetch_assoc($result);

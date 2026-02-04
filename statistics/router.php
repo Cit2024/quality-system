@@ -1,6 +1,6 @@
 <?php
 // statistics/router.php
-session_start();
+require_once __DIR__ . '/../config/session.php';
 require_once __DIR__.'/../config/DbConnection.php';
 require_once __DIR__.'/../helpers/FormTypes.php';
 require_once __DIR__.'/analytics/config/ConfigurationLoader.php';

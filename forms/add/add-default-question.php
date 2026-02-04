@@ -1,5 +1,5 @@
 <?php
-session_start();
+require_once __DIR__ . '/../../config/session.php';
 
 // Check if the admin is logged in
 if (!isset($_SESSION['admin_id'])) {
@@ -9,6 +9,9 @@ if (!isset($_SESSION['admin_id'])) {
 
 // Include the database connection
 include '../../config/DbConnection.php';
+require_once '../../helpers/csrf.php';
+
+verifyCSRFOrDie();
 
 // Get the section ID from the POST request
 $sectionId = $_POST['sectionId'];
