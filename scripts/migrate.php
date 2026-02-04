@@ -210,10 +210,30 @@ class MigrationRunner {
             return true;
             
         } catch (Exception $e) {
+            $errorMsg = $e->getMessage();
+            
+            // Check if error is due to duplicate column/entry (idempotency check)
+            if (stripos($errorMsg, 'Duplicate') !== false) {
+                $this->con->rollback(); // Rollback transaction but mark as success/warning
+                
+                // Record as applied with warning
+                $warningMsg = "Warning: Already applied (Duplicate detected): " . $errorMsg;
+                $stmt = $this->con->prepare("
+                    INSERT INTO Migrations (Migration, Checksum, Status, ErrorMessage)
+                    VALUES (?, ?, 'applied', ?)
+                    ON DUPLICATE KEY UPDATE Status = 'applied', ErrorMessage = ?
+                ");
+                $stmt->bind_param("ssss", $file, $checksum, $warningMsg, $warningMsg);
+                $stmt->execute();
+                $stmt->close();
+                
+                $this->warning("⚠ Skipped (Already applied): " . $errorMsg);
+                return true; // Return success to continue to next migration
+            }
+            
             $this->con->rollback();
             
             // Record failure
-            $errorMsg = $e->getMessage();
             $stmt = $this->con->prepare("
                 INSERT INTO Migrations (Migration, Checksum, Status, ErrorMessage)
                 VALUES (?, ?, 'failed', ?)

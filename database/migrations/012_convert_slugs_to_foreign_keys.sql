@@ -1,9 +1,29 @@
 -- Migration 012: Convert String Slugs to Foreign Keys
 -- This migration adds FK columns to the Form table and populates them from existing slug values
 
--- Step 1: Add new FK columns
-ALTER TABLE Form ADD COLUMN FormTypeID INT(11) NULL AFTER FormType;
-ALTER TABLE Form ADD COLUMN EvaluatorTypeID INT(11) NULL AFTER FormTarget;
+SET @dbname = DATABASE();
+
+-- Step 1: Add new FK columns if they don't exist
+SET @tablename = 'Form';
+SET @columnname = 'FormTypeID';
+SET @preparedStatement = (SELECT IF(
+  (SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = @dbname AND TABLE_NAME = @tablename AND COLUMN_NAME = @columnname) > 0,
+  'SELECT 1',
+  CONCAT('ALTER TABLE ', @tablename, ' ADD COLUMN ', @columnname, ' INT(11) NULL AFTER FormType')
+));
+PREPARE stmt FROM @preparedStatement;
+EXECUTE stmt;
+DEALLOCATE PREPARE stmt;
+
+SET @columnname = 'EvaluatorTypeID';
+SET @preparedStatement = (SELECT IF(
+  (SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = @dbname AND TABLE_NAME = @tablename AND COLUMN_NAME = @columnname) > 0,
+  'SELECT 1',
+  CONCAT('ALTER TABLE ', @tablename, ' ADD COLUMN ', @columnname, ' INT(11) NULL AFTER FormTarget')
+));
+PREPARE stmt FROM @preparedStatement;
+EXECUTE stmt;
+DEALLOCATE PREPARE stmt;
 
 -- Step 2: Populate FormTypeID from FormType slug
 UPDATE Form f
@@ -17,18 +37,46 @@ INNER JOIN EvaluatorTypes et ON f.FormTarget = et.Slug
 SET f.EvaluatorTypeID = et.ID
 WHERE f.FormTarget IS NOT NULL;
 
--- Step 4: Add foreign key constraints
-ALTER TABLE Form 
-ADD CONSTRAINT fk_form_formtype 
-FOREIGN KEY (FormTypeID) REFERENCES FormTypes(ID) ON DELETE SET NULL;
+-- Step 4: Add foreign key constraints safely
+SET @constraintname = 'fk_form_formtype';
+SET @preparedStatement = (SELECT IF(
+  (SELECT COUNT(*) FROM INFORMATION_SCHEMA.TABLE_CONSTRAINTS WHERE TABLE_SCHEMA = @dbname AND TABLE_NAME = @tablename AND CONSTRAINT_NAME = @constraintname) > 0,
+  'SELECT 1',
+  CONCAT('ALTER TABLE ', @tablename, ' ADD CONSTRAINT ', @constraintname, ' FOREIGN KEY (FormTypeID) REFERENCES FormTypes(ID) ON DELETE SET NULL')
+));
+PREPARE stmt FROM @preparedStatement;
+EXECUTE stmt;
+DEALLOCATE PREPARE stmt;
 
-ALTER TABLE Form 
-ADD CONSTRAINT fk_form_evaluatortype 
-FOREIGN KEY (EvaluatorTypeID) REFERENCES EvaluatorTypes(ID) ON DELETE SET NULL;
+SET @constraintname = 'fk_form_evaluatortype';
+SET @preparedStatement = (SELECT IF(
+  (SELECT COUNT(*) FROM INFORMATION_SCHEMA.TABLE_CONSTRAINTS WHERE TABLE_SCHEMA = @dbname AND TABLE_NAME = @tablename AND CONSTRAINT_NAME = @constraintname) > 0,
+  'SELECT 1',
+  CONCAT('ALTER TABLE ', @tablename, ' ADD CONSTRAINT ', @constraintname, ' FOREIGN KEY (EvaluatorTypeID) REFERENCES EvaluatorTypes(ID) ON DELETE SET NULL')
+));
+PREPARE stmt FROM @preparedStatement;
+EXECUTE stmt;
+DEALLOCATE PREPARE stmt;
 
 -- Step 5: Add indexes for performance
-CREATE INDEX idx_form_type_id ON Form(FormTypeID);
-CREATE INDEX idx_evaluator_type_id ON Form(EvaluatorTypeID);
+SET @indexname = 'idx_form_type_id';
+SET @preparedStatement = (SELECT IF(
+  (SELECT COUNT(*) FROM INFORMATION_SCHEMA.STATISTICS WHERE TABLE_SCHEMA = @dbname AND TABLE_NAME = @tablename AND INDEX_NAME = @indexname) > 0,
+  'SELECT 1',
+  CONCAT('CREATE INDEX ', @indexname, ' ON ', @tablename, '(FormTypeID)')
+));
+PREPARE stmt FROM @preparedStatement;
+EXECUTE stmt;
+DEALLOCATE PREPARE stmt;
 
--- NOTE: The old FormType and FormTarget columns are kept for backward compatibility
--- After verifying all code works with the new FK columns, drop them in a future migration
+SET @indexname = 'idx_evaluator_type_id';
+SET @preparedStatement = (SELECT IF(
+  (SELECT COUNT(*) FROM INFORMATION_SCHEMA.STATISTICS WHERE TABLE_SCHEMA = @dbname AND TABLE_NAME = @tablename AND INDEX_NAME = @indexname) > 0,
+  'SELECT 1',
+  CONCAT('CREATE INDEX ', @indexname, ' ON ', @tablename, '(EvaluatorTypeID)')
+));
+PREPARE stmt FROM @preparedStatement;
+EXECUTE stmt;
+DEALLOCATE PREPARE stmt;
+
+COMMIT;

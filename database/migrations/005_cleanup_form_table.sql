@@ -2,83 +2,83 @@
 -- Migration 005: Cleanup Form Table Duplicate Columns
 -- ===================================================================
 -- Purpose: Remove unused FormTypeID and EvaluatorTypeID columns from Form table.
--- These FK columns were added but never used. The system uses the legacy
--- string-based FormType and FormTarget columns instead.
 -- ===================================================================
-
--- Create procedure to safely drop foreign key if it exists
-DELIMITER $$
-
-DROP PROCEDURE IF EXISTS DropFKIfExists$$
-CREATE PROCEDURE DropFKIfExists(
-    IN tableName VARCHAR(64),
-    IN constraintName VARCHAR(64)
-)
-BEGIN
-    DECLARE constraintExists INT;
-    
-    SELECT COUNT(*) INTO constraintExists
-    FROM INFORMATION_SCHEMA.TABLE_CONSTRAINTS
-    WHERE TABLE_SCHEMA = DATABASE()
-      AND TABLE_NAME = tableName
-      AND CONSTRAINT_NAME = constraintName
-      AND CONSTRAINT_TYPE = 'FOREIGN KEY';
-    
-    IF constraintExists > 0 THEN
-        SET @sql = CONCAT('ALTER TABLE `', tableName, '` DROP FOREIGN KEY `', constraintName, '`');
-        PREPARE stmt FROM @sql;
-        EXECUTE stmt;
-        DEALLOCATE PREPARE stmt;
-    END IF;
-END$$
-
-DELIMITER ;
 
 -- Drop foreign key constraints if they exist
-CALL DropFKIfExists('Form', 'FK_Form_FormType');
-CALL DropFKIfExists('Form', 'FK_Form_EvaluatorType');
+-- Note: MySQL 5.7+ supports IF EXISTS for DROP FOREIGN KEY in some versions,
+-- but consistent behavior requires checking information_schema or creating a procedure.
+-- Since we cannot easily use DELIMITER in simple execution, we rely on a simplified approach
+-- or just ignoring errors for cleanup tasks if they fail (which mysqli_multi_query might handle poorly).
+-- However, we can use a direct block approach for safer execution.
 
--- Drop procedure after use
-DROP PROCEDURE IF EXISTS DropFKIfExists;
+-- Drop FK_Form_FormType
+SET @dbname = DATABASE();
+SET @tablename = 'Form';
+SET @constraintname = 'FK_Form_FormType';
+SET @preparedStatement = (SELECT IF(
+  (
+    SELECT COUNT(*) FROM INFORMATION_SCHEMA.TABLE_CONSTRAINTS
+    WHERE
+      TABLE_SCHEMA = @dbname
+      AND TABLE_NAME = @tablename
+      AND CONSTRAINT_NAME = @constraintname
+  ) > 0,
+  CONCAT('ALTER TABLE ', @tablename, ' DROP FOREIGN KEY ', @constraintname),
+  'SELECT 1'
+));
+PREPARE stmt FROM @preparedStatement;
+EXECUTE stmt;
+DEALLOCATE PREPARE stmt;
 
--- Create procedure to safely drop column if it exists
-DELIMITER $$
+-- Drop FK_Form_EvaluatorType
+SET @constraintname = 'FK_Form_EvaluatorType';
+SET @preparedStatement = (SELECT IF(
+  (
+    SELECT COUNT(*) FROM INFORMATION_SCHEMA.TABLE_CONSTRAINTS
+    WHERE
+      TABLE_SCHEMA = @dbname
+      AND TABLE_NAME = @tablename
+      AND CONSTRAINT_NAME = @constraintname
+  ) > 0,
+  CONCAT('ALTER TABLE ', @tablename, ' DROP FOREIGN KEY ', @constraintname),
+  'SELECT 1'
+));
+PREPARE stmt FROM @preparedStatement;
+EXECUTE stmt;
+DEALLOCATE PREPARE stmt;
 
-DROP PROCEDURE IF EXISTS DropColumnIfExists$$
-CREATE PROCEDURE DropColumnIfExists(
-    IN tableName VARCHAR(64),
-    IN columnName VARCHAR(64)
-)
-BEGIN
-    DECLARE columnExists INT;
-    
-    SELECT COUNT(*) INTO columnExists
-    FROM INFORMATION_SCHEMA.COLUMNS
-    WHERE TABLE_SCHEMA = DATABASE()
-      AND TABLE_NAME = tableName
-      AND COLUMN_NAME = columnName;
-    
-    IF columnExists > 0 THEN
-        SET @sql = CONCAT('ALTER TABLE `', tableName, '` DROP COLUMN `', columnName, '`');
-        PREPARE stmt FROM @sql;
-        EXECUTE stmt;
-        DEALLOCATE PREPARE stmt;
-    END IF;
-END$$
+-- Drop FormTypeID column
+SET @columnname = 'FormTypeID';
+SET @preparedStatement = (SELECT IF(
+  (
+    SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS
+    WHERE
+      TABLE_SCHEMA = @dbname
+      AND TABLE_NAME = @tablename
+      AND COLUMN_NAME = @columnname
+  ) > 0,
+  CONCAT('ALTER TABLE ', @tablename, ' DROP COLUMN ', @columnname),
+  'SELECT 1'
+));
+PREPARE stmt FROM @preparedStatement;
+EXECUTE stmt;
+DEALLOCATE PREPARE stmt;
 
-DELIMITER ;
-
--- Drop the unused FK columns if they exist
-CALL DropColumnIfExists('Form', 'FormTypeID');
-CALL DropColumnIfExists('Form', 'EvaluatorTypeID');
-
--- Drop procedure after use
-DROP PROCEDURE IF EXISTS DropColumnIfExists;
-
--- ===================================================================
--- Verification Query (run after migration to confirm):
--- SHOW COLUMNS FROM Form;
--- Expected: Should NOT see FormTypeID or EvaluatorTypeID columns
--- ===================================================================
+-- Drop EvaluatorTypeID column
+SET @columnname = 'EvaluatorTypeID';
+SET @preparedStatement = (SELECT IF(
+  (
+    SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS
+    WHERE
+      TABLE_SCHEMA = @dbname
+      AND TABLE_NAME = @tablename
+      AND COLUMN_NAME = @columnname
+  ) > 0,
+  CONCAT('ALTER TABLE ', @tablename, ' DROP COLUMN ', @columnname),
+  'SELECT 1'
+));
+PREPARE stmt FROM @preparedStatement;
+EXECUTE stmt;
+DEALLOCATE PREPARE stmt;
 
 COMMIT;
