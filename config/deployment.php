@@ -49,11 +49,11 @@ return [
         '/evaluation-form.php?evaluation=course_evaluation&Evaluator=student',
     ],
     
-    // Database settings (from DbConnection.php)
-    'db_host' => DB_HOST,
-    'db_name' => DB_NAME,
-    'db_user' => DB_USER,
-    'db_pass' => DB_PASS,
+    // Database settings (mapped from DbConnection.php variables)
+    'db_host' => isset($host) ? $host : (defined('DB_HOST') ? DB_HOST : 'localhost'),
+    'db_name' => isset($dbname) ? $dbname : (defined('DB_NAME') ? DB_NAME : 'citcoder_Quality'),
+    'db_user' => isset($username) ? $username : (defined('DB_USER') ? DB_USER : 'root'),
+    'db_pass' => isset($password) ? $password : (defined('DB_PASS') ? DB_PASS : ''),
     
     // Color codes for terminal output
     'colors' => [

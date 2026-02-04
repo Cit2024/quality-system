@@ -108,6 +108,25 @@ $excludePatterns = @(
     '*~'
 )
 
+# Read exclusions from .packageignore if it exists
+$packageIgnoreFile = Join-Path $projectRoot ".packageignore"
+if (Test-Path $packageIgnoreFile) {
+    Write-Info "Reading exclusions from .packageignore..."
+    $customExclusions = Get-Content $packageIgnoreFile | Where-Object { 
+        # Skip comments and empty lines
+        $_ -notmatch '^\s*#' -and $_ -notmatch '^\s*$' 
+    }
+    
+    foreach ($exclusion in $customExclusions) {
+        # Trim whitespace
+        $cleanExclusion = $exclusion.Trim()
+        if (-not [string]::IsNullOrWhiteSpace($cleanExclusion)) {
+            $excludePatterns += $cleanExclusion
+        }
+    }
+    Write-Info "  Added $(($customExclusions | Measure-Object).Count) custom exclusion patterns"
+}
+
 # Add test files to exclusions if not including tests
 if (-not $IncludeTests) {
     $excludePatterns += @(
