@@ -1,13 +1,17 @@
 <?php
-session_start();
+require_once __DIR__ . '/config/session.php';
 require_once 'config/DbConnection.php';
+require_once 'helpers/csrf.php';
+require_once 'helpers/error_handler.php';
+
+try {
 
 $formId = isset($_GET['id']) ? intval($_GET['id']) : 0;
 $evaluator = $_GET['Evaluator'] ?? '';
 $evaluation = $_GET['evaluation'] ?? '';
 
 if (!$formId) {
-    die("Invalid Form ID");
+    throw new ValidationException("Invalid Form ID");
 }
 
 // Fetch Form Details (Password)
@@ -18,7 +22,7 @@ $form = $stmt->get_result()->fetch_assoc();
 $stmt->close();
 
 if (!$form) {
-    die("Form not found");
+    throw new NotFoundException("Form not found");
 }
 
 // Fetch Access Fields
@@ -35,6 +39,7 @@ $stmt->close();
 // Handle Submission
 $error = '';
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    verifyCSRFOrDie();
     $valid = true;
     $redirectParams = [];
     
@@ -180,6 +185,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     <input type="password" name="form_password" required>
                 </div>
             <?php endif; ?>
+            
+            <input type="hidden" name="csrf_token" value="<?= generateCSRFToken() ?>">
 
             <?php foreach($fields as $field): ?>
                 <div class="form-group">
@@ -201,3 +208,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     </div>
 </body>
 </html>
+<?php
+} catch (Exception $e) {
+    handleException($e);
+}
+?>

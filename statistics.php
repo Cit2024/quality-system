@@ -1,10 +1,10 @@
 <?php
 // pages/statistics.php
-session_start();
+require_once __DIR__ . '/config/session.php';
 $currentPage = 'statistics';
 
 include 'components/header.php';
-// include 'forms/form_constants.php'; // Removed
+
 
 // Include database connections
 require_once 'config/dbConnectionCit.php';
@@ -42,7 +42,7 @@ $tab = isset($_GET['tab']) && in_array($_GET['tab'], $validTabs) ? $_GET['tab'] 
                 <span><?= htmlspecialchars($semester['ZamanName']) ?></span>
             </div>
             <div class="user-profile">
-                <img src="./assets/icons/circle-user-round.svg" alt="صورة المستخدم">
+                <i class="fa-solid fa-circle-user" aria-label="صورة المستخدم"></i>
             </div>
         </div>
 
@@ -95,7 +95,7 @@ $tab = isset($_GET['tab']) && in_array($_GET['tab'], $validTabs) ? $_GET['tab'] 
 
                         <!-- No Results Message -->
                         <div class="no-results-message" style="display: none;">
-                            <img src="./assets/icons/no-data.svg" alt="No results" width="50">
+                            <i class="fa-solid fa-inbox" aria-label="No results" style="font-size: 50px; color: #ccc;"></i>
                             <p>لا توجد عناصر مطابقة لـ "<span class="search-term"></span>"</p>
                         </div>
                     </div>

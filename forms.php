@@ -1,10 +1,15 @@
 <?php
 // pages/forms.php
-session_start();
+require_once __DIR__ . '/config/session.php';
+require_once __DIR__ . '/helpers/error_handler.php';
+require_once __DIR__ . '/helpers/permissions.php';
+
+try {
 $currentPage = 'forms'; // Set the current page for active link highlighting
 
 // Get semester data for header
 include './components/header.php';
+require_once 'helpers/csrf.php';
 
 require_once 'config/dbConnectionCit.php';
 require_once 'config/DbConnection.php';
@@ -15,7 +20,7 @@ require_once 'helpers/database.php';
 // Get trimText, formatBilingualText function
 require_once 'helpers/units.php';
 
-// require_once 'forms/form_constants.php'; // Removed
+
 require_once 'helpers/FormTypes.php';
 
 $formTypes = FormTypes::getFormTypes($con);
@@ -24,7 +29,7 @@ $formTargets = FormTypes::getFormTargets($con);
 // Fetch all forms
 $forms = fetchData($con, "SELECT * FROM Form");
 if ($forms === false) {
-    die("Error loading forms. Please try again later.");
+    throw new DatabaseException("Error loading forms. Please try again later.");
 }
 $forms = $forms ?: []; // Ensure it's always an array
 
@@ -39,6 +44,7 @@ $stats = fetchData($con, "SELECT COUNT(ID) AS total_forms FROM Form")[0] ?? ['to
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>النماذج</title>
+    <meta name="csrf-token" content="<?= generateCSRFToken() ?>">
     <link rel="icon" href="./assets/icons/college.png">
     <link rel="stylesheet" href="styles/forms.css">
     <link rel="stylesheet" href="styles/global.css">
@@ -56,7 +62,7 @@ $stats = fetchData($con, "SELECT COUNT(ID) AS total_forms FROM Form")[0] ?? ['to
                 <span><?php echo htmlspecialchars($semester['ZamanName'] ?? 'ربيع 2024 - 2025'); ?></span>
             </div>
             <div class="user-profile">
-                <img src="./assets/icons/circle-user-round.svg" alt="user">
+                <i class="fa-solid fa-circle-user" aria-label="user"></i>
             </div>
         </div>
         <div class="forms-page-container">
@@ -87,10 +93,10 @@ $stats = fetchData($con, "SELECT COUNT(ID) AS total_forms FROM Form")[0] ?? ['to
                                         <!-- Form Status Badge -->
                                         <div class="form-status-badge">
                                             <?php if ($form['FormStatus'] === 'published'): ?>
-                                                <img src="./assets/icons/badge-check.svg" alt="Published" />
+                                                <i class="fa-solid fa-circle-check" aria-label="Published" style="color: green;"></i>
                                                 <span>منشور</span>
                                             <?php else: ?>
-                                                <img src="./assets/icons/badge-alert.svg" alt="Draft" />
+                                                <i class="fa-solid fa-triangle-exclamation" aria-label="Draft" style="color: orange;"></i>
                                                 <span>مسودة</span>
                                             <?php endif; ?>
                                         </div>
@@ -164,12 +170,12 @@ $stats = fetchData($con, "SELECT COUNT(ID) AS total_forms FROM Form")[0] ?? ['to
                                         data-action="download" 
                                         data-form-id="<?php echo htmlspecialchars($form['ID']); ?>" 
                                         data-form-title="<?php echo htmlspecialchars($form['Title'], ENT_QUOTES, 'UTF-8'); ?>">
-                                    <img src="./assets/icons/file-down.svg" alt="download" />
+                                    <i class="fa-solid fa-file-arrow-down" aria-label="download"></i>
                                     تنزيل النموذج
                                 </button>
                                     <?php if ($_SESSION['permissions']['isCanDelete'] ?? false): ?>
                                         <button class="delete-form-button form-action-button" data-action="delete" data-form-id="<?php echo htmlspecialchars($form['ID']); ?>">
-                                            <img src="./assets/icons/trash.svg" alt="Delete" style="color:white;" />
+                                            <i class="fa-solid fa-trash" aria-label="Delete" style="color:white;"></i>
                                             حذف
                                         </button>
                                     <?php endif; ?>
@@ -179,7 +185,7 @@ $stats = fetchData($con, "SELECT COUNT(ID) AS total_forms FROM Form")[0] ?? ['to
                     </div>
                 <?php else: ?>
                     <div class="no-forms">
-                        <img src="./assets/icons/no-data.svg" alt="no forms" />
+                        <i class="fa-solid fa-inbox" aria-label="no forms" style="font-size: 50px; color: #ccc;"></i>
                         <p>لا توجد نماذج حاليا.</p>
                     </div>
                 <?php endif; ?>
@@ -191,3 +197,8 @@ $stats = fetchData($con, "SELECT COUNT(ID) AS total_forms FROM Form")[0] ?? ['to
     <script src="./scripts/forms.js"></script>
 </body>
 </html>
+<?php
+} catch (Exception $e) {
+    handleException($e);
+}
+?>

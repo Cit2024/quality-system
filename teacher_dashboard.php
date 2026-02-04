@@ -1,12 +1,11 @@
 <?php
 // teacher_dashdoard.php
-session_start();
+require_once __DIR__ . '/config/session.php';
+require_once __DIR__ . '/config/constants.php';
 
 // Include database connections
 require_once 'config/dbConnectionCit.php';
 require_once 'config/DbConnection.php';
-require_once 'helpers/database.php';
-// require_once 'forms/form_constants.php'; // Removed
 
 $currentPage = 'dashboard';
 
@@ -72,12 +71,12 @@ $studentsEvaluated = fetchData(
 )[0]['count'] ?? 0;
 
 // Calculate participation ratio
-$participation_ratio = $total_students > 0 ? round(($studentsEvaluated / $total_students) * 100, 2) : 0;
+$participation_ratio = $total_students > 0 ? round(($studentsEvaluated / $total_students) * 100, PERCENTAGE_PRECISION) : 0;
 
 // Get average rating
 $avgRatingData = fetchData(
     $con,
-    "SELECT AVG(CAST(JSON_UNQUOTE(JSON_EXTRACT(AnswerValue, '$.value')) AS DECIMAL(10,2))) as avg_rating
+    "SELECT AVG(CAST(JSON_UNQUOTE(JSON_EXTRACT(AnswerValue, '$.value')) AS DECIMAL(10," . RATING_PRECISION . "))) as avg_rating
      FROM EvaluationResponses 
      WHERE JSON_UNQUOTE(JSON_EXTRACT(Metadata, '$.teacher_id')) = ?
        AND FormType = 'teacher_evaluation'
@@ -167,7 +166,7 @@ include './components/header.php';
             </div>
             <div class="user-info">
                 <div class="user-profile">
-                    <img src="./assets/icons/circle-user-round.svg" alt="user">
+                    <i class="fa-solid fa-circle-user" aria-label="user"></i>
                 </div>
                 <span><?php echo htmlspecialchars($teacher_name); ?></span>
             </div>

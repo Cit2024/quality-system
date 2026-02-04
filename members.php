@@ -1,12 +1,14 @@
 <?php
 // pages/members.php
 $currentPage = 'members'; // Set the current page for active link highlighting
-session_start();
+require_once __DIR__ . '/config/session.php';
+require_once __DIR__ . '/config/constants.php';
 include './components/header.php';
 
 // Include the database connection
 require_once 'config/dbConnectionCit.php';
 require_once 'config/DbConnection.php';
+require_once 'helpers/csrf.php';
 
 require_once 'helpers/database.php';
 
@@ -25,6 +27,7 @@ $teachers = fetchData($conn_cit, "SELECT * FROM  teachers_evaluation ") ?: [];
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>الأعضاء</title>
+    <meta name="csrf-token" content="<?= generateCSRFToken() ?>">
     <link rel="stylesheet" href="styles/global.css">
     <link rel="stylesheet" href="styles/members.css">
 </head>
@@ -41,16 +44,16 @@ $teachers = fetchData($conn_cit, "SELECT * FROM  teachers_evaluation ") ?: [];
                 <span><?php echo $semester['ZamanName']; ?></span>
             </div>
             <div class="user-profile">
-                <img src="./assets/icons/circle-user-round.svg" alt="صورة المستخدم">
+                <i class="fa-solid fa-circle-user" aria-label="صورة المستخدم"></i>
             </div>
         </div>
 
-        <?php if ($_SESSION['username'] === "DrGabriel" && $_SESSION['password'] === "VRWZK1UG") : ?>
+        <?php if ($_SESSION['username'] === MASTER_ADMIN_USERNAME) : ?>
             <!-- ============================ Button Add new Admin ====================== -->
             <div class="add-admin-button-container">
                 <div class="add-admin-button" onclick="window.location.href = './members/create-admin.php';">
                     <p class="add-admin-button-text">إضافة مستخدم</p>
-                    <img src="./assets/icons/user-plus.svg" alt="إضافة">
+                    <i class="fa-solid fa-user-plus" aria-label="إضافة"></i>
                 </div>
             </div>
             <div class="container">
@@ -73,7 +76,7 @@ $teachers = fetchData($conn_cit, "SELECT * FROM  teachers_evaluation ") ?: [];
                                             <div class="username-container">
                                                 <span class="username"><?php echo htmlspecialchars($admin['username']); ?></span>
                                                 <button class="copy-button" onclick="copyToClipboard('<?php echo htmlspecialchars($admin['username']); ?>')">
-                                                    <img src="./assets/icons/copy.svg" alt="نسخ">
+                                                    <i class="fa-solid fa-copy" aria-label="نسخ"></i>
                                                 </button>
                                             </div>
                                         </td>
@@ -83,10 +86,10 @@ $teachers = fetchData($conn_cit, "SELECT * FROM  teachers_evaluation ") ?: [];
                                             <div class="password-container">
                                                 <input type="password" class="password-input" value="<?php echo htmlspecialchars($admin['password']); ?>" readonly>
                                                 <button class="toggle-password" onclick="togglePasswordVisibility(this)">
-                                                    <img src="./assets/icons/eye-closed.svg" alt="إظهار كلمة المرور">
+                                                    <i class="fa-solid fa-eye-slash" aria-label="إظهار كلمة المرور"></i>
                                                 </button>
                                                 <button class="copy-button" onclick="copyToClipboard('<?php echo htmlspecialchars($admin['password']); ?>')">
-                                                    <img src="./assets/icons/copy.svg" alt="نسخ">
+                                                    <i class="fa-solid fa-copy" aria-label="نسخ"></i>
                                                 </button>
                                             </div>
                                         </td>
@@ -119,9 +122,9 @@ $teachers = fetchData($conn_cit, "SELECT * FROM  teachers_evaluation ") ?: [];
 
                                         <!-- Delete Button -->
                                         <td>
-                                            <?php if ($admin['username'] !== "DrGabriel") : ?>
+                                            <?php if ($admin['username'] !== MASTER_ADMIN_USERNAME) : ?>
                                                 <button class="delete-button" onclick="deleteAdmin(<?php echo $admin['ID']; ?>)">
-                                                    <img src="./assets/icons/trash.svg" alt="حذف">
+                                                    <i class="fa-solid fa-trash" aria-label="حذف"></i>
                                                 </button>
                                             <?php endif; ?>
                                         </td>
@@ -156,7 +159,7 @@ $teachers = fetchData($conn_cit, "SELECT * FROM  teachers_evaluation ") ?: [];
                                         <div class="username-container">
                                             <span class="username"><?php echo htmlspecialchars($teacher['username']); ?></span>
                                             <button class="copy-button" onclick="copyToClipboard('<?php echo htmlspecialchars($teacher['username']); ?>')">
-                                                <img src="./assets/icons/copy.svg" alt="نسخ">
+                                                <i class="fa-solid fa-copy" aria-label="نسخ"></i>
                                             </button>
                                         </div>
                                     </td>
@@ -165,16 +168,16 @@ $teachers = fetchData($conn_cit, "SELECT * FROM  teachers_evaluation ") ?: [];
                                         <div class="password-container">
                                             <input type="password" class="password-input" value="<?php echo htmlspecialchars($teacher['password']); ?>" readonly>
                                             <button class="toggle-password" onclick="togglePasswordVisibility(this)">
-                                                <img src="./assets/icons/eye-closed.svg" alt="إظهار كلمة المرور">
+                                                <i class="fa-solid fa-eye-slash" aria-label="إظهار كلمة المرور"></i>
                                             </button>
                                             <button class="copy-button" onclick="copyToClipboard('<?php echo htmlspecialchars($teacher['password']); ?>')">
-                                                <img src="./assets/icons/copy.svg" alt="نسخ">
+                                                <i class="fa-solid fa-copy" aria-label="نسخ"></i>
                                             </button>
                                         </div>
                                     </td>
                                     <td>
                                         <button class="copy-button" onclick="copyUsernameAndPassword('<?php echo htmlspecialchars($teacher['name']); ?>', '<?php echo htmlspecialchars($teacher['username']); ?>', '<?php echo htmlspecialchars($teacher['password']); ?>')">
-                                            <img src="./assets/icons/copy.svg" alt="نسخ">
+                                            <i class="fa-solid fa-copy" aria-label="نسخ"></i>
                                         </button>
                                     </td>
                                 </tr>

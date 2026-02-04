@@ -1,5 +1,5 @@
 <?php
-session_start();
+require_once __DIR__ . '/config/session.php';
 
 // Include database connections
 require_once 'config/dbConnectionCit.php'; // For tprofiles table
@@ -20,12 +20,13 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     if (mysqli_num_rows($adminResult) == 1) {
         $admin = mysqli_fetch_assoc($adminResult);
 
-        // Verify password (plaintext comparison - INSECURE, needs hashing)
-        if ($password === $admin['password']) {
+        // Verify password (hashed)
+        if (password_verify($password, $admin['password'])) {
+            regenerateSessionOnPrivilegeChange();
             $_SESSION['admin_id'] = $admin['ID'];
             $_SESSION['username'] = $admin['username'];
             $_SESSION['user_type'] = 'admin';
-            $_SESSION['password'] = $admin['password'];
+            // Removed password from session for security
             $_SESSION['permissions'] = [
                 'isCanCreate' => (bool)$admin['isCanCreate'],
                 'isCanDelete' => (bool)$admin['isCanDelete'],
@@ -49,10 +50,11 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         $teacher = mysqli_fetch_assoc($teacherResult);
 
         // Verify password (plaintext comparison)
+        regenerateSessionOnPrivilegeChange();
         $_SESSION['teacher_id'] = $teacher['id'];
         $_SESSION['teacher_name'] = $teacher['name'];
         $_SESSION['username'] = $username;
-        $_SESSION['password'] = $teacher['password']; // Add this line
+        // Removed password from session for security
         
         header("Location: teacher_dashboard.php");
         exit();

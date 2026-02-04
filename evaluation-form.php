@@ -1,16 +1,21 @@
 <?php
 
-session_start();
+require_once __DIR__ . '/config/session.php';
 require_once 'config/dbConnectionCit.php';
 require_once 'config/DbConnection.php';
 require_once 'helpers/units.php';
+require_once 'helpers/csrf.php';
+require_once 'helpers/error_handler.php';
 require_once 'components/answer_types/floating-input.php';
+
+// Wrap the entire page logic in error handling if needed, 
+// or at least handle critical setup errors.
+try {
 
 
 // Validate required parameters
 if (!isset($_GET['evaluation'], $_GET['Evaluator'])) {
-    header("HTTP/1.1 400 Bad Request");
-    die("Missing required parameters");
+    throw new ValidationException("Missing required parameters");
 }
 
 // Validate against Database Types
@@ -21,8 +26,7 @@ $stmt->execute();
 $stmt->store_result();
 if ($stmt->num_rows === 0) {
     $stmt->close();
-    header("HTTP/1.1 400 Bad Request");
-    die("Invalid evaluator type");
+    throw new NotFoundException("Invalid evaluator type");
 }
 $stmt->close();
 
@@ -33,8 +37,7 @@ $stmt->execute();
 $stmt->store_result();
 if ($stmt->num_rows === 0) {
     $stmt->close();
-    header("HTTP/1.1 400 Bad Request");
-    die("Invalid evaluation type");
+    throw new NotFoundException("Invalid evaluation type");
 }
 $stmt->close();
 
@@ -68,7 +71,7 @@ try {
     $stmt->close();
 
 } catch (Exception $e) {
-    die("Database error: " . $e->getMessage());
+    throw new DatabaseException("Database error: " . $e->getMessage());
 }
 
 // 2. Dynamic Parameter Validation
@@ -134,7 +137,7 @@ if ($form_exists) {
     // Fetch sections for the form
     $stmt = $con->prepare("SELECT ID, title FROM Section WHERE IDForm = ?");
     if (!$stmt) {
-        die("Database error: " . $con->error);
+        throw new DatabaseException("Database error: " . $con->error);
     }
     
     $stmt->bind_param("i", $IDForm);
@@ -210,6 +213,7 @@ if ($form_exists) {
                       <?php require_once 'evaluation/form-header.php'; ?>
                       <!-- Form Body -->
                       <div class="form-body">
+                      <input type="hidden" name="csrf_token" value="<?= generateCSRFToken() ?>">
                     <?php if (!empty($form_by_type['note'])) : ?>
                         <div class="form-note">
                             *ملاحظة:
@@ -302,7 +306,7 @@ if ($form_exists) {
                 </form>
         <?php else: ?>
             <div class="no-form-message">
-                <img src="./assets/icons/no-data.svg" alt="No form available">
+                <i class="fa-solid fa-triangle-exclamation" style="font-size: 3rem; color: #e67e22; margin-bottom: 1rem;"></i>
                 <h2><?php echo htmlspecialchars($form_message); ?></h2>
                 <p>الرجاء التواصل مع المسؤولين</p>
             </div>
@@ -311,3 +315,8 @@ if ($form_exists) {
     <script src="./scripts/evaluation-form.js"></script>
 </body>
 </html>
+<?php
+} catch (Exception $e) {
+    handleException($e);
+}
+?>

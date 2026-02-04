@@ -1,6 +1,6 @@
 <?php
 // pages/dashboard.php
-session_start();
+require_once __DIR__ . '/config/session.php';
 
 // Check if admin is logged in
 if (!isset($_SESSION['admin_id'])) {
@@ -10,13 +10,21 @@ if (!isset($_SESSION['admin_id'])) {
 
 $currentPage = 'dashboard';
 
-// require_once __DIR__ . '/forms/form_constants.php'; // Removed
+
 
 // // Get semester data for header
 include './components/header.php';
 
 require_once 'config/dbConnectionCit.php';
 require_once 'config/DbConnection.php';
+require_once 'helpers/permissions.php';
+
+// Verify admin status and refresh permissions
+if (!verifyAdminStatus($con)) {
+    session_destroy();
+    header("Location: login.php");
+    exit();
+}
 
 require_once 'helpers/database.php';
 require_once 'helpers/FormTypes.php';
@@ -234,7 +242,7 @@ $enhancedStatisticsCards = [
                 <span><?php echo htmlspecialchars($semester['ZamanName']); ?></span>
             </div>
             <div class="user-profile">
-                <img src="./assets/icons/circle-user-round.svg" alt="user">
+                <i class="fa-solid fa-circle-user"></i>
             </div>
         </div>
 

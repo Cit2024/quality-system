@@ -1,6 +1,6 @@
 <?php
 // teacher_statistics.php
-session_start();
+require_once __DIR__ . '/config/session.php';
 $currentPage = 'statistics';
 
 // Check if teacher is logged in
@@ -10,7 +10,7 @@ if (!isset($_SESSION['teacher_id'])) {
 }
 
 include 'components/header.php';
-// include 'forms/form_constants.php'; // Removed
+
 
 // Include database connections
 require_once 'config/dbConnectionCit.php';
@@ -54,7 +54,7 @@ $FILTERED_FORM_TYPES = [
             </div>
             <div class="user-info">
                 <div class="user-profile">
-                    <img src="./assets/icons/circle-user-round.svg" alt="user">
+                    <i class="fa-solid fa-circle-user" aria-label="user"></i>
                 </div>
                 <span><?php echo htmlspecialchars($teacher_name); ?></span>
             </div>
@@ -92,7 +92,7 @@ $FILTERED_FORM_TYPES = [
 
                 <!-- No Results Message -->
                 <div class="no-results-message" style="display: none;">
-                    <img src="./assets/icons/no-data.svg" alt="No results" width="50">
+                    <i class="fa-solid fa-inbox" aria-label="No results" style="font-size: 50px; color: #ccc;"></i>
                     <p>لا توجد عناصر مطابقة لـ "<span class="search-term"></span>"</p>
                 </div>
             </div>
