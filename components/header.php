@@ -12,13 +12,14 @@ if (!$isAdmin && !$isTeacher) {
 
 // Include the database connection
 include __DIR__ . '/../config/dbConnectionCit.php';
+require_once __DIR__ . '/../helpers/error_handler.php';
 
 // Get current semester with proper error handling
 $sql = "SELECT ZamanNo, ZamanName FROM `zaman` WHERE ZamanNo = (SELECT MAX(ZamanNo) FROM zaman)";
 $result = mysqli_query($conn_cit, $sql);
 
 if (!$result) {
-    die("Database query failed: " . mysqli_error($conn_cit));
+    throw new DatabaseException("Database query failed: " . mysqli_error($conn_cit));
 }
 
 $semester = mysqli_fetch_assoc($result) ?? ['ZamanNo' => 0, 'ZamanName' => 'No Active Semester'];
@@ -28,11 +29,11 @@ function executePreparedStatement($con, $query, $param)
 {
     $stmt = mysqli_prepare($con, $query);
     if (!$stmt) {
-        die("Failed to prepare the SQL statement: " . mysqli_error($con));
+        throw new DatabaseException("Failed to prepare the SQL statement: " . mysqli_error($con));
     }
     mysqli_stmt_bind_param($stmt, "i", $param);
     if (!mysqli_stmt_execute($stmt)) {
-        die("Failed to execute the SQL statement: " . mysqli_stmt_error($stmt));
+        throw new DatabaseException("Failed to execute the SQL statement: " . mysqli_stmt_error($stmt));
     }
     mysqli_stmt_bind_result($stmt, $result);
     mysqli_stmt_fetch($stmt);
