@@ -4,7 +4,7 @@ $(document).ready(function () {
 
   // Function to initialize all event listeners
   function initializeEventListeners() {
-    
+
     // Event listener for copy link buttons
     $(document).on("click", ".copy-link-btn", handleCopyLink);
 
@@ -27,7 +27,7 @@ $(document).ready(function () {
 
     // Event listeners for question type changes
     $(document).on("click", ".question-type", handleQuestionTypeChange);
-    
+
     // Initialize options for existing multiple_choice questions on page load
     $('.question').each(function () {
       const $question = $(this);
@@ -50,7 +50,7 @@ $(document).ready(function () {
 
     // ========== ACCESS CONTROL EVENT LISTENERS ==========
     $(document).on('click', '.js-open-access-modal', openAccessModal);
-    $(document).on('click', '.js-close-access-modal', function(e) {
+    $(document).on('click', '.js-close-access-modal', function (e) {
       if ($(this).closest('#accessControlModal').length > 0) {
         closeAccessModal();
       }
@@ -58,43 +58,44 @@ $(document).ready(function () {
     $(document).on('click', '#accessControlModal .btn-cancel', closeAccessModal);
     $(document).on('click', '.js-save-access-settings', saveAccessSettings);
     $(document).on('click', '.js-add-access-row', addAccessFieldRow);
-    
+
     // Dynamic Access Fields Inputs
-    $(document).on('change', '.js-access-input', function() {
+    $(document).on('change', '.js-access-input', function () {
       const index = $(this).data('index');
       const key = $(this).data('key');
       updateAccessField(index, key, $(this).val());
     });
-    
-    $(document).on('change', '.js-access-checkbox', function() {
+
+    $(document).on('change', '.js-access-checkbox', function () {
       const index = $(this).data('index');
       const key = $(this).data('key');
       updateAccessField(index, key, $(this).is(':checked') ? 1 : 0);
     });
-    
-    $(document).on('click', '.js-remove-access-row', function() {
+
+    $(document).on('click', '.js-remove-access-row', function () {
       const index = $(this).data('index');
       removeAccessFieldRow(index);
     });
 
     // ========== TYPE MANAGEMENT EVENT LISTENERS ==========
-    $(document).on('click', '.js-open-type-modal', function() {
+    $(document).on('click', '.js-open-type-modal', function () {
       const category = $(this).data('category');
       openTypeModal(category);
     });
     $(document).on('click', '.js-close-type-modal', closeTypeModal);
-    
-    $(document).on('click', '.js-icon-option', function() {
+
+    $(document).on('click', '.js-icon-option', function () {
       $('.icon-option').css('borderColor', 'transparent');
       $(this).css('borderColor', '#2196F3');
       $('#typeIcon').val($(this).data('icon'));
     });
 
-    $(document).on('submit', '#typeForm', function(e) {
+    $(document).on('submit', '#typeForm', function (e) {
       e.preventDefault();
       const formData = new FormData(this);
       formData.append('action', 'create_type');
-      
+      formData.append('csrf_token', $('meta[name="csrf-token"]').attr('content'));
+
       $.ajax({
         url: window.location.href,
         method: 'POST',
@@ -102,21 +103,21 @@ $(document).ready(function () {
         processData: false,
         contentType: false,
         dataType: 'json',
-        success: function(data) {
+        success: function (data) {
           if (data.success) {
             alert('تم الإضافة بنجاح');
-            location.reload(); 
+            location.reload();
           } else {
             alert('خطأ: ' + data.message);
           }
         },
-        error: function() { 
-          alert('حدث خطأ في الاتصال'); 
+        error: function () {
+          alert('حدث خطأ في الاتصال');
         }
       });
     });
 
-    $(document).on('click', '.js-delete-type', function(e) {
+    $(document).on('click', '.js-delete-type', function (e) {
       e.stopPropagation();
       const category = $(this).data('category');
       const id = $(this).data('db-id');
@@ -124,21 +125,21 @@ $(document).ready(function () {
     });
 
     // ========== CUSTOM SELECTS EVENT LISTENERS ==========
-    $(document).on('click', '.js-custom-select-trigger', function() {
+    $(document).on('click', '.js-custom-select-trigger', function () {
       const type = $(this).data('type');
       toggleCustomSelect(type);
     });
 
-    $(document).on('click', '.js-custom-option', function() {
+    $(document).on('click', '.js-custom-option', function () {
       const type = $(this).data('type');
       const value = $(this).data('value');
       const name = $(this).data('name') || $(this).find('span').first().text();
-      
+
       selectOption(type, value, name, this);
     });
 
     // Close selects when clicking outside
-    $(document).on('click', function(e) {
+    $(document).on('click', function (e) {
       if (!$(e.target).closest('.custom-select-wrapper').length) {
         $('.custom-select-wrapper').removeClass('open');
       }
@@ -148,20 +149,18 @@ $(document).ready(function () {
   // ========== GLOBAL VARIABLES ==========
   let currentAccessFields = [];
   const iconsList = [
-    'assets/icons/college.png',
-    'assets/icons/user-check.svg',
-    'assets/icons/user-graduate-solid.svg',
-    'assets/icons/chalkboard-user-solid.svg',
-    'assets/icons/building-solid.svg',
-    'assets/icons/briefcase-solid.svg',
-    'assets/icons/clipboard-list.svg',
-    'assets/icons/book-bookmark-solid.svg',
-    'assets/icons/star.svg',
-    'assets/icons/calendar.svg'
+    'fa-solid fa-graduation-cap',
+    'fa-solid fa-chalkboard-user',
+    'fa-solid fa-building',
+    'fa-solid fa-briefcase',
+    'fa-solid fa-clipboard-list',
+    'fa-solid fa-book-bookmark',
+    'fa-solid fa-star',
+    'fa-solid fa-calendar'
   ];
 
   // ========== FORM ACTION HANDLERS ==========
-  
+
   function handleFormAction(event) {
     event.stopPropagation();
     const $this = $(this);
@@ -191,27 +190,27 @@ $(document).ready(function () {
 
     if (questionsContainer.style.display === "block" || questionsContainer.style.display === "") {
       questionsContainer.style.display = "none";
-      chevron.innerHTML = `<img src="../assets/icons/chevron-down.svg" alt="Chevron down icon" />`;
+      chevron.innerHTML = `<i class="fa-solid fa-chevron-down"></i>`;
     } else {
       questionsContainer.style.display = "block";
-      chevron.innerHTML = `<img src="../assets/icons/chevron-up.svg" alt="Chevron up icon" />`;
+      chevron.innerHTML = `<i class="fa-solid fa-chevron-up"></i>`;
     }
   }
 
   function handleFormTypeToggle() {
     const formId = $(".form-details").data("form-id");
     const newType = this.value;
-    
+
     const selectedOption = $(`#type-options .custom-option[data-value="${newType}"]`);
     const allowedTargetsStr = selectedOption.data("targets");
     const allowedTargets = allowedTargetsStr ? String(allowedTargetsStr).split(',') : [];
-    
+
     const $targetOptions = $("#target-options .custom-option");
-    
+
     $targetOptions.each(function () {
       const targetVal = $(this).data('value');
       const isAllowed = allowedTargets.includes(String(targetVal));
-      
+
       if (isAllowed) {
         $(this).show();
       } else {
@@ -224,7 +223,7 @@ $(document).ready(function () {
       $('#target-selected-text').text('اختر');
       $('#form-target-select').val('');
     }
-    
+
     updateFormType(formId, newType);
   }
 
@@ -284,7 +283,7 @@ $(document).ready(function () {
       updateQuestionField(questionId, field, newText);
     });
   }
-  
+
   function openTypeModal(currentType, questionId, $element) {
     const modalContent = Object.keys(window.TYPE_QUESTION || {}).map(type => `
       <div class="type-option" 
@@ -292,7 +291,7 @@ $(document).ready(function () {
            role="button"
            tabindex="0"
            aria-label="اختر ${window.TYPE_QUESTION[type].name}">
-          <img src="../${window.TYPE_QUESTION[type].icon}" alt="${type}" />
+          <i class="${window.TYPE_QUESTION[type].icon}"></i>
           <span>${window.TYPE_QUESTION[type].name}</span>
       </div>
     `).join('');
@@ -332,16 +331,16 @@ $(document).ready(function () {
       }
     }
   }
-  
+
   function handleQuestionTypeChange(e) {
     e.stopPropagation();
     const $this = $(this);
     const questionId = $this.data("id");
     const currentType = $this.data("type");
-    
+
     openTypeModal(currentType, questionId, $this);
   }
-    
+
   function addQuestionOption(questionId, optionText, callback) {
     sendAjaxRequest("./add/add-question-option.php", {
       questionId: questionId,
@@ -391,11 +390,11 @@ $(document).ready(function () {
     const formTitle = $button.data('form-title');
     downloadFormEnhanced(formId, formTitle);
   }
-   
+
   function downloadFormEnhanced(formId, formTitle) {
     const $printContainer = $('.view-container').clone();
     $printContainer.find('[data-printthis-ignore]').remove();
-    
+
     const printWindow = window.open('', '_blank');
     printWindow.document.write(`
       <!DOCTYPE html>
@@ -436,9 +435,9 @@ $(document).ready(function () {
   function replaceWithInputField($element, text, callback) {
     const $input = $("<input type='text' />").val(text);
     $element.html($input);
-    
+
     $input.focus().select();
-    
+
     $input.on("blur", function () {
       const newText = $input.val().trim();
       if (newText === "") {
@@ -451,14 +450,14 @@ $(document).ready(function () {
         }
       }
     });
-    
+
     $input.on("keypress", function (e) {
       if (e.which === 13) {
         e.preventDefault();
         $(this).blur();
       }
     });
-    
+
     $input.on("keydown", function (e) {
       if (e.which === 27) {
         e.preventDefault();
@@ -480,7 +479,7 @@ $(document).ready(function () {
         callback(newText);
       }
     });
-    
+
     $textarea.on("keydown", function (e) {
       if (e.which === 13 && e.ctrlKey) {
         e.preventDefault();
@@ -521,8 +520,8 @@ $(document).ready(function () {
         const formStatus = $(".form-status");
         formStatus.html(
           newStatus === "published"
-            ? `<img src=".././assets/icons/badge-check.svg" alt="Published" /><span>منشور</span>`
-            : `<img src=".././assets/icons/badge-alert.svg" alt="Draft" /><span>مسودة</span>`
+            ? `<i class="fa-solid fa-circle-check" style="color: #2ecc71;"></i><span>منشور</span>`
+            : `<i class="fa-solid fa-circle-exclamation" style="color: #e67e22;"></i><span>مسودة</span>`
         );
       }
     );
@@ -561,7 +560,7 @@ $(document).ready(function () {
       value,
     });
   }
-  
+
   function updateTypeVisuals($element, newType) {
     const icons = {
       'multiple_choice': 'list-check',
@@ -569,7 +568,7 @@ $(document).ready(function () {
       'evaluation': 'star',
       'essay': 'quote'
     };
-    
+
     const labels = {
       'multiple_choice': 'إختيار من متعدد',
       'true_false': 'صح/خطأ',
@@ -578,13 +577,13 @@ $(document).ready(function () {
     };
 
     $element.html(`
-      <img src=".././assets/icons/${icons[newType]}.svg" alt="${newType}" />
+      <i class="fa-solid fa-${icons[newType]}"></i>
       <span>${labels[newType]}</span>
     `);
-    
+
     const $question = $element.closest('.question');
     $question.find('.options-section').remove();
-    
+
     if (newType === 'multiple_choice') {
       const optionsHtml = `
         <div class="options-section">
@@ -597,7 +596,7 @@ $(document).ready(function () {
       attachOptionEventListeners($question);
     }
   }
-   
+
   function attachOptionEventListeners($question) {
     $question.find('.add-option').off('click').on('click', function (e) {
       e.stopPropagation();
@@ -621,7 +620,7 @@ $(document).ready(function () {
       const $optionItem = $(this).closest('.option-item');
       const questionId = $question.find('.question-type').data('id');
       const optionText = $optionItem.data('option');
-        
+
       if (confirm("حذف هذا الخيار؟")) {
         removeQuestionOption(questionId, optionText, () => {
           $optionItem.remove();
@@ -696,14 +695,14 @@ $(document).ready(function () {
         const $tempContainer = $('<div>').html(
           html.replace(/\.\.(\/\.?)?\/assets/g, '/quality-system/assets')
         );
-            
+
         $tempContainer.find('[data-printthis-ignore]').remove();
-            
+
         if (typeof $.fn.printThis !== 'function') {
           console.warn('printThis plugin not loaded, using fallback printing');
           return fallbackPrint($tempContainer, formTitle);
         }
-            
+
         $tempContainer.printThis({
           importCSS: true,
           loadCSS: "/quality-system/styles/forms.css",
@@ -775,43 +774,60 @@ $(document).ready(function () {
     `);
     printWindow.document.close();
   }
-  
+
   function handleCopyLink(event) {
     event.stopPropagation();
     const $button = $(this);
     const link = $button.data('link') || $button.prev('.evaluation-link, .evaluation-link-input').val();
-    
+
     const tempInput = $('<input>');
     $('body').append(tempInput);
     tempInput.val(link).select();
     document.execCommand('copy');
     tempInput.remove();
-    
+
     const originalHtml = $button.html();
     $button.addClass('copied');
     $button.html('<i class="fa-solid fa-check"></i> <span>تم النسخ</span>');
-    
+
     setTimeout(() => {
       $button.removeClass('copied');
       $button.html(originalHtml);
     }, 2000);
   }
-  
+
   function sendAjaxRequest(url, data, successCallback) {
+    // Add CSRF token
+    data.csrf_token = $('meta[name="csrf-token"]').attr('content');
+
     $.ajax({
       url,
       method: "POST",
       data,
       success: function (response) {
-        const result = JSON.parse(response);
-        if (result.status === "success") {
+        // Try to parse JSON if response is a string
+        let result = response;
+        if (typeof response === 'string') {
+          try {
+            result = JSON.parse(response);
+          } catch (e) {
+            console.error("Failed to parse JSON response", e);
+            alert("Server error: Invalid response format");
+            return;
+          }
+        }
+
+        if (result.status === "success" || result.success) {
           if (successCallback) successCallback(result);
         } else {
-          alert("Failed: " + result.message);
+          alert("Failed: " + (result.message || "Unknown error"));
         }
       },
       error: function (xhr, status, error) {
         console.error("AJAX error:", error);
+        if (xhr.status === 403) {
+          alert("Session expired or invalid security token. Please refresh the page.");
+        }
       },
     });
   }
@@ -824,20 +840,20 @@ $(document).ready(function () {
 
   function openAccessModal() {
     console.log("Opening Access Modal...");
-    
+
     if (!window.formConfig) {
       console.error("formConfig is missing!");
       alert("System Error: Configuration missing.");
       return;
     }
-    
+
     console.log("Form Config:", window.formConfig);
-    
+
     $('#access-form-password').val(window.formConfig.password || '');
-    
+
     const tbody = $('#access-fields-tbody');
     tbody.html('<tr><td colspan="5" style="text-align:center;">جاري التحميل...</td></tr>');
-    
+
     $('#accessControlModal').addClass('active').show();
     console.log("Modal displayed");
 
@@ -845,9 +861,9 @@ $(document).ready(function () {
       url: `edit-form.php?id=${window.formConfig.id}&action=get_access_data`,
       method: 'GET',
       dataType: 'json',
-      success: function(data) {
+      success: function (data) {
         console.log("Access data loaded:", data);
-        if(data.success) {
+        if (data.success) {
           $('#access-form-password').val(data.password || '');
           currentAccessFields = data.fields || [];
           renderAccessFields();
@@ -855,8 +871,8 @@ $(document).ready(function () {
           alert('فشل تحميل البيانات: ' + (data.message || 'خطأ غير معروف'));
         }
       },
-      error: function(xhr, status, error) {
-        console.error('AJAX Error:', {xhr, status, error});
+      error: function (xhr, status, error) {
+        console.error('AJAX Error:', { xhr, status, error });
         tbody.html('<tr><td colspan="5" style="text-align:center; color:red;">خطأ في التحميل</td></tr>');
         alert('خطأ في الاتصال بالخادم');
       }
@@ -871,7 +887,7 @@ $(document).ready(function () {
   function renderAccessFields() {
     const tbody = $('#access-fields-tbody');
     tbody.empty();
-    
+
     currentAccessFields.forEach((field, index) => {
       const row = `
         <tr>
@@ -922,7 +938,7 @@ $(document).ready(function () {
 
   function saveAccessSettings() {
     const password = $('#access-form-password').val();
-    
+
     for (let field of currentAccessFields) {
       if (!field.Label.trim()) {
         alert('يرجى إدخال اسم لجميع الحقول');
@@ -935,6 +951,7 @@ $(document).ready(function () {
     formData.append('form_id', window.formConfig.id);
     formData.append('password', password);
     formData.append('fields', JSON.stringify(currentAccessFields));
+    formData.append('csrf_token', $('meta[name="csrf-token"]').attr('content'));
 
     $.ajax({
       url: 'edit-form.php?id=' + window.formConfig.id,
@@ -943,21 +960,21 @@ $(document).ready(function () {
       processData: false,
       contentType: false,
       dataType: 'json',
-      success: function(data) {
+      success: function (data) {
         if (data.success) {
           alert('تم حفظ الإعدادات بنجاح');
           closeAccessModal();
-          
+
           if (data.eval_link) {
             $('.evaluation-link-input').val(data.eval_link);
           }
-          
+
           location.reload();
         } else {
           alert('حدث خطأ: ' + data.message);
         }
       },
-      error: function() {
+      error: function () {
         alert('حدث خطأ في الاتصال');
       }
     });
@@ -967,14 +984,14 @@ $(document).ready(function () {
 
   function openTypeModal(category) {
     console.log("Opening Type Modal for:", category);
-    
+
     $('#typeCategory').val(category);
     $('#modalTitle').text(category === 'target' ? 'إضافة مقيّم جديد' : 'إضافة نوع تقييم جديد');
     $('#typeForm')[0].reset();
-    
+
     const iconContainer = $('.icon-selector');
     iconContainer.empty();
-    
+
     iconsList.forEach(icon => {
       const div = $('<div>')
         .addClass('icon-option js-icon-option')
@@ -985,12 +1002,12 @@ $(document).ready(function () {
           border: '2px solid transparent',
           borderRadius: '4px'
         })
-        .html(`<img src="../${icon}" style="width: 24px; height: 24px;">`)
+        .html(`<i class="${icon}" style="font-size: 24px; color: #333;"></i>`)
         .data('icon', icon);
-        
+
       iconContainer.append(div);
     });
-    
+
     $('#typeModal').addClass('active').show();
     console.log("Type Modal displayed");
   }
@@ -1012,13 +1029,14 @@ $(document).ready(function () {
       url: window.location.href,
       method: 'POST',
       contentType: 'application/json',
-      data: JSON.stringify({ 
+      data: JSON.stringify({
         action: 'delete_type',
         id: id,
-        category: category
+        category: category,
+        csrf_token: $('meta[name="csrf-token"]').attr('content')
       }),
       dataType: 'json',
-      success: function(data) {
+      success: function (data) {
         if (data.success) {
           alert('تم الحذف بنجاح');
           location.reload();
@@ -1026,7 +1044,7 @@ $(document).ready(function () {
           alert('خطأ: ' + data.message);
         }
       },
-      error: function() {
+      error: function () {
         alert('حدث خطأ في الاتصال');
       }
     });
@@ -1035,9 +1053,9 @@ $(document).ready(function () {
   function toggleCustomSelect(type) {
     const wrapper = $('#' + type + '-select-wrapper');
     const isOpen = wrapper.hasClass('open');
-    
+
     $('.custom-select-wrapper').removeClass('open');
-    
+
     if (!isOpen) {
       wrapper.addClass('open');
     }
@@ -1046,25 +1064,25 @@ $(document).ready(function () {
   function selectOption(type, value, name, element) {
     const inputId = type === 'target' ? 'form-target-select' : 'form-type-select';
     const inputElement = $('#' + inputId);
-    
+
     inputElement.val(value).trigger('change');
-    
+
     $('#' + type + '-selected-text').text(name);
-    
+
     const wrapper = $('#' + type + '-select-wrapper');
     wrapper.find('.custom-option').removeClass('selected');
     $(element).addClass('selected');
-    
+
     wrapper.removeClass('open');
   }
 
   // ========== FONT AWESOME ICON PICKER ==========
-  
+
   let fontAwesomeIcons = [];
-  
+
   // Curated list of popular Font Awesome solid icons
   const popularIcons = [
-    'book-bookmark', 'graduation-cap', 'chalkboard-user', 'user-tie', 
+    'book-bookmark', 'graduation-cap', 'chalkboard-user', 'user-tie',
     'user-graduate', 'briefcase', 'building', 'person-chalkboard',
     'layer-group', 'clipboard-list', 'user-check', 'users', 'calendar',
     'chart-bar', 'chart-line', 'chart-pie', 'file-alt', 'folder',
@@ -1077,21 +1095,21 @@ $(document).ready(function () {
     'book', 'bookmark', 'pen', 'pencil', 'highlighter', 'eraser',
     'calculator', 'compass', 'globe', 'flag', 'shield', 'crown'
   ];
-  
+
   function loadFontAwesomeIcons() {
     // Use curated list of popular icons
     fontAwesomeIcons = popularIcons.map(icon => ({
       name: icon,
       className: `fa-solid fa-${icon}`
     }));
-    
+
     renderIcons(fontAwesomeIcons);
   }
-  
+
   function renderIcons(icons) {
     const iconSelector = $('.icon-selector');
     iconSelector.empty();
-    
+
     if (icons.length === 0) {
       iconSelector.html(`
         <div style="grid-column: 1 / -1; text-align: center; padding: 20px; color: #999;">
@@ -1100,7 +1118,7 @@ $(document).ready(function () {
       `);
       return;
     }
-    
+
     icons.forEach(icon => {
       const iconElement = $(`
         <div class="icon-option" data-icon="${icon.className}" style="
@@ -1117,58 +1135,58 @@ $(document).ready(function () {
           <i class="${icon.className}" style="font-size: 24px; color: #333;"></i>
         </div>
       `);
-      
-      iconElement.on('mouseenter', function() {
-        $(this).css({backgroundColor: '#e3f2fd', transform: 'scale(1.1)'});
+
+      iconElement.on('mouseenter', function () {
+        $(this).css({ backgroundColor: '#e3f2fd', transform: 'scale(1.1)' });
       });
-      
-      iconElement.on('mouseleave', function() {
+
+      iconElement.on('mouseleave', function () {
         if (!$(this).hasClass('selected')) {
-          $(this).css({backgroundColor: 'white', transform: 'scale(1)'});
+          $(this).css({ backgroundColor: 'white', transform: 'scale(1)' });
         }
       });
-      
-      iconElement.on('click', function() {
+
+      iconElement.on('click', function () {
         $('.icon-option').removeClass('selected').css({
           borderColor: 'transparent',
           backgroundColor: 'white',
           transform: 'scale(1)'
         });
-        
+
         $(this).addClass('selected').css({
           borderColor: '#2196F3',
           backgroundColor: '#e3f2fd',
           transform: 'scale(1.05)'
         });
-        
+
         $('#typeIcon').val(icon.className);
         $('#selectedIconDisplay').attr('class', icon.className);
         $('#selectedIconName').text(icon.className);
         $('#selectedIconPreview').show();
       });
-      
+
       iconSelector.append(iconElement);
     });
   }
-  
+
   // Search functionality
-  $(document).on('input', '#iconSearch', function() {
+  $(document).on('input', '#iconSearch', function () {
     const searchTerm = $(this).val().toLowerCase();
-    
+
     if (!searchTerm) {
       renderIcons(fontAwesomeIcons);
       return;
     }
-    
-    const filteredIcons = fontAwesomeIcons.filter(icon => 
+
+    const filteredIcons = fontAwesomeIcons.filter(icon =>
       icon.name.toLowerCase().includes(searchTerm)
     );
-    
+
     renderIcons(filteredIcons);
   });
-  
+
   // Initialize icon picker when modal opens
-  $(document).on('click', '.js-open-type-modal', function() {
+  $(document).on('click', '.js-open-type-modal', function () {
     if (fontAwesomeIcons.length === 0) {
       loadFontAwesomeIcons();
     }

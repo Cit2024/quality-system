@@ -140,8 +140,8 @@ function initializeCharts() {
   document
     .querySelectorAll('canvas[id^="chart-course-"], canvas[id^="chart-teacher-"]')
     .forEach((canvas) => {
-      const evaluations = parseInt(canvas.dataset.evaluations);
-      const total = parseInt(canvas.dataset.totalStudents);
+      const evaluations = parseFloat(canvas.dataset.evaluations) || 0;
+      const total = parseFloat(canvas.dataset.totalStudents) || 0;
 
       // Destroy existing chart if any
       const existingChart = Chart.getChart(canvas);

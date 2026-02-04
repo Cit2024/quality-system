@@ -13,22 +13,23 @@ function copyToClipboard(text) {
 // Function to toggle password visibility
 function togglePasswordVisibility(button) {
   const passwordInput = button.previousElementSibling;
-  const eyeIcon = button.querySelector("img");
+  const eyeIcon = button.querySelector("i"); // Changed from img to i
 
   if (passwordInput.type === "password") {
     passwordInput.type = "text";
-    eyeIcon.src = "./assets/icons/eye.svg";
+    eyeIcon.classList.remove("fa-eye-slash");
+    eyeIcon.classList.add("fa-eye");
   } else {
     passwordInput.type = "password";
-    eyeIcon.src = "./assets/icons/eye-closed.svg";
+    eyeIcon.classList.remove("fa-eye");
+    eyeIcon.classList.add("fa-eye-slash");
   }
 }
 
 // Function to update permissions
 function updatePermission(adminId, permission, isChecked) {
   fetch(
-    `./members/update/update_permission.php?id=${adminId}&permission=${permission}&value=${
-      isChecked ? 1 : 0
+    `./members/update/update_permission.php?id=${adminId}&permission=${permission}&value=${isChecked ? 1 : 0
     }`
   )
     .then((response) => response.json())
@@ -47,7 +48,15 @@ function updatePermission(adminId, permission, isChecked) {
 // Function to delete an admin
 function deleteAdmin(adminId) {
   if (confirm("هل أنت متأكد من حذف هذا المشرف؟")) {
-    fetch(`./members/delete/delete_admin.php?id=${adminId}`)
+    const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+
+    fetch(`./members/delete/delete_admin.php`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/x-www-form-urlencoded',
+      },
+      body: `id=${adminId}&csrf_token=${csrfToken}`
+    })
       .then((response) => response.json())
       .then((data) => {
         if (data.success) {
@@ -101,7 +110,7 @@ function copyCredentials(username, password) {
 }
 
 // Existing functions for copying username and password and url for system quality
-function copyUsernameAndPassword(name,username,password) {
+function copyUsernameAndPassword(name, username, password) {
   const text = `Link to the evaluation system : https://erp.cit.edu.ly/quality-system/login.php \n\nname: ${name}\nusername: ${username}\npassword: ${password}`;
   navigator.clipboard
     .writeText(text)

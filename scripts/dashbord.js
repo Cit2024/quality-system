@@ -2,27 +2,27 @@
  * Dashboard Controller
  * Handles all chart initialization and interactions
  */
-document.addEventListener('DOMContentLoaded', function() {
+document.addEventListener('DOMContentLoaded', function () {
     // DOM Elements
     const pieChartElement = document.querySelector('.pie-chart');
     const lineChartElement = document.querySelector('.line-chart');
     const chartTypeSelect = document.getElementById('chart-type');
     const statisticsAboutSelect = document.getElementById('statistics-about');
-    
+
     // First extract all chart data from DOM
     const chartData = {
         labels: JSON.parse(lineChartElement.dataset.semesterNames),
         datasets: {
-            studentCounts: JSON.parse(lineChartElement.dataset.studentCounts),
-            teacherRatings: JSON.parse(lineChartElement.dataset.teacherRatings),
-            courseRatings: JSON.parse(lineChartElement.dataset.courseRatings)
+            studentCounts: JSON.parse(lineChartElement.dataset.studentCounts).map(Number),
+            teacherRatings: JSON.parse(lineChartElement.dataset.teacherRatings).map(val => parseFloat(val) || 0),
+            courseRatings: JSON.parse(lineChartElement.dataset.courseRatings).map(val => parseFloat(val) || 0)
         }
     };
-    
+
     // Initialize charts after data is loaded
     const pieChart = initPieChart();
     let lineChart = initLineChart(chartData);
-    
+
     // Event listeners
     chartTypeSelect.addEventListener('change', updateChartType);
     statisticsAboutSelect.addEventListener('change', updateChartData);
@@ -37,8 +37,8 @@ document.addEventListener('DOMContentLoaded', function() {
                 labels: ["الطالبة المشاركين", "الطالبة الغير مشاكين"],
                 datasets: [{
                     data: [
-                        parseInt(pieChartElement.dataset.participatedStudents),
-                        parseInt(pieChartElement.dataset.nonParticipatedStudents)
+                        parseFloat(pieChartElement.dataset.participatedStudents) || 0,
+                        parseFloat(pieChartElement.dataset.nonParticipatedStudents) || 0
                     ],
                     backgroundColor: ["rgb(255, 99, 3)", "rgb(195, 195, 195)"],
                     borderWidth: 1
@@ -156,25 +156,25 @@ document.addEventListener('DOMContentLoaded', function() {
      * Update chart type based on user selection
      */
     function updateChartType() {
-        
+
         // Save necessary data before destruction
         const oldLabels = [...lineChart.data.labels];
-        const oldDataset = {...lineChart.data.datasets[0]};
+        const oldDataset = { ...lineChart.data.datasets[0] };
         // Retrieve current titles from the existing options
         const yAxisTitle = lineChart.options.scales.y.title.text;
         const chartTitle = lineChart.options.plugins.title.text;
-    
+
         // Destroy old chart
         lineChart.destroy();
-        
+
         // Destroy old chart before creating new one
         lineChart.destroy();
-        
+
         // Get current data and labels
         const currentDataset = lineChart.data.datasets[0];
         const currentOptions = lineChart.options;
-        
-        
+
+
         // Create new chart with updated type and regenerated options
         lineChart = new Chart(document.getElementById('average-quarterly-ratings'), {
             type: chartTypeSelect.value,
@@ -193,7 +193,7 @@ document.addEventListener('DOMContentLoaded', function() {
         const selectedStat = statisticsAboutSelect.value;
         let newData, newLabel, newBackgroundColor, newBorderColor, yAxisTitle, chartTitle;
 
-        switch(selectedStat) {
+        switch (selectedStat) {
             case 'number-students':
                 newData = chartData.datasets.studentCounts;
                 newLabel = 'مشاركة الطلبة في التقييم';
@@ -202,7 +202,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 newBackgroundColor = 'rgba(75, 192, 192, 0.2)';
                 newBorderColor = 'rgba(75, 192, 192, 1)';
                 break;
-                
+
             case 'average-teacher-ratings':
                 newData = chartData.datasets.teacherRatings;
                 newLabel = 'متوسط تقييمات المدرسين';
@@ -211,7 +211,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 newBackgroundColor = 'rgba(255, 99, 132, 0.2)';
                 newBorderColor = 'rgba(255, 99, 132, 1)';
                 break;
-                
+
             case 'average-course-ratings':
                 newData = chartData.datasets.courseRatings;
                 newLabel = 'متوسط تقييمات المقررات';
@@ -241,7 +241,7 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     // Update the window resize handler
-    window.addEventListener('resize', function() {
+    window.addEventListener('resize', function () {
         if (pieChart && !pieChart.destroyed) pieChart.resize();
         if (lineChart && !lineChart.destroyed) lineChart.resize();
     });

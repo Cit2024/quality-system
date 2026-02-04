@@ -13,11 +13,11 @@ class StatisticsController {
   }
 
   getFirstValidType() {
-    return Object.keys(FORM_TYPES).find(type => 
+    return Object.keys(FORM_TYPES).find(type =>
       FORM_TYPES[type].allowed_targets.includes(this.currentTarget)
     );
   }
-  
+
   initElements() {
     this.elements = {
       mainTabs: document.querySelectorAll('.tab-button'),
@@ -43,9 +43,9 @@ class StatisticsController {
 
     // Sub tabs
     document.addEventListener('click', (e) => {
-      if(e.target.closest('.sub-tab-button')) {
+      if (e.target.closest('.sub-tab-button')) {
         const newType = e.target.closest('.sub-tab-button').dataset.type;
-        if(this.currentType !== newType) {
+        if (this.currentType !== newType) {
           this.currentType = newType;
           this.filters.filter = 'all';
           this.elements.filterSelect.value = 'all';
@@ -55,16 +55,16 @@ class StatisticsController {
       }
     });
 
-   // Search
-   let searchTimeout;
-   this.elements.searchInput.addEventListener('input', (e) => {
+    // Search
+    let searchTimeout;
+    this.elements.searchInput.addEventListener('input', (e) => {
       clearTimeout(searchTimeout);
       this.filters.search = e.target.value.toLowerCase();
       searchTimeout = setTimeout(() => this.filterCards(), 300);
     });
 
-   // Filter
-   this.elements.filterSelect.addEventListener('change', (e) => {
+    // Filter
+    this.elements.filterSelect.addEventListener('change', (e) => {
       this.filters.filter = e.target.value;
       this.loadData();
     });
@@ -72,12 +72,12 @@ class StatisticsController {
 
   updateUI() {
     // Main tabs
-    this.elements.mainTabs.forEach(btn => 
+    this.elements.mainTabs.forEach(btn =>
       btn.classList.toggle('active', btn.dataset.target === this.currentTarget)
     );
 
     // Tab contents
-    document.querySelectorAll('.tab-content').forEach(content => 
+    document.querySelectorAll('.tab-content').forEach(content =>
       content.classList.toggle('active', content.id === `${this.currentTarget}-tab`)
     );
 
@@ -88,30 +88,30 @@ class StatisticsController {
   updateSubTabs() {
     // First hide all sub-tabs
     document.querySelectorAll('.sub-tabs').forEach(subTabContainer => {
-        subTabContainer.style.display = 'none';
+      subTabContainer.style.display = 'none';
     });
 
     // Then show only valid ones
     const activeTabContent = document.querySelector(`#${this.currentTarget}-tab`);
     const activeSubTabs = activeTabContent.querySelector('.sub-tabs');
-    
-    if(activeSubTabs) {
-        activeSubTabs.style.display = 'flex';
-        
-        // Update individual buttons
-        activeSubTabs.querySelectorAll('.sub-tab-button').forEach(btn => {
-            const isValid = window.FORM_TYPES[btn.dataset.type].allowed_targets.includes(this.currentTarget);
-            btn.style.display = isValid ? 'flex' : 'none';
-            btn.classList.toggle('active', btn.dataset.type === this.currentType);
-        });
-     }
-    }
 
-  
+    if (activeSubTabs) {
+      activeSubTabs.style.display = 'flex';
+
+      // Update individual buttons
+      activeSubTabs.querySelectorAll('.sub-tab-button').forEach(btn => {
+        const isValid = window.FORM_TYPES[btn.dataset.type].allowed_targets.includes(this.currentTarget);
+        btn.style.display = isValid ? 'flex' : 'none';
+        btn.classList.toggle('active', btn.dataset.type === this.currentType);
+      });
+    }
+  }
+
+
   async loadData() {
     const loader = createLoadingSpinnerBar();
     const container = document.querySelector(`#${this.currentTarget}-tab .cards-container`);
-    
+
     try {
       container.innerHTML = '';
       container.appendChild(loader);
@@ -130,7 +130,7 @@ class StatisticsController {
       container.innerHTML = html;
       initializeCharts();
       this.updateFilters(filters);
-      
+
       // Reapply search filter if active
       if (this.filters.search) {
         this.filterCards();
@@ -159,7 +159,7 @@ class StatisticsController {
       );
       const title = titleElement?.textContent?.toLowerCase() || '';
       const isMatch = title.includes(searchTerm);
-      
+
       card.style.display = isMatch ? 'block' : 'none';
       if (isMatch) visibleCount++;
     });
@@ -170,28 +170,28 @@ class StatisticsController {
   toggleNoResults(show) {
     const message = document.querySelector(`#${this.currentTarget}-tab .no-results-message`);
     if (!message) return;
-    
+
     message.style.display = show ? 'flex' : 'none';
     if (show) message.querySelector('.search-term').textContent = this.filters.search;
   }
-    
+
   updateFilters(filters) {
-        this.elements.filterSelect.innerHTML = '<option value="all">الكل</option>';
-        
-        if (typeof filters === 'object' && !Array.isArray(filters)) {
-            // Handle time-based filters (alumni program evaluations)
-            Object.entries(filters).forEach(([value, text]) => {
-                const option = new Option(text, value);
-                this.elements.filterSelect.add(option);
-            });
-        } else if (Array.isArray(filters)) {
-            // Handle semester filters (courses/teachers)
-            filters.forEach(value => {
-                const option = new Option(value.text, value.id);
-                this.elements.filterSelect.add(option);
-            });
-        }
+    this.elements.filterSelect.innerHTML = '<option value="all">الكل</option>';
+
+    if (typeof filters === 'object' && !Array.isArray(filters)) {
+      // Handle time-based filters (alumni program evaluations)
+      Object.entries(filters).forEach(([value, text]) => {
+        const option = new Option(text, value);
+        this.elements.filterSelect.add(option);
+      });
+    } else if (Array.isArray(filters)) {
+      // Handle semester filters (courses/teachers)
+      filters.forEach(value => {
+        const option = new Option(value.text, value.id);
+        this.elements.filterSelect.add(option);
+      });
     }
+  }
 
   updateURL() {
     const url = new URL(window.location);
@@ -210,9 +210,9 @@ function initializeCharts() {
   document.querySelectorAll('canvas[id^="chart-number-evaluation"]').forEach(canvas => {
     if (canvas.chart) return; // Prevent reinitialization
 
-    const evaluations = parseInt(canvas.dataset.evaluations);
-    const total = parseInt(canvas.dataset.totalStudents);
-    
+    const evaluations = parseFloat(canvas.dataset.evaluations) || 0;
+    const total = parseFloat(canvas.dataset.totalStudents) || 0;
+
     canvas.chart = new Chart(canvas, {
       type: 'doughnut',
       data: {
@@ -233,9 +233,9 @@ function initializeCharts() {
             position: 'bottom',
             labels: {
               font: {
-                    family: 'DINRegular',
-                    size: 14
-                },
+                family: 'DINRegular',
+                size: 14
+              },
               usePointStyle: true
             },
           },
@@ -253,15 +253,15 @@ document.addEventListener('DOMContentLoaded', () => {
 
 // In sub-tab click event listener
 document.addEventListener('click', (e) => {
-    if(e.target.closest('.sub-tab-button')) {
-        const newType = e.target.closest('.sub-tab-button').dataset.type;
-        if(this.currentType !== newType) {
-            this.currentType = newType;
-            // Reset filter to 'all'
-            this.filters.filter = 'all';
-            this.elements.filterSelect.value = 'all';
-            this.updateSubTabs();
-            this.loadData();
-        }
+  if (e.target.closest('.sub-tab-button')) {
+    const newType = e.target.closest('.sub-tab-button').dataset.type;
+    if (this.currentType !== newType) {
+      this.currentType = newType;
+      // Reset filter to 'all'
+      this.filters.filter = 'all';
+      this.elements.filterSelect.value = 'all';
+      this.updateSubTabs();
+      this.loadData();
     }
+  }
 });

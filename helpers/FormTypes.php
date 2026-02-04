@@ -8,19 +8,19 @@ class FormTypes {
     const TYPE_QUESTION = [
         'true_false' => [
             'name' => 'صح/خطأ',
-            'icon' => './assets/icons/square-check.svg'
+            'icon' => 'fa-solid fa-square-check'
         ],
         'evaluation' => [
             'name' => 'تقييم',
-            'icon' => './assets/icons/star.svg'
+            'icon' => 'fa-solid fa-star'
         ],
         'multiple_choice' => [
             'name' => 'إختيار من متعدد',
-            'icon' => './assets/icons/list-check.svg'
+            'icon' => 'fa-solid fa-list-check'
         ],
         'essay' => [
             'name' => 'مقالي',
-            'icon' => './assets/icons/quote.svg'
+            'icon' => 'fa-solid fa-quote-left'
         ]
     ];
 
