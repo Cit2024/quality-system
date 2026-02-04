@@ -311,7 +311,7 @@ class GenericEvaluationTemplate {
             if (!empty($teacherData)) {
                 $teachers[] = [
                     'name' => $teacherData[0]['name'],
-                    'photo' => '../assets/icons/circle-user-round.svg'
+                    'photo' => 'fa-solid fa-circle-user'
                 ];
             }
         }

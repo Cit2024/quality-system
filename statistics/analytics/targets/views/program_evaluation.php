@@ -36,7 +36,7 @@ $participants = $stats['participants'] ?? 0;
     <div class="container">
         <div class="back-button" onclick="window.history.back()">
             <span>رجوع</span>
-            <img src="../assets/icons/chevron-right.svg" alt="Back">
+            <i class="fa-solid fa-chevron-right"></i>
         </div>
 
         <div class="container-analytics">
@@ -70,7 +70,7 @@ $participants = $stats['participants'] ?? 0;
                                                         ])) ?>"
                                 data-questions="<?= htmlspecialchars(json_encode($questions)) ?>"
                                 data-stats="<?= htmlspecialchars(json_encode($stats)) ?>">
-                                <img src="../assets/icons/file-down.svg" alt="download">
+                                <i class="fa-solid fa-file-arrow-down"></i>
                                 تنزيل التقرير
                             </button>
                         </div>
@@ -111,7 +111,7 @@ $participants = $stats['participants'] ?? 0;
                                                         ENT_QUOTES,
                                                         'UTF-8'
                                                     ) ?>">
-                                <img src="../assets/icons/folder-clock.svg" alt="folder clock">
+                                <i class="fa-solid fa-folder-tree"></i>
                                 انشاء تقرير شامل
                             </button>
                         </div>

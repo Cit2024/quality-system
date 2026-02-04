@@ -28,7 +28,7 @@
     <div class="container">
         <div class="back-button" onclick="window.history.back()">
             <span>رجوع</span>
-            <img src="../assets/icons/chevron-right.svg" alt="Back">
+            <i class="fa-solid fa-chevron-right" aria-label="Back"></i>
         </div>
 
         <div class="container-analytics">
@@ -44,14 +44,14 @@
                                     data-basic-information="<?= htmlspecialchars(json_encode($viewData['teacher'])) ?>"
                                     data-questions="<?= htmlspecialchars(json_encode($viewData['questions'])) ?>"
                                     data-stats="<?= htmlspecialchars(json_encode($viewData['stats'])) ?>">
-                                    <img src="../assets/icons/file-down.svg" alt="download">
+                                    <i class="fa-solid fa-file-arrow-down" aria-label="download"></i>
                                     تنزيل التقرير
                                 </button>
                                 <button class="download-all-courses primary-button"
                                     data-report-type="teacher"
                                     data-file-name="<?= htmlspecialchars($viewData['teacher']['name']) ?>"
                                     data-all-course="<?= htmlspecialchars(json_encode($viewData['all_courses'])) ?>">
-                                    <img src="../assets/icons/files.svg" alt="download files">
+                                    <i class="fa-solid fa-files" aria-label="download files"></i>
                                     تنزيل تقارير لكل المقررات
                                 </button>
 
@@ -107,7 +107,7 @@
                             data-file-name="<?= htmlspecialchars($viewData['teacher']['name']) ?>"
                             data-basic-information="<?= htmlspecialchars(json_encode($viewData['teacher'])) ?>"
                             data-all-semester="<?= htmlspecialchars(json_encode($viewData['all_semesters']), ENT_QUOTES, 'UTF-8') ?>">
-                            <img src="../assets/icons/folder-clock.svg" alt="folder clock">
+                            <i class="fa-solid fa-folder-clock" aria-label="folder clock"></i>
                             تحميل ملف التقييمات عبر الفصول
                         </button>
                     </div>

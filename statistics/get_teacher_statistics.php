@@ -76,7 +76,7 @@ class TeacherStatisticsHandler
     private function getTeacherPhoto()
     {
         // Placeholder for actual photo retrieval logic
-        return './assets/icons/circle-user-round.svg';
+        return 'fa-solid fa-circle-user';
     }
 
     private function shouldAddFilterParam()

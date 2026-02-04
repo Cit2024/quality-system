@@ -27,7 +27,7 @@
     <div class="container">
         <div class="back-button" onclick="window.history.back()">
             <span>رجوع</span>
-            <img src="../assets/icons/chevron-right.svg" alt="Back">
+            <i class="fa-solid fa-chevron-right"></i>
         </div>
 
         <div class="container-analytics">
@@ -55,7 +55,7 @@
                                     data-basic-information="<?= htmlspecialchars(json_encode($viewData['course'])) ?>"
                                     data-questions="<?= htmlspecialchars(json_encode($viewData['questions'])) ?>"
                                     data-stats="<?= htmlspecialchars(json_encode($viewData['stats'])) ?>">
-                                    <img src="../assets/icons/file-down.svg" alt="download">
+                                    <i class="fa-solid fa-file-arrow-down"></i>
                                     تنزيل التقرير
                                 </button>
 
@@ -70,7 +70,11 @@
                                 <div class="flex-row gap-20">
                                     <?php foreach ($viewData['course']['teachers'] as $teacher) : ?>
                                         <div class="selfie-photo">
-                                            <img src="<?= $teacher['photo'] ?>" alt="<?= htmlspecialchars($teacher['name']) ?>">
+                                            <?php if (str_starts_with($teacher['photo'], 'fa-')): ?>
+                                                <i class="<?= $teacher['photo'] ?>" style="font-size: 2.5rem; color: #bdc3c7;"></i>
+                                            <?php else: ?>
+                                                <img src="<?= $teacher['photo'] ?>" alt="<?= htmlspecialchars($teacher['name']) ?>">
+                                            <?php endif; ?>
                                         </div>
                                         <p class="primary-title"><?= htmlspecialchars($teacher['name']) ?></p>
                                     <?php endforeach; ?>
@@ -97,7 +101,7 @@
                             data-file-name="<?= htmlspecialchars($viewData['course']['MadaName']) ?>"
                             data-basic-information="<?= htmlspecialchars(json_encode($viewData['course'])) ?>"
                             data-all-semester="<?= htmlspecialchars(json_encode($viewData['all_semesters']), ENT_QUOTES, 'UTF-8') ?>">
-                            <img src="../assets/icons/folder-clock.svg" alt="folder clock">
+                            <i class="fa-solid fa-folder-tree"></i>
                             تحميل ملف التقييمات عبر الفصول
                         </button>
                     </div>

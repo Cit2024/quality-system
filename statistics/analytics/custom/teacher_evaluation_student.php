@@ -4,6 +4,7 @@
 require_once __DIR__ . '/../../../shared/auth.php';
 require_once __DIR__ . '/../../../shared/database.php';
 require_once __DIR__ . '/../../../shared/data_fetcher.php';
+require_once __DIR__ . '/../../../../helpers/exceptions.php';
 
 // 1. Input Validation & Sanitization
 // ------------------------------------------------------------
@@ -21,12 +22,11 @@ $teacherData = safeFetch(
 )[0] ?? null;
 
 if (empty($teacherData)) {
-    header("HTTP/1.1 404 Not Found");
-    die("Teacher not found");
+    throw new NotFoundException("Teacher not found");
 }
 
 // Add default photo path
-$teacherData['photo'] = '../assets/icons/circle-user-round.svg';
+$teacherData['photo'] = 'fa-solid fa-circle-user';
 
 
 // 3. Fetch Available Semesters
