@@ -29,6 +29,7 @@ composer.lock
 node_modules/
 package-lock.json
 vendor/phpunit/
+docker-compose.yml
 
 # ================================================
 # Documentation (exclude detailed docs, keep essential)
