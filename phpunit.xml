@@ -32,8 +32,12 @@
 
     <php>
         <env name="APP_ENV" value="testing"/>
-        <env name="DB_HOST" value="localhost"/>
-        <env name="DB_NAME" value="citcoder_Quality_test"/>
+        <!-- Connect to Docker DB from Host -->
+        <env name="DB_HOST" value="127.0.0.1"/>
+        <env name="DB_PORT" value="3307"/>
+        <env name="DB_NAME" value="quality_system_test"/>
+        <env name="DB_USER" value="root"/>
+        <env name="DB_PASS" value="rootpassword"/>
     </php>
 
     <coverage>

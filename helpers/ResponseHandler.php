@@ -100,9 +100,10 @@ class ResponseHandler {
                 // Sanitize all string inputs
                 $sanitizedValue = htmlspecialchars($value, ENT_QUOTES, 'UTF-8');
                 
-                // Specific validation for ID fields
-                if (strpos(strtolower($fieldKey), 'id') !== false || 
-                    strpos(strtolower($fieldKey), '_id') !== false) {
+                // Specific validation for ID fields (except Course ID which can be alphanumeric)
+                if ((strpos(strtolower($fieldKey), 'id') !== false || 
+                    strpos(strtolower($fieldKey), '_id') !== false) && 
+                    strtolower($fieldKey) !== 'idcourse') {
                     if (!ctype_digit((string)$value)) {
                         throw new Exception("Field '{$field['Label']}' must be a valid number");
                     }

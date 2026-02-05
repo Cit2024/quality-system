@@ -25,7 +25,11 @@ tests/
 phpunit.xml
 phpunit.xml.dist
 .phpunit.result.cache
+.phpunit.cache/
+coverage/
 composer.lock
+composer.phar
+composer-setup.php
 node_modules/
 package-lock.json
 vendor/phpunit/

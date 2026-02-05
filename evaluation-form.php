@@ -6,7 +6,15 @@ require_once 'config/DbConnection.php';
 require_once 'helpers/units.php';
 require_once 'helpers/csrf.php';
 require_once 'helpers/error_handler.php';
+require_once 'helpers/FormTypes.php';
 require_once 'components/answer_types/floating-input.php';
+
+if (!defined('FORM_TYPES')) {
+    define('FORM_TYPES', FormTypes::getFormTypes($con));
+}
+if (!defined('FORM_TARGETS')) {
+    define('FORM_TARGETS', FormTypes::getFormTargets($con));
+}
 
 // Wrap the entire page logic in error handling if needed, 
 // or at least handle critical setup errors.
@@ -17,6 +25,9 @@ try {
 if (!isset($_GET['evaluation'], $_GET['Evaluator'])) {
     throw new ValidationException("Missing required parameters");
 }
+
+$TypeEvaluation = $_GET['evaluation'];
+$Evaluator = $_GET['Evaluator'];
 
 // Validate against Database Types
 // Check Evaluator Type

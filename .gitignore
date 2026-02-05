@@ -1,5 +1,47 @@
+# Dependencies
+vendor/
+node_modules/
+composer.phar
+composer-setup.php
 
+# Environment
+.env
+.env.local
+.env.development
+.env.test
+.env.production
 
+# Config (Secrets)
 config/DbConnection.php
 config/dbconnectionCit.php
-/releases/*
+
+# IDEs
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Testing
+tests/coverage/
+.phpunit.result.cache
+.phpunit.cache/
+coverage/
+
+# OS Files
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Build / Releases
+releases/
+*.zip
+*.tar.gz
+
+# Logs
+*.log
+logs/
+!logs/.htaccess
+
+# Temporary
+tmp/
+temp/

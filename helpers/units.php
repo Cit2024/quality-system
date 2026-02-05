@@ -47,6 +47,13 @@ function formatBilingualText($text, $maxLength = 0) {
     return htmlspecialchars($text, ENT_QUOTES, 'UTF-8');
 }
 
+/**
+ * Dummy function for GPA calculation
+ */
+function calculateCumulativeGPA($studentID) {
+    return ['gpa' => 0];
+}
+
 // Original trim function remains the same
 function trimText($text, $maxLength) {
     $text = htmlspecialchars($text, ENT_QUOTES, 'UTF-8');
