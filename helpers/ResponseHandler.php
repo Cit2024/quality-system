@@ -13,6 +13,9 @@ class ResponseHandler {
     }
 
     public function handleSubmission($postData) {
+        $this->log("--- NEW SUBMISSION ---");
+        $this->log("Raw POST: " . json_encode($postData, JSON_UNESCAPED_UNICODE));
+        
         $this->con->begin_transaction();
         try {
             // 1. Basic Validation
@@ -33,11 +36,13 @@ class ResponseHandler {
 
             // 3. Validate Dynamic Access Fields
             $metadata = $this->validateAndCollectMetadata($formId, $postData);
+            $this->log("Resolved Metadata: " . json_encode($metadata, JSON_UNESCAPED_UNICODE));
 
             // 4. Special Logic: Teacher Lookup for Student Evaluation
             if ($form['FormTarget'] === 'student' && 
                ($form['FormType'] === 'teacher_evaluation' || $form['FormType'] === 'course_evaluation')) {
                 $metadata = $this->enrichStudentMetadata($metadata, $postData);
+                $this->log("Enriched Metadata: " . json_encode($metadata, JSON_UNESCAPED_UNICODE));
             }
 
             // 5. Check for Duplicates (Now uses FOR UPDATE inside transaction)
@@ -50,10 +55,12 @@ class ResponseHandler {
             $this->saveAnswers($form, $metadata, $postData['question'] ?? []);
             
             $this->con->commit();
+            $this->log("Submission Successful");
             return ['success' => true];
 
         } catch (mysqli_sql_exception $e) {
             $this->con->rollback();
+            $this->log("MySQL Error: " . $e->getMessage());
             // Check for duplicate entry error (1062)
             if ($e->getCode() == 1062) {
                  return ['success' => false, 'message' => "لقد قمت بإرسال هذا التقييم مسبقاً"];
@@ -62,6 +69,7 @@ class ResponseHandler {
             return ['success' => false, 'message' => "Database error occurred"];
         } catch (Exception $e) {
             $this->con->rollback();
+            $this->log("Exception: " . $e->getMessage());
             error_log("Submission Error: " . $e->getMessage());
             return ['success' => false, 'message' => $e->getMessage()];
         }
@@ -83,12 +91,20 @@ class ResponseHandler {
             // Try multiple possible input names:
             // 1. Direct slug name (from evaluation-form hidden inputs)
             // 2. field_ID pattern (from login-form inputs)
-            $value = null;
+            $rawValue = null;
             if (isset($postData[$fieldKey])) {
-                $value = trim($postData[$fieldKey]);
+                $rawValue = $postData[$fieldKey];
             } elseif (isset($postData['field_' . $field['ID']])) {
-                $value = trim($postData['field_' . $field['ID']]);
+                $rawValue = $postData['field_' . $field['ID']];
             }
+
+            // ROBUSTNESS: Handle arrays (if same input is sent multiple times)
+            if (is_array($rawValue)) {
+                $this->log("Warning: Field '$fieldKey' received as array. Taking first element.");
+                $rawValue = reset($rawValue);
+            }
+            
+            $value = ($rawValue !== null) ? trim((string)$rawValue) : null;
             
             // Check if required
             if ($field['IsRequired'] && (is_null($value) || $value === '')) {
@@ -133,15 +149,10 @@ class ResponseHandler {
 
         // Required fields for lookup
         if (empty($metadata['Semester']) || empty($metadata['IDCourse']) || empty($metadata['IDGroup'])) {
-            // If they are not in metadata, check postData directly (legacy support)
-            $metadata['Semester'] = $postData['Semester'] ?? null;
-            $metadata['IDCourse'] = $postData['IDCourse'] ?? null;
-            $metadata['IDGroup'] = $postData['IDGroup'] ?? null;
-            
-            if (empty($metadata['Semester']) || empty($metadata['IDCourse']) || empty($metadata['IDGroup'])) {
-                 throw new Exception("Missing course details for teacher lookup");
-            }
+             throw new Exception("Missing course details for teacher lookup (Semester, IDCourse, or IDGroup)");
         }
+
+        $this->log("Teacher Lookup: Semester={$metadata['Semester']}, Course={$metadata['IDCourse']}, Group={$metadata['IDGroup']}");
 
         // Lookup Teacher
         $stmt = $this->conn_cit->prepare("SELECT TNo FROM coursesgroups WHERE ZamanNo = ? AND MadaNo = ? AND GNo = ?");
@@ -149,14 +160,25 @@ class ResponseHandler {
         $stmt->execute();
         $stmt->bind_result($teacherId);
         
+        $found = false;
         if ($stmt->fetch()) {
             $metadata['teacher_id'] = $teacherId;
-        } else {
-            throw new Exception("Teacher not found for this course/group");
-        }
+            $this->log("Teacher Found: $teacherId");
+            $found = true;
+        } 
         $stmt->close();
 
+        if (!$found) {
+             throw new Exception("Teacher not found for this course/group");
+        }
+
         return $metadata;
+    }
+
+    private function log($message) {
+        $logFile = __DIR__ . '/../logs/submission.log';
+        $timestamp = date('Y-m-d H:i:s');
+        file_put_contents($logFile, "[$timestamp] $message\n", FILE_APPEND);
     }
 
     private function isDuplicate($form, $metadata) {

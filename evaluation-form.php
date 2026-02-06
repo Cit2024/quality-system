@@ -226,29 +226,24 @@ if ($form_exists) {
         <!-- Pass Context Data (Dynamic) -->
         <!-- Pass Context Data (Dynamic) -->
         <?php 
-        $printed_fields = [];
+        $printed_slugs = [];
         
-        // 1. Pass Access Fields (from GET variables)
+        // 1. Pass Access Fields (from GET variables or processed session)
         foreach ($access_fields as $field): 
             $slug = $field['Slug'];
             if ($slug && isset($$slug) && $$slug): 
-                $printed_fields[$slug] = true;
+                // Ensure we only print this specific slug once
+                if (isset($printed_slugs[$slug])) continue;
+                $printed_slugs[$slug] = true;
                 ?>
                 <input type="hidden" name="<?= htmlspecialchars($slug) ?>" value="<?= htmlspecialchars($$slug) ?>">
             <?php endif; 
         endforeach; 
         
         // 2. Pass Session Data as Hidden Fields for ResponseHandler
-        // Avoid duplicating fields already printed above
+        // This is for fields that were submitted via login-form.php as 'field_ID'
         if (isset($_SESSION['form_auth_' . $formId])) {
             foreach ($_SESSION as $key => $val) {
-                // Check if this key corresponds to a field we already printed
-                // The pattern is tricky because session keys are 'field_ID', but above we used Slugs.
-                // However, the ResponseHandler checks BOTH. To be safe, we print session fields 
-                // but we should avoid printing something if we think it conflicts.
-                // Actually, duplicate inputs usually result in the LAST one being used by PHP (unless [] name).
-                // But let's keep it clean.
-                
                 if (strpos($key, 'field_') === 0 && !empty($val)) {
                      echo '<input type="hidden" name="' . htmlspecialchars($key) . '" value="' . htmlspecialchars($val) . '">';
                 }
