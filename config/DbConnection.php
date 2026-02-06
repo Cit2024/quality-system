@@ -19,5 +19,5 @@ if (mysqli_connect_errno()) {
     echo "لا يمكن الاتصال بقاعدة البيانات: " . mysqli_connect_error();
 }
 
-mysqli_set_charset($con, 'utf8');
+mysqli_set_charset($con, 'utf8mb4');
 ?>

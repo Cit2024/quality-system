@@ -156,7 +156,7 @@ function handleException($e, $isAjax = false) {
 <body>
     <header>
         <div class='logo-contnet'>
-            <img src='./assets/icons/Industrial-Technology-College-Logo-Arabic-For-the-big-screen.svg' alt='Industrial Technology College Logo' />
+            <img src='./assets/icons/college.png' alt='Industrial Technology College Logo' />
         </div>
         <div class='header-title'>
             <p>وزارة الصناعة و المعادن</p>

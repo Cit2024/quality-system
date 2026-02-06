@@ -19,4 +19,4 @@ if (mysqli_connect_errno()) {
   echo "لا بمكن الاتصال بقاعدة البيانات" . mysqli_connect_error();
 }
 
-mysqli_set_charset($conn_cit, 'utf8');
+mysqli_set_charset($conn_cit, 'utf8mb4');

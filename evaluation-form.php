@@ -189,7 +189,7 @@ if ($form_exists) {
 <body>
     <header>
         <div class="logo-contnet">
-            <img src="./assets/icons/Industrial-Technology-College-Logo-Arabic-For-the-big-screen.svg" alt="Industrial Technology College Logo" />
+            <img src="./assets/icons/college.png" alt="Industrial Technology College Logo" />
         </div>
         <div class="title">
             <p>وزارة الصناعة و المعادن</p>
@@ -224,20 +224,33 @@ if ($form_exists) {
         
         <!-- Pass Context Data -->
         <!-- Pass Context Data (Dynamic) -->
-        <?php foreach ($access_fields as $field): 
+        <!-- Pass Context Data (Dynamic) -->
+        <?php 
+        $printed_fields = [];
+        
+        // 1. Pass Access Fields (from GET variables)
+        foreach ($access_fields as $field): 
             $slug = $field['Slug'];
-            if ($slug && isset($$slug) && $$slug): ?>
+            if ($slug && isset($$slug) && $$slug): 
+                $printed_fields[$slug] = true;
+                ?>
                 <input type="hidden" name="<?= htmlspecialchars($slug) ?>" value="<?= htmlspecialchars($$slug) ?>">
             <?php endif; 
-        endforeach; ?>
+        endforeach; 
         
-        <!-- Pass Session Data as Hidden Fields for ResponseHandler -->
-        <?php 
-        // If logged in via login-form.php, pass those values too
+        // 2. Pass Session Data as Hidden Fields for ResponseHandler
+        // Avoid duplicating fields already printed above
         if (isset($_SESSION['form_auth_' . $formId])) {
             foreach ($_SESSION as $key => $val) {
+                // Check if this key corresponds to a field we already printed
+                // The pattern is tricky because session keys are 'field_ID', but above we used Slugs.
+                // However, the ResponseHandler checks BOTH. To be safe, we print session fields 
+                // but we should avoid printing something if we think it conflicts.
+                // Actually, duplicate inputs usually result in the LAST one being used by PHP (unless [] name).
+                // But let's keep it clean.
+                
                 if (strpos($key, 'field_') === 0 && !empty($val)) {
-                    echo '<input type="hidden" name="' . htmlspecialchars($key) . '" value="' . htmlspecialchars($val) . '">';
+                     echo '<input type="hidden" name="' . htmlspecialchars($key) . '" value="' . htmlspecialchars($val) . '">';
                 }
             }
         }
