@@ -1,4 +1,7 @@
 <?php
+require_once __DIR__ . '/EnvLoader.php';
+EnvLoader::load(__DIR__ . '/../.env');
+
 if (file_exists(__DIR__ . '/local_config.php')) {
     include_once __DIR__ . '/local_config.php';
 }

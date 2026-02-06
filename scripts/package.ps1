@@ -38,6 +38,61 @@ Write-Info "  Quality System - Production Package Builder"
 Write-Info "================================================================================"
 Write-Host ""
 
+# Parse PHP files to find default values and populate .env
+function Update-EnvFromConfig {
+    param (
+        [string]$PhpFile,
+        [string]$EnvFile
+    )
+
+    if (-not (Test-Path $PhpFile)) { return }
+    
+    $content = Get-Content $PhpFile -Raw
+    
+    # Defaults to look for
+    $patterns = @{
+        'DB_HOST' = 'DB_HOST.*?:\s*"([^"]+)"'
+        'DB_PORT' = 'DB_PORT.*?:\s*(\d+)\s*\)'
+        'DB_USER' = 'DB_USER.*?:\s*"([^"]+)"'
+        'DB_PASS' = 'DB_PASS.*?:\s*"([^"]+)"'
+        'DB_NAME' = 'DB_NAME.*?:\s*"([^"]+)"'
+        
+        'CIT_DB_HOST' = 'CIT_DB_HOST.*?:\s*"([^"]+)"'
+        'CIT_DB_PORT' = 'CIT_DB_PORT.*?:\s*(\d+)\s*\)'
+        'CIT_DB_USER' = 'CIT_DB_USER.*?:\s*"([^"]+)"'
+        'CIT_DB_PASS' = 'CIT_DB_PASS.*?:\s*"([^"]+)"'
+        'CIT_DB_NAME' = 'CIT_DB_NAME.*?:\s*"([^"]+)"'
+    }
+
+    $envContent = ""
+    if (Test-Path $EnvFile) {
+        $envContent = Get-Content $EnvFile -Raw
+    } else {
+        New-Item -Path $EnvFile -ItemType File -Force | Out-Null
+    }
+
+    $updatesMade = $false
+    
+    foreach ($key in $patterns.Keys) {
+        # Check if key already exists in .env
+        if ($envContent -match "(?m)^$key=") { continue }
+
+        # Try to find default in PHP file
+        if ($content -match $patterns[$key]) {
+            $value = $matches[1]
+            Write-Info "  Found default for ${key}: $value"
+            Add-Content -Path $EnvFile -Value "$key=$value"
+            $updatesMade = $true
+        }
+    }
+
+    if ($updatesMade) {
+        Write-Success "  Updated .env with defaults from $(Split-Path $PhpFile -Leaf)"
+    }
+}
+
+
+
 # Configuration
 $projectRoot = Get-Location
 $timestamp = Get-Date -Format "yyyy-MM-dd_HH-mm-ss"
@@ -57,6 +112,13 @@ Write-Host "  Output: $outputPath"
 Write-Host "  Include Tests: $IncludeTests"
 Write-Host ""
 
+# Auto-generate .env from config defaults
+Write-Info "Checking for .env configuration..."
+$envFile = Join-Path $projectRoot ".env"
+Update-EnvFromConfig -PhpFile (Join-Path $projectRoot "config/DbConnection.php") -EnvFile $envFile
+Update-EnvFromConfig -PhpFile (Join-Path $projectRoot "config/dbConnectionCit.php") -EnvFile $envFile
+Write-Host ""
+
 # Files/folders to ALWAYS exclude
 $excludePatterns = @(
     # Version control
@@ -71,7 +133,6 @@ $excludePatterns = @(
     
     # Development
     'node_modules',
-    '.env.example',
     '.editorconfig',
     
     # Documentation (keep only essential)
@@ -105,7 +166,10 @@ $excludePatterns = @(
     # Temporary files
     '*.tmp',
     '*.bak',
-    '*~'
+    '*~',
+    
+    # Environment variables
+    '.env'
 )
 
 # Read exclusions from .packageignore if it exists
@@ -252,13 +316,18 @@ $installGuide = @"
 Upload all files to your web server (e.g., /var/www/html/ or /public_html/)
 
 ### 2. Configure Database
-Edit ``config/DbConnection.php`` with your database credentials:
-``````php
-define('DB_HOST', 'localhost');
-define('DB_USER', 'your_db_user');
-define('DB_PASS', 'your_db_password');
-define('DB_NAME', 'citcoder_Quality');
-``````
+### 2. Configure Database
+1. Create a ``.env`` file in the root directory:
+   ``````bash
+   touch .env
+   ``````
+2. Edit ``.env`` with your database credentials:
+   ``````ini
+   DB_HOST=localhost
+   DB_USER=your_user
+   DB_PASS=your_password
+   DB_NAME=citcoder_Quality
+   ``````
 
 ### 3. Set Permissions
 ``````bash
