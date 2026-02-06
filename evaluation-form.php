@@ -202,24 +202,7 @@ if ($form_exists) {
 
     <div class="container">
         <?php if ($form_exists): ?>
-            <form action="<?php
-                    // Define form handlers for each target
-                    $formHandlers = [
-                        'student' => './evaluation/form-student.php',
-                        'teacher' => './evaluation/form-teacher.php',
-                        'admin' => './evaluation/form-admin.php',
-                        'alumni' => './evaluation/form-alumni.php',
-                        'employer' => './evaluation/form-employer.php'
-                    ];
-                    
-                    // Get clean form target value
-                    $formTarget = htmlspecialchars($form_by_type['FormTarget'] ?? '');
-                    
-                    // Select appropriate handler or fallback
-                    echo isset($formHandlers[$formTarget]) 
-                        ? $formHandlers[$formTarget]
-                        : './evaluation/form-default.php';
-                    ?>" method="POST">
+            <form action="./evaluation/submit.php" method="POST">
                       <!-- Form Header -->
                       <?php require_once 'evaluation/form-header.php'; ?>
                       <!-- Form Body -->
@@ -233,6 +216,11 @@ if ($form_exists) {
                     <?php endif; ?>
         <input type="hidden" name="form_id" value="<?php echo $form_by_type['ID']; ?>">
         <input type="hidden" name="evaluation_type" value="<?php echo $TypeEvaluation; ?>">
+        
+        <!-- Retain Return URL -->
+        <?php if (!empty($_GET['return_url'])): ?>
+            <input type="hidden" name="return_url" value="<?= htmlspecialchars($_GET['return_url']) ?>">
+        <?php endif; ?>
         
         <!-- Pass Context Data -->
         <!-- Pass Context Data (Dynamic) -->
