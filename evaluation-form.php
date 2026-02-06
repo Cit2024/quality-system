@@ -26,8 +26,8 @@ if (!isset($_GET['evaluation'], $_GET['Evaluator'])) {
     throw new ValidationException("Missing required parameters");
 }
 
-$TypeEvaluation = $_GET['evaluation'];
-$Evaluator = $_GET['Evaluator'];
+$TypeEvaluation = trim($_GET['evaluation']);
+$Evaluator = trim($_GET['Evaluator']);
 
 // Validate against Database Types
 // Check Evaluator Type
@@ -37,7 +37,7 @@ $stmt->execute();
 $stmt->store_result();
 if ($stmt->num_rows === 0) {
     $stmt->close();
-    throw new NotFoundException("Invalid evaluator type");
+    throw new NotFoundException("Invalid evaluator type: " . htmlspecialchars($Evaluator));
 }
 $stmt->close();
 

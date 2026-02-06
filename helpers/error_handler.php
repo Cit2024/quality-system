@@ -52,81 +52,147 @@ function handleException($e, $isAjax = false) {
         ]);
     } else {
         // HTML response for regular requests
+        $pageTitle = "خطأ - $httpCode";
+        
+        // Determine appropriate icon based on error code
+        $iconClass = 'fa-triangle-exclamation'; // default
+        if ($httpCode === 404) {
+            $iconClass = 'fa-magnifying-glass-chart';
+        } elseif ($httpCode === 403) {
+            $iconClass = 'fa-user-lock';
+        }
+
         echo "<!DOCTYPE html>
 <html lang='ar' dir='rtl'>
 <head>
     <meta charset='UTF-8'>
     <meta name='viewport' content='width=device-width, initial-scale=1.0'>
-    <title>خطأ - $httpCode</title>
+    <title>$pageTitle</title>
+    <link rel='icon' href='./assets/icons/college.png'>
+    <!-- Use project standard styles -->
+    <link rel='stylesheet' href='./styles/evaluation-form.css'>
+    <link rel='stylesheet' href='./components/ComponentsStyles.css'>
+    <link rel='stylesheet' href='https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css'>
     <style>
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        body { 
+            background-color: #f4f4f4; 
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+        .error-page-container {
+            flex: 1;
             display: flex;
             justify-content: center;
             align-items: center;
-            min-height: 100vh;
-            margin: 0;
             padding: 20px;
         }
-        .error-container {
+        .error-content {
             background: white;
             border-radius: 10px;
-            padding: 40px;
-            max-width: 600px;
-            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+            box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+            padding: 50px 30px;
             text-align: center;
+            max-width: 600px;
+            width: 100%;
+            border-top: 5px solid #ff6303;
         }
-        h1 {
-            color: #e74c3c;
-            font-size: 72px;
-            margin: 0;
+        .error-code {
+            font-family: 'DINBold';
+            font-size: 80px;
+            line-height: 1;
+            color: #ff6303;
+            margin-bottom: 20px;
+            opacity: 0.9;
         }
-        h2 {
-            color: #2c3e50;
-            margin: 10px 0;
+        .error-icon {
+            font-size: 60px;
+            color: #ff6303;
+            margin-bottom: 20px;
         }
-        p {
-            color: #7f8c8d;
+        .error-message {
+            font-family: 'DINBold';
+            font-size: 24px;
+            color: #333;
+            margin-bottom: 15px;
+        }
+        .error-description {
+            font-family: 'DINRegular';
+            font-size: 16px;
+            color: #666;
+            margin-bottom: 30px;
             line-height: 1.6;
         }
-        .back-button {
-            display: inline-block;
-            margin-top: 20px;
-            padding: 12px 30px;
-            background: #3498db;
+        .back-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            background-color: #333; 
             color: white;
+            padding: 12px 30px;
+            border-radius: 8px;
             text-decoration: none;
-            border-radius: 5px;
-            transition: background 0.3s;
+            font-family: 'DINRegular';
+            transition: all 0.3s ease;
         }
-        .back-button:hover {
-            background: #2980b9;
+        .back-btn:hover {
+            background-color: #ff6303;
+            transform: translateY(-2px);
         }
-        .debug-info {
-            margin-top: 20px;
-            padding: 15px;
+        .debug-box {
+            margin-top: 30px;
             background: #f8f9fa;
-            border-radius: 5px;
-            text-align: left;
+            border: 1px solid #eee;
+            border-radius: 6px;
+            padding: 15px;
+            text-align: right;
+            direction: ltr;
             font-family: monospace;
-            font-size: 12px;
-            color: #495057;
+            font-size: 13px;
+            overflow-x: auto;
         }
     </style>
 </head>
 <body>
-    <div class='error-container'>
-        <h1>$httpCode</h1>
-        <h2>" . htmlspecialchars($message) . "</h2>
-        <p>عذراً، حدث خطأ أثناء معالجة طلبك.</p>
-        <a href='javascript:history.back()' class='back-button'>العودة للخلف</a>
-        " . ($isDevelopment ? "
-        <div class='debug-info'>
-            <strong>File:</strong> {$e->getFile()}<br>
-            <strong>Line:</strong> {$e->getLine()}<br>
-            <strong>Trace:</strong><br><pre>" . htmlspecialchars($e->getTraceAsString()) . "</pre>
-        </div>" : "") . "
+    <header>
+        <div class='logo-contnet'>
+            <img src='./assets/icons/Industrial-Technology-College-Logo-Arabic-For-the-big-screen.svg' alt='Industrial Technology College Logo' />
+        </div>
+        <div class='header-title'>
+            <p>وزارة الصناعة و المعادن</p>
+            <p>كلية التنقية الصناعية - مصراتة</p>
+        </div>
+        <div></div>
+    </header>
+
+    <div class='separator'></div>
+
+    <div class='error-page-container'>
+        <div class='error-content'>
+            <div class='error-icon'>
+                <i class='fa-solid $iconClass'></i>
+            </div>
+            <div class='error-message'>" . htmlspecialchars($message) . "</div>
+            <div class='error-description'>
+                نعتذر، حدث خطأ غير متوقع أثناء معالجة طلبك.<br>
+                يرجى المحاولة مرة أخرى أو التواصل مع الدعم الفني.
+            </div>
+            
+            <a href='javascript:history.back()' class='back-btn'>
+                <i class='fa-solid fa-arrow-right'></i>
+                العودة للصفحة السابقة
+            </a>
+
+            " . ($isDevelopment ? "
+            <div class='debug-box'>
+                <strong>Error:</strong> {$e->getMessage()}<br>
+                <strong>File:</strong> {$e->getFile()}:{$e->getLine()}<br>
+                <div style='margin-top:10px; border-top:1px dashed #ccc; padding-top:10px;'>
+                    <strong>Stack Trace:</strong><br>
+                    <pre>" . htmlspecialchars($e->getTraceAsString()) . "</pre>
+                </div>
+            </div>" : "") . "
+        </div>
     </div>
 </body>
 </html>";
