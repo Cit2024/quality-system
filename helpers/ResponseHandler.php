@@ -2,10 +2,14 @@
 
 require_once __DIR__ . '/exceptions.php';
 require_once __DIR__ . '/../config/constants.php';
+require_once __DIR__ . '/rules/SubmissionRuleInterface.php';
+require_once __DIR__ . '/rules/StudentTeacherLookupRule.php';
+require_once __DIR__ . '/rules/UniqueSubmissionRule.php';
 
 class ResponseHandler {
     private $con;
     private $conn_cit;
+    private $messages = []; // Cache for system messages
 
     public function __construct($con, $conn_cit = null) {
         $this->con = $con;
@@ -14,13 +18,12 @@ class ResponseHandler {
 
     public function handleSubmission($postData) {
         $this->log("--- NEW SUBMISSION ---");
-        $this->log("Raw POST: " . json_encode($postData, JSON_UNESCAPED_UNICODE));
         
         $this->con->begin_transaction();
         try {
             // 1. Basic Validation
             if (empty($postData['form_id'])) {
-                throw new ValidationException("Form ID is missing");
+                throw new ValidationException($this->getMessage('form_id_missing', 'Form ID is missing'));
             }
             $formId = (int)$postData['form_id'];
 
@@ -31,46 +34,81 @@ class ResponseHandler {
             $form = $stmt->get_result()->fetch_assoc();
             
             if (!$form) {
-                throw new NotFoundException("Form not found or not published");
+                throw new NotFoundException($this->getMessage('form_not_found', 'Form not found or not published'));
             }
 
             // 3. Validate Dynamic Access Fields
             $metadata = $this->validateAndCollectMetadata($formId, $postData);
-            $this->log("Resolved Metadata: " . json_encode($metadata, JSON_UNESCAPED_UNICODE));
-
-            // 4. Special Logic: Teacher Lookup for Student Evaluation
-            if ($form['FormTarget'] === 'student' && 
-               ($form['FormType'] === 'teacher_evaluation' || $form['FormType'] === 'course_evaluation')) {
-                $metadata = $this->enrichStudentMetadata($metadata, $postData);
-                $this->log("Enriched Metadata: " . json_encode($metadata, JSON_UNESCAPED_UNICODE));
+            
+            // 3.1 Normalize Metadata (Critical for DB Fix)
+            // Ensure schema-compatible keys exist (snake_case)
+            $normalizationMap = [
+                'IDStudent' => 'student_id',
+                'IDCourse' => 'course_id',
+                'teacher_id' => 'teacher_id'
+            ];
+            foreach ($normalizationMap as $old => $new) {
+                if (isset($metadata[$old])) {
+                    $metadata[$new] = $metadata[$old];
+                }
             }
 
-            // 5. Check for Duplicates (Now uses FOR UPDATE inside transaction)
-            if ($this->isDuplicate($form, $metadata)) {
-                $this->con->rollback();
-                throw new DuplicateException("لقد قمت بإرسال هذا التقييم مسبقاً");
+            // 4. Dynamic Rules Execution
+            $rules = $this->loadRules($form['FormType'], $form['FormTarget']);
+            foreach ($rules as $ruleData) {
+                $className = $ruleData['RuleClass'];
+                $config = json_decode($ruleData['RuleConfig'], true) ?? [];
+                
+                if (class_exists($className)) {
+                    $rule = new $className();
+                    if ($rule instanceof SubmissionRuleInterface) {
+                        try {
+                            $context = [
+                                'con' => $this->con,
+                                'conn_cit' => $this->conn_cit,
+                                'form' => $form
+                            ];
+                            // Execute Rule
+                            $resultData = $rule->execute(['metadata' => $metadata], $context, $config);
+                            
+                            // Update metadata if modified by rule
+                            if (isset($resultData['metadata'])) {
+                                $metadata = $resultData['metadata'];
+                            }
+                        } catch (Exception $e) {
+                            // Map rule exceptions to user-friendly messages if possible
+                            // For duplicates, we check the specific message key
+                            if (strpos($e->getMessage(), 'Duplicate') !== false) {
+                                throw new DuplicateException($this->getMessage('submission_duplicate', 'Duplicate submission'));
+                            }
+                            throw $e;
+                        }
+                    }
+                }
             }
-
-            // 6. Process and Save Answers
+            
+            // 5. Save Answers
             $this->saveAnswers($form, $metadata, $postData['question'] ?? []);
             
             $this->con->commit();
             $this->log("Submission Successful");
-            return ['success' => true];
+            return [
+                'success' => true, 
+                'message' => $this->getMessage('submission_success', 'Submission successful'),
+                'form_target' => $form['FormTarget'],
+                'form_type' => $form['FormType']
+            ];
 
         } catch (mysqli_sql_exception $e) {
             $this->con->rollback();
             $this->log("MySQL Error: " . $e->getMessage());
-            // Check for duplicate entry error (1062)
             if ($e->getCode() == 1062) {
-                 return ['success' => false, 'message' => "لقد قمت بإرسال هذا التقييم مسبقاً"];
+                 return ['success' => false, 'message' => $this->getMessage('submission_duplicate', 'Duplicate submission')];
             }
-            error_log("Database Error: " . $e->getMessage());
-            return ['success' => false, 'message' => "Database error occurred"];
+            return ['success' => false, 'message' => $this->getMessage('database_error', 'Database error occurred')];
         } catch (Exception $e) {
             $this->con->rollback();
             $this->log("Exception: " . $e->getMessage());
-            error_log("Submission Error: " . $e->getMessage());
             return ['success' => false, 'message' => $e->getMessage()];
         }
     }
@@ -78,19 +116,14 @@ class ResponseHandler {
     private function validateAndCollectMetadata($formId, $postData) {
         $metadata = [];
         
-        // Fetch required fields for this form
         $stmt = $this->con->prepare("SELECT * FROM FormAccessFields WHERE FormID = ? ORDER BY OrderIndex");
         $stmt->bind_param("i", $formId);
         $stmt->execute();
         $result = $stmt->get_result();
 
         while ($field = $result->fetch_assoc()) {
-            // Use Slug if available, fallback to Label
             $fieldKey = !empty($field['Slug']) ? $field['Slug'] : $field['Label'];
             
-            // Try multiple possible input names:
-            // 1. Direct slug name (from evaluation-form hidden inputs)
-            // 2. field_ID pattern (from login-form inputs)
             $rawValue = null;
             if (isset($postData[$fieldKey])) {
                 $rawValue = $postData[$fieldKey];
@@ -98,30 +131,27 @@ class ResponseHandler {
                 $rawValue = $postData['field_' . $field['ID']];
             }
 
-            // ROBUSTNESS: Handle arrays (if same input is sent multiple times)
             if (is_array($rawValue)) {
-                $this->log("Warning: Field '$fieldKey' received as array. Taking first element.");
                 $rawValue = reset($rawValue);
             }
             
             $value = ($rawValue !== null) ? trim((string)$rawValue) : null;
             
-            // Check if required
             if ($field['IsRequired'] && (is_null($value) || $value === '')) {
-                throw new Exception("Field '{$field['Label']}' is required");
+                $msg = str_replace('{field}', $field['Label'], $this->getMessage('field_required', "Field {$field['Label']} is required"));
+                throw new Exception($msg);
             }
 
-            // Sanitization and Validation
             if (!empty($value)) {
-                // Sanitize all string inputs
                 $sanitizedValue = htmlspecialchars($value, ENT_QUOTES, 'UTF-8');
                 
-                // Specific validation for ID fields (except Course ID which can be alphanumeric)
+                // Numeric validation for ID fields (except Course ID)
                 if ((strpos(strtolower($fieldKey), 'id') !== false || 
                     strpos(strtolower($fieldKey), '_id') !== false) && 
                     strtolower($fieldKey) !== 'idcourse') {
                     if (!ctype_digit((string)$value)) {
-                        throw new Exception("Field '{$field['Label']}' must be a valid number");
+                         $msg = str_replace('{field}', $field['Label'], $this->getMessage('field_number_required', "Field {$field['Label']} must be a number"));
+                         throw new Exception($msg);
                     }
                 }
 
@@ -129,89 +159,57 @@ class ResponseHandler {
             }
         }
 
-        // Add System Metadata
         $metadata['ip_address'] = $_SERVER['REMOTE_ADDR'];
         $metadata['submission_date'] = date('Y-m-d H:i:s');
         
-        // Validate total JSON size
-        if (strlen(json_encode($metadata)) > METADATA_SIZE_LIMIT) {
-             throw new Exception("Metadata size exceeds limit");
-        }
-
         return $metadata;
     }
 
-    private function enrichStudentMetadata($metadata, $postData) {
-        // Ensure we have the CIT connection
-        if (!$this->conn_cit) {
-            throw new Exception("CIT Database connection required for this form type");
-        }
-
-        // Required fields for lookup
-        if (empty($metadata['Semester']) || empty($metadata['IDCourse']) || empty($metadata['IDGroup'])) {
-             throw new Exception("Missing course details for teacher lookup (Semester, IDCourse, or IDGroup)");
-        }
-
-        $this->log("Teacher Lookup: Semester={$metadata['Semester']}, Course={$metadata['IDCourse']}, Group={$metadata['IDGroup']}");
-
-        // Lookup Teacher
-        $stmt = $this->conn_cit->prepare("SELECT TNo FROM coursesgroups WHERE ZamanNo = ? AND MadaNo = ? AND GNo = ?");
-        $stmt->bind_param("isi", $metadata['Semester'], $metadata['IDCourse'], $metadata['IDGroup']);
+    private function loadRules($formType, $formTarget) {
+        $rules = [];
+        // Fetch active rules for this form type/target, ordered by index
+        $stmt = $this->con->prepare("SELECT RuleClass, RuleConfig FROM FormProcessingRules WHERE FormType = ? AND FormTarget = ? AND IsActive = 1 ORDER BY OrderIndex ASC");
+        $stmt->bind_param("ss", $formType, $formTarget);
         $stmt->execute();
-        $stmt->bind_result($teacherId);
-        
-        $found = false;
-        if ($stmt->fetch()) {
-            $metadata['teacher_id'] = $teacherId;
-            $this->log("Teacher Found: $teacherId");
-            $found = true;
-        } 
-        $stmt->close();
-
-        if (!$found) {
-             throw new Exception("Teacher not found for this course/group");
+        $result = $stmt->get_result();
+        while ($row = $result->fetch_assoc()) {
+            $rules[] = $row;
         }
-
-        return $metadata;
+        $stmt->close();
+        return $rules;
     }
 
+    private function getMessage($key, $defaultMessage) {
+        // Return cached message if available
+        if (isset($this->messages[$key])) {
+            return $this->messages[$key];
+        }
+
+        // Fetch from DB
+        $stmt = $this->con->prepare("SELECT Message FROM SystemMessages WHERE `Key` = ?");
+        $stmt->bind_param("s", $key);
+        $stmt->execute();
+        $stmt->bind_result($message);
+        
+        if ($stmt->fetch()) {
+            $this->messages[$key] = $message;
+        } else {
+            // Fallback to default if not found
+            $this->messages[$key] = $defaultMessage;
+        }
+        $stmt->close();
+        
+        return $this->messages[$key];
+    }
+    
     private function log($message) {
         $logFile = __DIR__ . '/../logs/submission.log';
         $timestamp = date('Y-m-d H:i:s');
         file_put_contents($logFile, "[$timestamp] $message\n", FILE_APPEND);
     }
 
-    private function isDuplicate($form, $metadata) {
-        // Define unique constraints based on form target
-        if ($form['FormTarget'] === 'student') {
-            // Unique per Student + Course + Semester + FormType
-            // We verify if ANY answer exists for this combination
-            $stmt = $this->con->prepare("SELECT 1 FROM EvaluationResponses 
-                WHERE FormType = ? 
-                AND IDStudent = ? 
-                AND IDCourse = ? 
-                AND Semester = ? 
-                LIMIT 1 FOR UPDATE");
-            
-            $semester = $metadata['Semester'] ?? '';
-            $studentId = $metadata['IDStudent'] ?? '';
-            $courseId = $metadata['IDCourse'] ?? '';
-
-            $stmt->bind_param("ssss", $form['FormType'], $studentId, $courseId, $semester);
-            $stmt->execute();
-            $result = $stmt->fetch();
-            $stmt->close();
-            
-            return $result ? true : false;
-        }
-        
-        return false;
-    }
-
     private function saveAnswers($form, $metadata, $answers) {
         require_once __DIR__ . '/../evaluation/config/answer_processor.php';
-
-        // Transaction is now handled by the caller (handleSubmission)
         
         $metadataJson = json_encode($metadata, JSON_UNESCAPED_UNICODE);
         $semester = $metadata['Semester'] ?? null;
@@ -221,8 +219,6 @@ class ResponseHandler {
         foreach ($answers as $questionId => $response) {
             $questionId = (int)$questionId;
             
-            // Get Question Details
-            // Note: Optimally, we should fetch all question details in one go, but keeping this logic for now
             $qStmt = $this->con->prepare("SELECT TypeQuestion, Choices FROM Question WHERE ID = ?");
             $qStmt->bind_param("i", $questionId);
             $qStmt->execute();
@@ -231,7 +227,6 @@ class ResponseHandler {
 
             if (!$questionData) continue;
 
-            // Process Answer
             $answerValue = processAnswerResponse($questionData, $response);
             if (!$answerValue) continue;
 
@@ -250,3 +245,4 @@ class ResponseHandler {
         $stmt->close();
     }
 }
+
