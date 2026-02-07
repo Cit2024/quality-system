@@ -71,7 +71,7 @@ class TeacherStatisticsController {
       });
 
       const response = await fetch(
-        `./statistics/get_teacher_statistics.php?${params}`
+        `./statistics/get_statistics.php?${params}`
       );
       const { html, success, error } = await response.json();
 
