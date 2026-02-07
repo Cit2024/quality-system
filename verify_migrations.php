@@ -1,6 +1,6 @@
 <?php
 /**
- * Database Verification Script
+ * Database Verification Script - Updated for Database Separation
  * Checks if migrations were applied correctly
  * Run this in browser: http://localhost/quality-system/verify_migrations.php
  */
@@ -25,6 +25,7 @@ header('Content-Type: text/html; charset=utf-8');
         .pass { background: #d4edda; border-left: 4px solid #28a745; }
         .fail { background: #f8d7da; border-left: 4px solid #dc3545; }
         .warn { background: #fff3cd; border-left: 4px solid #ffc107; }
+        .info { background: #d1ecf1; border-left: 4px solid #17a2b8; }
         .status { font-weight: bold; font-size: 18px; }
         table { width: 100%; border-collapse: collapse; margin: 15px 0; }
         th, td { padding: 10px; text-align: right; border: 1px solid #ddd; }
@@ -41,33 +42,43 @@ header('Content-Type: text/html; charset=utf-8');
     $errors = 0;
     $warnings = 0;
 
-    // CHECK 1: RegTeacherID Column
-    echo "<h2>📋 Check 1: Teacher Identity Mapping</h2>";
-    $result = mysqli_query($con, "SHOW COLUMNS FROM teachers_evaluation LIKE 'RegTeacherID'");
-    if (mysqli_num_rows($result) > 0) {
-        echo '<div class="check pass"><span class="status">✅ PASS:</span> RegTeacherID column exists</div>';
-        
-        // Check for NULL values
-        $result = mysqli_query($con, "SELECT COUNT(*) as count FROM teachers_evaluation WHERE RegTeacherID IS NULL");
-        $row = mysqli_fetch_assoc($result);
-        if ($row['count'] == 0) {
-            echo '<div class="check pass"><span class="status">✅ PASS:</span> All teachers linked (' . $row['count'] . ' unlinked)</div>';
-        } else {
-            echo '<div class="check warn"><span class="status">⚠️ WARNING:</span> ' . $row['count'] . ' teachers not linked</div>';
-            $warnings++;
-            
-            // Show unlinked teachers
-            $result = mysqli_query($con, "SELECT id, name, username FROM teachers_evaluation WHERE RegTeacherID IS NULL LIMIT 5");
-            if (mysqli_num_rows($result) > 0) {
-                echo '<table><tr><th>ID</th><th>Name</th><th>Username</th></tr>';
-                while ($teacher = mysqli_fetch_assoc($result)) {
-                    echo '<tr><td>' . $teacher['id'] . '</td><td>' . htmlspecialchars($teacher['name']) . '</td><td>' . htmlspecialchars($teacher['username']) . '</td></tr>';
-                }
-                echo '</table>';
-            }
+    // CHECK 1: Database Separation
+    echo "<h2>📋 Check 1: Database Architecture Separation</h2>";
+    
+    // Verify Citgate tables do NOT exist in Quality DB
+    $citgate_tables = ['regteacher', 'teachers_evaluation', 'coursesgroups', 'tanzil', 'sprofiles', 'zaman', 'divitions', 'mawad', 'AuditLog'];
+    $found_in_quality = [];
+    
+    foreach ($citgate_tables as $table) {
+        $result = mysqli_query($con, "SHOW TABLES LIKE '$table'");
+        if (mysqli_num_rows($result) > 0) {
+            $found_in_quality[] = $table;
         }
+    }
+    
+    if (empty($found_in_quality)) {
+        echo '<div class="check pass"><span class="status">✅ PASS:</span> Citgate tables correctly separated (not in Quality DB)</div>';
     } else {
-        echo '<div class="check fail"><span class="status">❌ FAIL:</span> RegTeacherID column missing - Migration 018 not applied</div>';
+        echo '<div class="check fail"><span class="status">❌ FAIL:</span> Found ' . count($found_in_quality) . ' Citgate tables in Quality DB</div>';
+        echo '<div class="code">Tables found: ' . implode(', ', $found_in_quality) . '</div>';
+        echo '<div class="code">Action: Run Migration 022 (022_remove_citgate_tables.sql)</div>';
+        $errors++;
+    }
+    
+    // Verify Citgate tables exist in Citgate DB
+    $missing_in_citgate = [];
+    foreach ($citgate_tables as $table) {
+        if ($table === 'AuditLog') continue; // Skip AuditLog for Citgate check
+        $result = mysqli_query($conn_cit, "SHOW TABLES LIKE '$table'");
+        if (mysqli_num_rows($result) == 0) {
+            $missing_in_citgate[] = $table;
+        }
+    }
+    
+    if (empty($missing_in_citgate)) {
+        echo '<div class="check pass"><span class="status">✅ PASS:</span> All required tables exist in Citgate DB</div>';
+    } else {
+        echo '<div class="check fail"><span class="status">❌ FAIL:</span> Missing tables in Citgate DB: ' . implode(', ', $missing_in_citgate) . '</div>';
         $errors++;
     }
 
@@ -89,14 +100,14 @@ header('Content-Type: text/html; charset=utf-8');
         $errors++;
     }
 
-    // CHECK 3: Foreign Keys
+    // CHECK 3: Foreign Keys (Quality DB only)
     echo "<h2>📋 Check 3: Foreign Key Constraints</h2>";
-    $fks = ['fk_teacher_link', 'fk_resp_question', 'fk_course_teacher', 'fk_form_type_slug', 'fk_form_target_slug'];
+    $quality_fks = ['fk_resp_question', 'fk_form_type_slug', 'fk_form_target_slug'];
     $result = mysqli_query($con, "
         SELECT CONSTRAINT_NAME 
         FROM information_schema.TABLE_CONSTRAINTS 
         WHERE CONSTRAINT_SCHEMA = DATABASE() 
-        AND CONSTRAINT_NAME IN ('" . implode("','", $fks) . "')
+        AND CONSTRAINT_NAME IN ('" . implode("','", $quality_fks) . "')
     ");
     $found = [];
     while ($row = mysqli_fetch_assoc($result)) {
@@ -104,12 +115,32 @@ header('Content-Type: text/html; charset=utf-8');
     }
     
     echo '<table><tr><th>Constraint</th><th>Status</th></tr>';
-    foreach ($fks as $fk) {
+    foreach ($quality_fks as $fk) {
         $exists = in_array($fk, $found);
-        echo '<tr><td>' . $fk . '</td><td>' . ($exists ? '✅ Exists' : '❌ Missing') . '</td></tr>';
+        echo '<tr><td>' . $fk . '</td><td>' . ($exists ? '✅ Exists' : '⚠️ Missing') . '</td></tr>';
         if (!$exists) $warnings++;
     }
     echo '</table>';
+    
+    // Check that cross-database FKs are removed
+    $removed_fks = ['fk_teacher_link', 'fk_course_teacher', 'fk_evaluation_coursesgroups'];
+    $result = mysqli_query($con, "
+        SELECT CONSTRAINT_NAME 
+        FROM information_schema.TABLE_CONSTRAINTS 
+        WHERE CONSTRAINT_SCHEMA = DATABASE() 
+        AND CONSTRAINT_NAME IN ('" . implode("','", $removed_fks) . "')
+    ");
+    $still_exist = [];
+    while ($row = mysqli_fetch_assoc($result)) {
+        $still_exist[] = $row['CONSTRAINT_NAME'];
+    }
+    
+    if (empty($still_exist)) {
+        echo '<div class="check pass"><span class="status">✅ PASS:</span> Cross-database FKs correctly removed</div>';
+    } else {
+        echo '<div class="check warn"><span class="status">⚠️ WARNING:</span> Cross-database FKs still exist: ' . implode(', ', $still_exist) . '</div>';
+        $warnings++;
+    }
 
     // CHECK 4: Redundant Columns Removed
     echo "<h2>📋 Check 4: Schema Cleanup</h2>";
@@ -122,28 +153,24 @@ header('Content-Type: text/html; charset=utf-8');
         $warnings++;
     }
 
-    // CHECK 5: Sample Teacher Data
-    echo "<h2>📋 Check 5: Sample Teacher Data</h2>";
-    $result = mysqli_query($con, "
-        SELECT te.id, te.name, te.RegTeacherID, rt.name as registry_name
-        FROM teachers_evaluation te
-        LEFT JOIN regteacher rt ON te.RegTeacherID = rt.id
-        LIMIT 5
-    ");
+    // CHECK 5: Support Tables
+    echo "<h2>📋 Check 5: Support Tables</h2>";
+    $support_tables = ['FormProcessingRules', 'SystemMessages'];
+    $missing_tables = [];
     
-    if (mysqli_num_rows($result) > 0) {
-        echo '<table><tr><th>Local ID</th><th>Teacher Name</th><th>Reg ID</th><th>Registry Name</th><th>Status</th></tr>';
-        while ($row = mysqli_fetch_assoc($result)) {
-            $status = $row['RegTeacherID'] ? '✅ Linked' : '❌ Not Linked';
-            echo '<tr>';
-            echo '<td>' . $row['id'] . '</td>';
-            echo '<td>' . htmlspecialchars($row['name']) . '</td>';
-            echo '<td>' . ($row['RegTeacherID'] ?? 'NULL') . '</td>';
-            echo '<td>' . htmlspecialchars($row['registry_name'] ?? 'N/A') . '</td>';
-            echo '<td>' . $status . '</td>';
-            echo '</tr>';
+    foreach ($support_tables as $table) {
+        $result = mysqli_query($con, "SHOW TABLES LIKE '$table'");
+        if (mysqli_num_rows($result) == 0) {
+            $missing_tables[] = $table;
         }
-        echo '</table>';
+    }
+    
+    if (empty($missing_tables)) {
+        echo '<div class="check pass"><span class="status">✅ PASS:</span> All support tables exist</div>';
+    } else {
+        echo '<div class="check fail"><span class="status">❌ FAIL:</span> Missing support tables: ' . implode(', ', $missing_tables) . '</div>';
+        echo '<div class="code">Action: Run Migration 021 (021_create_support_tables.sql)</div>';
+        $errors++;
     }
 
     // SUMMARY
@@ -154,14 +181,18 @@ header('Content-Type: text/html; charset=utf-8');
         echo '<div class="check warn"><span class="status">⚠️ WARNINGS FOUND</span><br>Migrations applied but some manual actions needed. Errors: ' . $errors . ', Warnings: ' . $warnings . '</div>';
     } else {
         echo '<div class="check fail"><span class="status">❌ ERRORS FOUND</span><br>Migrations not fully applied. Errors: ' . $errors . ', Warnings: ' . $warnings . '</div>';
-        echo '<div class="code">Action Required: Run APPLY_ALL_MIGRATIONS.sql</div>';
     }
 
     // Next Steps
     echo "<h2>📌 Next Steps</h2>";
     echo "<ol>";
     if ($errors > 0) {
-        echo "<li>Run <code>APPLY_ALL_MIGRATIONS.sql</code> in phpMyAdmin</li>";
+        if (!empty($found_in_quality)) {
+            echo "<li>Run <code>022_remove_citgate_tables.sql</code> to remove Citgate tables from Quality DB</li>";
+        }
+        if (!empty($missing_tables)) {
+            echo "<li>Run <code>021_create_support_tables.sql</code> to create missing support tables</li>";
+        }
     }
     if ($warnings > 0) {
         echo "<li>Review warnings above and take manual actions if needed</li>";
