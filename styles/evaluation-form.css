@@ -47,8 +47,10 @@ header {
 }
 
 header img {
-    width: 200px;
     height: 80px;
+    width: auto;
+    aspect-ratio: 1/1;
+    object-fit: contain;
     margin-left: 20px;
 }
 
