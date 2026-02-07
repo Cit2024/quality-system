@@ -27,8 +27,13 @@ if ($result['success']) {
     
     // If it was a student evaluation, maybe redirect back to their portal?
     // We can check the form type or metadata if needed
-    if (isset($_POST['return_url'])) {
+    // Priority 1: Explicit return_url
+    if (!empty($_POST['return_url'])) {
         $redirectUrl .= "&path=" . urlencode($_POST['return_url']);
+    } 
+    // Priority 2: Student Default (CIT ERP)
+    elseif (isset($result['form_target']) && $result['form_target'] === 'student') {
+        $redirectUrl .= "&path=" . urlencode("https://erp.cit.edu.ly/resultab/thisterm.php");
     }
     
     header("Location: $redirectUrl");

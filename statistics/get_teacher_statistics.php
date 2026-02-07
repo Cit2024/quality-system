@@ -16,17 +16,59 @@ class TeacherStatisticsHandler
     private $formType;
     private $filter;
 
-    public function __construct($con, $conn_cit)
-    {
-        $this->con = $con;
-        $this->conn_cit = $conn_cit;
-    }
-
     public function handleRequest($teacherId, $formType, $filter)
     {
         try {
             $this->validateInput($teacherId, $formType);
-            $this->teacherId = $teacherId;
+            
+            // INTEGRITY FIX: Map local teacher_id to RegTeacherID if possible
+            // If the requested ID matches the session's local ID, use the session's RegTeacherID
+            if (session_status() === PHP_SESSION_NONE) session_start();
+            
+            if (isset($_SESSION['teacher_id']) && $teacherId == $_SESSION['teacher_id']) {
+                if (!empty($_SESSION['reg_teacher_id'])) {
+                    $this->teacherId = $_SESSION['reg_teacher_id'];
+                } else {
+                    // Fallback: This user has no RegTeacherID linked!
+                    // We can't show data.
+                    throw new Exception("Your account is not linked to the Teacher Registry. Please contact support.");
+                }
+            } else {
+                // If viewing someone else (Admin view), we assume $teacherId passed IS the RegTeacherID (TNo)
+                // OR we have to lookup the RegTeacherID from the local ID passed.
+                // Assuming Admin passes the TNo directly or we need a lookup here.
+                // For safety, let's look it up in teachers_evaluation if it exists there.
+                $linkedId = $this->lookupRegId($teacherId);
+                $this->teacherId = $linkedId ? $linkedId : $teacherId;
+            }
+
+            $this->teacherId = (int)$this->teacherId; // Ensure int
+            $this->formType = $formType;
+            $this->filter = $filter;
+
+            $teacherInfo = $this->getTeacherInfo();
+            
+            // INTEGRITY FIX: Map local teacher_id to RegTeacherID if possible
+            // If the requested ID matches the session's local ID, use the session's RegTeacherID
+            if (session_status() === PHP_SESSION_NONE) session_start();
+            
+            if (isset($_SESSION['teacher_id']) && $teacherId == $_SESSION['teacher_id']) {
+                if (!empty($_SESSION['reg_teacher_id'])) {
+                    $this->teacherId = $_SESSION['reg_teacher_id'];
+                } else {
+                    // Fallback: This user has no RegTeacherID linked!
+                    // We can't show data.
+                    throw new Exception("Your account is not linked to the Teacher Registry. Please contact support.");
+                }
+            } else {
+                // If viewing someone else (Admin view), we assume $teacherId passed IS the RegTeacherID (TNo)
+                // OR we have to lookup the RegTeacherID from the local ID passed.
+                // Assuming Admin passes the TNo directly or we need a lookup here.
+                // For safety, let's look it up in teachers_evaluation if it exists there.
+                $linkedId = $this->lookupRegId($teacherId);
+                $this->teacherId = $linkedId ? $linkedId : $teacherId;
+            }
+
             $this->formType = $formType;
             $this->filter = $filter;
 
@@ -338,6 +380,20 @@ HTML;
             'success' => false,
             'error' => 'حدث خطأ أثناء معالجة طلبك'
         ]);
+    }
+
+    private function lookupRegId($inputParamsId) {
+        // Check if this ID exists in teachers_evaluation
+        if (!$this->conn_cit) return null;
+        
+        $stmt = $this->conn_cit->prepare("SELECT RegTeacherID FROM teachers_evaluation WHERE id = ?");
+        $stmt->bind_param("i", $inputParamsId);
+        $stmt->execute();
+        $res = $stmt->get_result();
+        if ($row = $res->fetch_assoc()) {
+            return $row['RegTeacherID'];
+        }
+        return null;
     }
 }
 

@@ -16,7 +16,13 @@ if (!isset($_SESSION['teacher_id'])) {
 }
 
 $teacher_id = $_SESSION['teacher_id'];
+$reg_teacher_id = $_SESSION['reg_teacher_id'] ?? null;
 $teacher_name = $_SESSION['teacher_name'] ?? 'Teacher';
+
+// Verify RegTeacherID exists
+if (!$reg_teacher_id) {
+    die('Error: Teacher account not linked to registry. Please contact administrator.');
+}
 
 
 // Get current semester information
@@ -30,7 +36,7 @@ $totalStudentsQuery = "
     FROM tanzil t
     JOIN coursesgroups c ON t.ZamanNo = c.ZamanNo AND t.MadaNo = c.MadaNo
     WHERE c.TNo = ? AND t.ZamanNo = ?";
-$totalStudentsData = fetchData($conn_cit, $totalStudentsQuery, [$teacher_id, $semester['ZamanNo']], 'ii');
+$totalStudentsData = fetchData($conn_cit, $totalStudentsQuery, [$reg_teacher_id, $semester['ZamanNo']], 'ii');
 $total_students = $totalStudentsData[0]['total_students'] ?? 0;
 
 // FIXED: Get evaluated courses count
@@ -38,7 +44,7 @@ $teacherCoursesQuery = "
     SELECT DISTINCT c.MadaNo 
     FROM coursesgroups c 
     WHERE c.TNo = ? AND c.ZamanNo = ?";
-$teacherCourses = fetchData($conn_cit, $teacherCoursesQuery, [$teacher_id, $semester['ZamanNo']], 'ii');
+$teacherCourses = fetchData($conn_cit, $teacherCoursesQuery, [$reg_teacher_id, $semester['ZamanNo']], 'ii');
 
 $coursesEvaluated = 0;
 if (!empty($teacherCourses)) {
@@ -66,8 +72,8 @@ $studentsEvaluated = fetchData(
      WHERE JSON_UNQUOTE(JSON_EXTRACT(Metadata, '$.teacher_id')) = ?
        AND FormType IN ('course_evaluation', 'teacher_evaluation')
        AND Semester = ?",
-    [$teacher_id, $semester['ZamanNo']],
-    'si'
+    [$reg_teacher_id, $semester['ZamanNo']],
+    'ss'
 )[0]['count'] ?? 0;
 
 // Calculate participation ratio
@@ -98,7 +104,7 @@ $historicalData = fetchData(
      GROUP BY Semester
      ORDER BY Semester DESC
      LIMIT 6",
-    [$teacher_id],
+    [$reg_teacher_id],
     's'
 );
 
