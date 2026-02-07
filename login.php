@@ -40,6 +40,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     }
 
     // Teacher authentication with prepared statement
+    // Fetch RegTeacherID as well
     $teacherQuery = "SELECT * FROM teachers_evaluation WHERE username  = ? AND password = ? ";
     $stmt = mysqli_prepare($conn_cit, $teacherQuery);
     mysqli_stmt_bind_param($stmt, "ss", $username, $password);
@@ -52,6 +53,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         // Verify password (plaintext comparison)
         regenerateSessionOnPrivilegeChange();
         $_SESSION['teacher_id'] = $teacher['id'];
+        $_SESSION['reg_teacher_id'] = $teacher['RegTeacherID']; // Store the canonical ID
         $_SESSION['teacher_name'] = $teacher['name'];
         $_SESSION['username'] = $username;
         // Removed password from session for security

@@ -112,11 +112,21 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
             if ($id <= 0) throw new Exception('معرف غير صحيح');
             
             $table = $category === 'target' ? 'EvaluatorTypes' : 'FormTypes';
-            $col = $category === 'target' ? 'EvaluatorTypeID' : 'FormTypeID';
+            // Refactor: Use Slug for check instead of ID columns (which will be dropped)
+            $colName = $category === 'target' ? 'FormTarget' : 'FormType';
             
-            // Check usage
-            $stmt = $con->prepare("SELECT COUNT(*) as count FROM Form WHERE $col = ?");
+            // 1. Get the Slug first
+            $stmt = $con->prepare("SELECT Slug FROM $table WHERE ID = ?");
             $stmt->bind_param('i', $id);
+            $stmt->execute();
+            $res = $stmt->get_result();
+            if ($res->num_rows === 0) throw new Exception('العنصر غير موجود');
+            $slug = $res->fetch_assoc()['Slug'];
+            $stmt->close();
+
+            // 2. Check usage using Slug
+            $stmt = $con->prepare("SELECT COUNT(*) as count FROM Form WHERE $colName = ?");
+            $stmt->bind_param('s', $slug);
             $stmt->execute();
             $count = $stmt->get_result()->fetch_assoc()['count'];
             $stmt->close();
