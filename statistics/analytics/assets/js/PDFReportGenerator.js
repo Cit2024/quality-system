@@ -81,8 +81,8 @@
   // create a text node that applies RTL/LTR and alignment automatically for Arabic
   function makeTextNode(value, extra = {}) {
     const v = (value === null || value === undefined) ? '' : String(value);
-    // Reverse Arabic word order for proper display
-    const displayText = hasArabicText(v) ? reverseArabicWords(v) : v;
+    // Do NOT reverse manually. pdfMake handles RTL with direction: 'rtl' property.
+    const displayText = v;
     const node = { text: displayText };
     if (hasArabicText(v)) {
       node.direction = 'rtl';
