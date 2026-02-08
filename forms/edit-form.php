@@ -867,17 +867,17 @@ if (!$sections_result) {
                                 <!-- Question Type -->
                                 <div class="question-type" data-id="<?php echo $question['ID']; ?>" data-type="<?php echo $question['TypeQuestion']; ?>">
                                     <?php if ($question['TypeQuestion'] === 'true_false'): ?>
-                                        <img src=".././assets/icons/square-check.svg" alt="True/False" />
+                                        <i class="fa-solid fa-square-check"></i>
                                         <span>صح/خطأ</span>
                                     <?php elseif ($question['TypeQuestion'] === 'evaluation'): ?>
-                                        <img src=".././assets/icons/star.svg" alt="Evaluation" />
+                                        <i class="fa-solid fa-star"></i>
                                         <span>تقييم</span>
                                     <?php elseif ($question['TypeQuestion'] === 'essay'):  ?>
-                                        <img src=".././assets/icons/quote.svg" alt="Essay" />
+                                        <i class="fa-solid fa-quote-left"></i>
                                         <span>مقالي</span>
                                     <?php endif; ?>
                                     <?php if ($question['TypeQuestion'] === 'multiple_choice'): ?>
-                                        <img src=".././assets/icons/list-check.svg" alt="Multiple choice" />
+                                        <i class="fa-solid fa-list-check"></i>
                                         <span>اختيار من متعدد</span>
                                     <?php endif; ?>
                                 </div>
@@ -905,7 +905,8 @@ if (!$sections_result) {
             <?php endwhile; ?>
             <!-- Add Section Button -->
             <div class="add-section-button" data-form-id="<?php echo $form['ID']; ?>" data-printthis-ignore>
-                <img src=".././assets/icons/copy-plus.svg" alt="Add Section" />
+                <i class="fa-solid fa-copy"></i>
+                <i class="fa-solid fa-plus"></i>
                 <span>إضافة قسم</span>
             </div>
         </div>
