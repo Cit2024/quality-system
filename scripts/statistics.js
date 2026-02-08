@@ -212,33 +212,44 @@ function initializeCharts() {
 
     const evaluations = parseFloat(canvas.dataset.evaluations) || 0;
     const total = parseFloat(canvas.dataset.totalStudents) || 0;
+    const nonParticipants = Math.max(0, total - evaluations);
+
+    // Primary color: #FF6303, Gray: #e0e0e0 or similar for non-participants
+    const primaryColor = '#FF6303';
+    const grayColor = '#e0e0e0';
 
     canvas.chart = new Chart(canvas, {
       type: 'doughnut',
       data: {
-        labels: ['المشتركين', 'الغير مشتركين'],
+        labels: ['المشتركين', 'غير المشتركين'],
         datasets: [{
-          data: [evaluations, total - evaluations],
+          data: [evaluations, nonParticipants],
           backgroundColor: [
-            'rgb(255, 99, 3)',
-            'rgba(204, 204, 204, 1)'
-          ]
+            primaryColor,
+            grayColor
+          ],
+          borderWidth: 0,
+          hoverOffset: 4
         }]
       },
       options: {
         responsive: true,
         maintainAspectRatio: false,
+        cutout: '70%', // Make it look like a ring
         plugins: {
           legend: {
-            position: 'bottom',
-            labels: {
-              font: {
-                family: 'DINRegular',
-                size: 14
-              },
-              usePointStyle: true
-            },
+            display: false // Hide legend to save space, numbers below explain it
           },
+          tooltip: {
+            callbacks: {
+              label: function (context) {
+                const label = context.label || '';
+                const value = context.raw || 0;
+                const percentage = total > 0 ? Math.round((value / total) * 100) : 0;
+                return `${label}: ${value} (${percentage}%)`;
+              }
+            }
+          }
         },
       },
     });
