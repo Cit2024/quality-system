@@ -36,6 +36,25 @@ vendor/phpunit/
 docker-compose.yml
 verify_migrations.php
 
+# Debug & Test Scripts (exclude from production)
+scripts/apply_citgate_fix.php
+scripts/debug_statistics.php
+scripts/fix_passwords.php
+scripts/init_test_db.php
+scripts/inspect_teachers_table.php
+scripts/package_v2.ps1
+scripts/trace_execution.php
+scripts/verify.php
+scripts/verify_fix.php
+
+# Database Dumps (exclude from production)
+citcoder_Quality.sql
+citcoder_Citgate.sql
+*.sql
+
+# Debug Files
+statistics/debug_router.php
+
 # ================================================
 # Documentation (exclude detailed docs, keep essential)
 # ================================================
