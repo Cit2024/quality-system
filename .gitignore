@@ -45,3 +45,5 @@ logs/
 # Temporary
 tmp/
 temp/
+/Software-Components-from-Other-Projects/
+citcoder_Quality.sql

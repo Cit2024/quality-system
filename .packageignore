@@ -86,6 +86,7 @@ backups/*
 !backups/weekly/
 !backups/monthly/
 !backups/logs/
+/Software-Components-from-Other-Projects/
 
 # ================================================
 # Environment & Config
