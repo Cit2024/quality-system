@@ -3,7 +3,17 @@
 require_once __DIR__ . '/../config/session.php';
 require_once __DIR__.'/../config/DbConnection.php';
 require_once __DIR__.'/../helpers/FormTypes.php';
-require_once __DIR__.'/analytics/config/ConfigurationLoader.php';
+
+// Try to load ConfigurationLoader, but don't fail if it's unavailable
+$useConfigLoader = false;
+if (file_exists(__DIR__.'/analytics/config/ConfigurationLoader.php') && is_readable(__DIR__.'/analytics/config/ConfigurationLoader.php')) {
+    try {
+        require_once __DIR__.'/analytics/config/ConfigurationLoader.php';
+        $useConfigLoader = true;
+    } catch (Exception $e) {
+        error_log("ConfigurationLoader unavailable: " . $e->getMessage());
+    }
+}
 
 $formTypes = FormTypes::getFormTypes($con);
 $formTargets = FormTypes::getFormTargets($con);
@@ -29,35 +39,37 @@ if (!in_array($target, $formTypes[$type]['allowed_targets'], true)) {
     exit("Invalid target-type combination");
 }
 
-// NEW: Check configuration for routing strategy
+// Try configuration-based routing if available
 try {
-    // Check if this combination uses a custom file
-    if (ConfigurationLoader::usesCustomFile($type, $target)) {
-        $customFile = ConfigurationLoader::getCustomFilePath($type, $target);
+    if ($useConfigLoader) {
+        // Check if this combination uses a custom file
+        if (ConfigurationLoader::usesCustomFile($type, $target)) {
+            $customFile = ConfigurationLoader::getCustomFilePath($type, $target);
+            
+            if ($customFile && file_exists($customFile)) {
+                require_once $customFile;
+                exit;
+            } else {
+                // Custom file configured but missing - log error and fall back
+                error_log("Custom file configured but not found: $customFile");
+            }
+        }
         
-        if ($customFile && file_exists($customFile)) {
-            require_once $customFile;
+        // Check if configuration exists for generic template
+        $config = ConfigurationLoader::getConfig($type, $target);
+        
+        if ($config) {
+            // Use generic template
+            require_once __DIR__.'/analytics/templates/GenericEvaluationTemplate.php';
+            $template = new GenericEvaluationTemplate($type, $target);
+            $template->render($_GET);
             exit;
-        } else {
-            // Custom file configured but missing - log error and fall back
-            error_log("Custom file configured but not found: $customFile");
         }
     }
     
-    // Check if configuration exists for generic template
-    $config = ConfigurationLoader::getConfig($type, $target);
-    
-    if ($config) {
-        // Use generic template
-        require_once __DIR__.'/analytics/templates/GenericEvaluationTemplate.php';
-        $template = new GenericEvaluationTemplate($type, $target);
-        $template->render($_GET);
-        exit;
-    }
-    
-    // No configuration found - fall back to old system
-    $baseDir = realpath(__DIR__.'/analytics/targets');
-    $requestedFile = realpath(__DIR__."/analytics/targets/$target/types/$type.php");
+    // Fall back to direct file routing
+    $baseDir = realpath(__DIR__.'/analytics/targets/views');
+    $requestedFile = realpath(__DIR__."/analytics/targets/views/$type.php");
 
     // Verify the resolved path is within the intended directory
     if (!$requestedFile || strpos($requestedFile, $baseDir) !== 0) {

@@ -11,7 +11,7 @@
  
 // Include shared header
 require_once __DIR__ . '/../analytics/shared/header.php';
-require_once __DIR__ . '/../../../config/constants.php';
+require_once __DIR__ . '/../../config/constants.php';
 
 // Split title
 $titleParts = split_arabic_english($questionData['question']);
