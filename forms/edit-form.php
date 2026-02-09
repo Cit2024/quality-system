@@ -656,103 +656,126 @@ if (!$sections_result) {
             <p class="editable" data-id="<?php echo $form['ID']; ?>" data-field="Description"><?php echo $form['Description']; ?></p>
 
             <div class="form-row-active-button">
+                <!-- Left Side: Status and Metadata Controls -->
                 <div class="control-buttons">
-                    <!-- Form Status and Flip Switch Row -->
-                    <div class="form-status-row">
-                        <!-- Custom Flip Switch -->
-                        <label class="switch" data-printthis-ignore>
-                            <input type="checkbox" id="form-status-toggle" <?php echo $form['FormStatus'] === 'published' ? 'checked' : ''; ?>>
-                            <div class="slider">
-                                <div class="circle">
-                                    <i class="fa-solid fa-xmark cross"></i>
-                                    <i class="fa-solid fa-check checkmark"></i>
+                    <!-- Form Status Control Card -->
+                    <div class="form-status-card">
+                        <div class="card-header">
+                            <i class="fa-solid fa-circle-info"></i>
+                            <span>حالة النموذج</span>
+                        </div>
+                        <div class="card-content">
+                            <!-- Custom Flip Switch -->
+                            <label class="switch" data-printthis-ignore>
+                                <input type="checkbox" id="form-status-toggle" <?php echo $form['FormStatus'] === 'published' ? 'checked' : ''; ?>>
+                                <div class="slider">
+                                    <div class="circle">
+                                        <i class="fa-solid fa-xmark cross"></i>
+                                        <i class="fa-solid fa-check checkmark"></i>
+                                    </div>
                                 </div>
-                            </div>
-                        </label>
+                            </label>
 
-                        <!-- Form Status -->
-                        <div class="form-status">
-                            <?php if ($form['FormStatus'] === 'published'): ?>
-                                <i class="fa-solid fa-badge-check"></i>
-                                <span>منشور</span>
-                            <?php else: ?>
-                                <i class="fa-solid fa-triangle-exclamation"></i>
-                                <span>مسودة</span>
-                            <?php endif; ?>
+                            <!-- Form Status Text -->
+                            <div class="form-status">
+                                <?php if ($form['FormStatus'] === 'published'): ?>
+                                    <i class="fa-solid fa-badge-check"></i>
+                                    <span>مفعل</span>
+                                <?php else: ?>
+                                    <i class="fa-solid fa-triangle-exclamation"></i>
+                                    <span>غير مفعل</span>
+                                <?php endif; ?>
+                            </div>
                         </div>
                     </div>
                     
-                    <!-- Form Target Control -->
-                    <div class="form-status-row">
-                        <span>المُقيِّم : </span>
-                        <div class="custom-select-wrapper form-target-control" id="target-select-wrapper">
-                            <div class="custom-select-trigger js-custom-select-trigger" data-type="target">
-                                <span id="target-selected-text"><?= $formTargets[$form['FormTarget']]['name'] ?? 'اختر' ?></span>
-                                <i class="fa-solid fa-chevron-down"></i>
-                            </div>
-                            <div class="custom-select-options" id="target-options">
-                                <?php foreach ($formTargets as $key => $target): ?>
-                                    <div class="custom-option js-custom-option <?= $key === $form['FormTarget'] ? 'selected' : '' ?>" 
-                                         data-type="target" 
-                                         data-value="<?= $key ?>" 
-                                         data-db-id="<?= $target['id'] ?>" 
-                                         data-name="<?= $target['name'] ?>">
-                                        <span><?= $target['name'] ?></span>
-                                        <button type="button" class="btn-delete-option js-delete-type" data-category="target" data-db-id="<?= $target['id'] ?>" title="حذف">
-                                            <i class="fa-solid fa-trash"></i>
-                                        </button>
-                                    </div>
-                                <?php endforeach; ?>
-                                <div class="custom-option-add js-open-type-modal" data-category="target">
-                                    <i class="fa-solid fa-plus"></i> إضافة جديد
-                                </div>
-                            </div>
-                            <input type="hidden" id="form-target-select" value="<?= $form['FormTarget'] ?>">
+                    <!-- Form Metadata Controls Card -->
+                    <div class="form-metadata-card">
+                        <div class="card-header">
+                            <i class="fa-solid fa-sliders"></i>
+                            <span>إعدادات التقييم</span>
                         </div>
-                    </div>
-
-                    <!-- Form Type Control -->
-                    <div class="form-status-row">
-                        <span>نوع التقييم : </span>
-                        <div class="custom-select-wrapper form-type-control" id="type-select-wrapper">
-                            <div class="custom-select-trigger js-custom-select-trigger" data-type="type">
-                                <span id="type-selected-text"><?= $formTypes[$form['FormType']]['name'] ?? 'اختر' ?></span>
-                                <i class="fa-solid fa-chevron-down"></i>
-                            </div>
-                            <div class="custom-select-options" id="type-options">
-                                <?php foreach ($formTypes as $key => $type): ?>
-                                    <div class="custom-option js-custom-option <?= $key === $form['FormType'] ? 'selected' : '' ?>" 
-                                         data-type="type"
-                                         data-value="<?= $key ?>" 
-                                         data-db-id="<?= $type['id'] ?>" 
-                                         data-targets="<?= implode(',', $type['allowed_targets']) ?>"
-                                         data-name="<?= $type['name'] ?>">
-                                        <span><?= $type['name'] ?></span>
-                                        <button type="button" class="btn-delete-option js-delete-type" data-category="type" data-db-id="<?= $type['id'] ?>" title="حذف">
-                                            <i class="fa-solid fa-trash"></i>
-                                        </button>
+                        <div class="card-content">
+                            <!-- Form Target Control -->
+                            <div class="form-control-row">
+                                <label>
+                                    <i class="fa-solid fa-user"></i>
+                                    <span>المُقيِّم</span>
+                                </label>
+                                <div class="custom-select-wrapper form-target-control" id="target-select-wrapper">
+                                    <div class="custom-select-trigger js-custom-select-trigger" data-type="target">
+                                        <span id="target-selected-text"><?= $formTargets[$form['FormTarget']]['name'] ?? 'اختر' ?></span>
+                                        <i class="fa-solid fa-chevron-down"></i>
                                     </div>
-                                <?php endforeach; ?>
-                                <div class="custom-option-add js-open-type-modal" data-category="type">
-                                    <i class="fa-solid fa-plus"></i> إضافة جديد
+                                    <div class="custom-select-options" id="target-options">
+                                        <?php foreach ($formTargets as $key => $target): ?>
+                                            <div class="custom-option js-custom-option <?= $key === $form['FormTarget'] ? 'selected' : '' ?>" 
+                                                 data-type="target" 
+                                                 data-value="<?= $key ?>" 
+                                                 data-db-id="<?= $target['id'] ?>" 
+                                                 data-name="<?= $target['name'] ?>">
+                                                <span><?= $target['name'] ?></span>
+                                                <button type="button" class="btn-delete-option js-delete-type" data-category="target" data-db-id="<?= $target['id'] ?>" title="حذف">
+                                                    <i class="fa-solid fa-trash"></i>
+                                                </button>
+                                            </div>
+                                        <?php endforeach; ?>
+                                        <div class="custom-option-add js-open-type-modal" data-category="target">
+                                            <i class="fa-solid fa-plus"></i> إضافة جديد
+                                        </div>
+                                    </div>
+                                    <input type="hidden" id="form-target-select" value="<?= $form['FormTarget'] ?>">
                                 </div>
                             </div>
-                            <input type="hidden" id="form-type-select" value="<?= $form['FormType'] ?>" data-current-type="<?= $form['FormType'] ?>">
+
+                            <!-- Form Type Control -->
+                            <div class="form-control-row">
+                                <label>
+                                    <i class="fa-solid fa-list-check"></i>
+                                    <span>نوع التقييم</span>
+                                </label>
+                                <div class="custom-select-wrapper form-type-control" id="type-select-wrapper">
+                                    <div class="custom-select-trigger js-custom-select-trigger" data-type="type">
+                                        <span id="type-selected-text"><?= $formTypes[$form['FormType']]['name'] ?? 'اختر' ?></span>
+                                        <i class="fa-solid fa-chevron-down"></i>
+                                    </div>
+                                    <div class="custom-select-options" id="type-options">
+                                        <?php foreach ($formTypes as $key => $type): ?>
+                                            <div class="custom-option js-custom-option <?= $key === $form['FormType'] ? 'selected' : '' ?>" 
+                                                 data-type="type"
+                                                 data-value="<?= $key ?>" 
+                                                 data-db-id="<?= $type['id'] ?>" 
+                                                 data-targets="<?= implode(',', $type['allowed_targets']) ?>"
+                                                 data-name="<?= $type['name'] ?>">
+                                                <span><?= $type['name'] ?></span>
+                                                <button type="button" class="btn-delete-option js-delete-type" data-category="type" data-db-id="<?= $type['id'] ?>" title="حذف">
+                                                    <i class="fa-solid fa-trash"></i>
+                                                </button>
+                                            </div>
+                                        <?php endforeach; ?>
+                                        <div class="custom-option-add js-open-type-modal" data-category="type">
+                                            <i class="fa-solid fa-plus"></i> إضافة جديد
+                                        </div>
+                                    </div>
+                                    <input type="hidden" id="form-type-select" value="<?= $form['FormType'] ?>" data-current-type="<?= $form['FormType'] ?>">
+                                </div>
+                            </div>
                         </div>
                     </div>
 
                 </div> <!-- Close control-buttons -->
 
-                <div style="display: flex; gap: 10px;">
+                <!-- Right Side: Action Buttons -->
+                <div class="action-buttons-group">
                     <button type="button" class="access-settings-btn js-open-access-modal">
                         <i class="fa-solid fa-lock"></i>
-                        إعدادات الوصول
+                        <span>إعدادات الوصول</span>
                     </button>
                     <button class="download-form-button" data-printthis-ignore 
                         data-form-id="<?php echo $form['ID']; ?>"
                         data-form-title="<?php echo htmlspecialchars($form['Title'], ENT_QUOTES, 'UTF-8'); ?>">
                         <i class="fa-solid fa-file-arrow-down" aria-label="download"></i>
-                        تنزيل النموذج
+                        <span>تنزيل النموذج</span>
                     </button>
                 </div>
             </div>
