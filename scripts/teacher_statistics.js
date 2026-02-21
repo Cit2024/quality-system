@@ -182,6 +182,5 @@ function initializeCharts() {
 // Initialize
 document.addEventListener("DOMContentLoaded", () => {
   window.statisticsController = new TeacherStatisticsController();
-  this.elements.cardsContainer.innerHTML = html;
   initializeCharts(); // Initialize the charts after loading new data
 });

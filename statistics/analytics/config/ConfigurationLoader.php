@@ -70,7 +70,8 @@ class ConfigurationLoader {
         $config = self::getConfig($formType, $evaluatorType);
         
         if ($config && ($config['use_custom_file'] ?? false)) {
-            return __DIR__ . '/../../' . ($config['custom_path'] ?? '');
+            $rawPath = __DIR__ . '/../../' . ($config['custom_path'] ?? '');
+            return realpath($rawPath) ?: $rawPath;
         }
 
         return null;

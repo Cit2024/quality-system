@@ -1,6 +1,9 @@
 <?php
 // analytics/targets/views/course_evaluation.php
 
+// Initialize variables from $viewData for backward compatibility
+$courseData = $viewData['course'] ?? [];
+
 ?>
 <script>
     // Add error handling for JSON encoding
@@ -19,7 +22,7 @@
 <head>
     <meta charset="UTF-8">
     <?php include __DIR__ . '/../../shared/head.php'; ?>
-    <title>إحصائيات المقرر - <?= htmlspecialchars($courseData['MadaName']) ?></title>
+    <title>إحصائيات المقرر - <?= htmlspecialchars($courseData['MadaName'] ?? 'المقرر') ?></title>
     <link rel="stylesheet" href="./analytics/assets/css/main.css">
 </head>
 
@@ -84,7 +87,7 @@
                         <!-- In your view template -->
                         <canvas id="department-breakdown-chart"
                             data-department-stats="<?= htmlspecialchars(json_encode($viewData['stats']['department_stats'])) ?>"
-                            data-total-students="<?= $viewData['stats']['total'] ?>"
+                            data-total-students="<?= $viewData['stats']['total'] ?? $viewData['stats']['total_students'] ?? 0 ?>"
                             data-non-participants="<?= $viewData['stats']['non_participants'] ?>">
                         </canvas>
                     </div>
@@ -100,7 +103,7 @@
                             data-report-type="course"
                             data-file-name="<?= htmlspecialchars($viewData['course']['MadaName']) ?>"
                             data-basic-information="<?= htmlspecialchars(json_encode($viewData['course'])) ?>"
-                            data-all-semester="<?= htmlspecialchars(json_encode($viewData['all_semesters']), ENT_QUOTES, 'UTF-8') ?>">
+                            data-all-semester="<?= htmlspecialchars(json_encode($viewData['all_semesters'] ?? []), ENT_QUOTES, 'UTF-8') ?>">
                             <i class="fa-solid fa-folder-tree"></i>
                             تحميل ملف التقييمات عبر الفصول
                         </button>
