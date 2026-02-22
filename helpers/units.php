@@ -48,9 +48,48 @@ function formatBilingualText($text, $maxLength = 0) {
 }
 
 /**
- * Dummy function for GPA calculation
+ * Calculates cumulative GPA from archived grade records (asnzil table)
+ * Formula: SUM(Nekat) / SUM(AddWhadat)  — grade points / credit hours
+ * Falls back to sprofiles.avrg if no grade records found
  */
 function calculateCumulativeGPA($studentID) {
+    if (empty($studentID)) return ['gpa' => 0];
+    
+    global $conn_cit;
+    if (!isset($conn_cit)) {
+        require_once __DIR__ . '/../config/dbConnectionCit.php';
+    }
+    
+    $id = mysqli_real_escape_string($conn_cit, $studentID);
+    
+    // Primary: Calculate from actual grade records in asnzil
+    // Nekat = grade points per course, AddWhadat = credit hours
+    $query = "SELECT SUM(Nekat) AS total_points, SUM(AddWhadat) AS total_units 
+              FROM asnzil 
+              WHERE KidNo = '$id' AND Nekat IS NOT NULL AND AddWhadat > 0";
+    $result = mysqli_query($conn_cit, $query);
+    
+    if ($result && $row = mysqli_fetch_assoc($result)) {
+        $totalUnits = (float)($row['total_units'] ?? 0);
+        $totalPoints = (float)($row['total_points'] ?? 0);
+        
+        if ($totalUnits > 0) {
+            $gpa = round($totalPoints / $totalUnits, 2);
+            return ['gpa' => $gpa];
+        }
+    }
+    
+    // Fallback: Check sprofiles.avrg
+    $query = "SELECT avrg FROM sprofiles WHERE KidNo = '$id' LIMIT 1";
+    $result = mysqli_query($conn_cit, $query);
+    
+    if ($result && $row = mysqli_fetch_assoc($result)) {
+        $avrg = (float)($row['avrg'] ?? 0);
+        if ($avrg > 0) {
+            return ['gpa' => round($avrg, 2)];
+        }
+    }
+    
     return ['gpa' => 0];
 }
 

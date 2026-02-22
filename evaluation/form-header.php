@@ -17,18 +17,25 @@ $evaluatorName = FORM_TARGETS[$Evaluator]['name'];
 <div class="form-header">
     <?php if($Evaluator === 'student'): ?>
         <div class="student-header">
-            <?php if($TypeEvaluation === 'course_evaluation'): ?>
-                <div class="course-meta">
-                    <h3><?= htmlspecialchars($course_info['MadaName'] ?? '') ?></h3>
-                    <p>رمز المقرر: <?= htmlspecialchars($IDCourse) ?></p>
-                    <p>الفصل الدارسي: <?= htmlspecialchars($semester_name['ZamanName'] ?? '') ?></p>
+            <div class="meta-section">
+                <?php if(isset($course_info)): ?>
+                    <h3><?= htmlspecialchars($course_info['MadaName'] ?? '') ?> (<?= htmlspecialchars($IDCourse) ?>)</h3>
+                <?php endif; ?>
+                
+                <div class="meta-grid">
+                    <?php if(isset($semester_name)): ?>
+                        <p><strong>الفصل الدراسي:</strong> <?= htmlspecialchars($semester_name['ZamanName'] ?? '') ?></p>
+                    <?php endif; ?>
+
+                    <?php if(isset($teacher_name)): ?>
+                        <p><strong>مدرس المقرر:</strong> <?= htmlspecialchars($teacher_name['name'] ?? '') ?></p>
+                    <?php endif; ?>
+
+                    <?php if(isset($GPA) && !empty($GPA['gpa']) && $GPA['gpa'] > 0): ?>
+                        <p><strong>المعدل التراكمي:</strong> <?= $GPA['gpa'] ?>%</p>
+                    <?php endif; ?>
                 </div>
-            <?php elseif($TypeEvaluation === 'teacher_evaluation'): ?>
-                <div class="teacher-info">
-                    <h3>مدرس المقرر: <?= htmlspecialchars($teacher_name['name'] ?? '') ?></h3>
-                    <p>المعدل التراكمي: <?= $GPA['gpa'] ?? '0' ?>%</p>
-                </div>
-            <?php endif; ?>
+            </div>
         </div>
     <?php elseif($Evaluator === 'alumni'): ?>
         <div class="alumni-header">

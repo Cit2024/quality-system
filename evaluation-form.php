@@ -169,6 +169,62 @@ if ($form_exists) {
         $form_exists = false;
         $form_message = "النموذج الموجود لا يحتوي على أي أقسام";
     }
+
+    // 2. Fetch Metadata for Header (Semester, Course, Teacher)
+    //    These tables live in citcoder_Citgate, so we use $conn_cit
+    if ($form_exists) {
+        require_once 'config/dbConnectionCit.php'; // zaman, mawad, coursesgroups, regteacher are all in Citgate
+
+        // Fetch Semester Name
+        if (isset($Semester)) {
+            $stmt = $conn_cit->prepare("SELECT ZamanName FROM zaman WHERE ZamanNo = ?");
+            $stmt->bind_param("i", $Semester);
+            $stmt->execute();
+            $semester_name = $stmt->get_result()->fetch_assoc();
+            $stmt->close();
+        }
+
+        // Fetch Course Info
+        if (isset($IDCourse)) {
+            $stmt = $conn_cit->prepare("SELECT MadaName FROM mawad WHERE MadaNo = ?");
+            $stmt->bind_param("s", $IDCourse);
+            $stmt->execute();
+            $course_info = $stmt->get_result()->fetch_assoc();
+            $stmt->close();
+        }
+
+        // Fetch Teacher Name if parameters are present
+        if (isset($IDCourse, $Semester, $IDGroup)) {
+            // First try with provided group
+            $teacher_query = "
+                SELECT t.name 
+                FROM regteacher t
+                JOIN coursesgroups cg ON t.id = cg.TNo
+                WHERE cg.ZamanNo = ? AND cg.MadaNo = ? AND cg.GNo = ?
+            ";
+            $stmt = $conn_cit->prepare($teacher_query);
+            $stmt->bind_param("isi", $Semester, $IDCourse, $IDGroup);
+            $stmt->execute();
+            $teacher_name = $stmt->get_result()->fetch_assoc();
+            $stmt->close();
+
+            // Fallback if not found (e.g. IDGroup was 0)
+            if (!$teacher_name) {
+                $teacher_query = "
+                    SELECT t.name 
+                    FROM regteacher t
+                    JOIN coursesgroups cg ON t.id = cg.TNo
+                    WHERE cg.ZamanNo = ? AND cg.MadaNo = ?
+                    LIMIT 1
+                ";
+                $stmt = $conn_cit->prepare($teacher_query);
+                $stmt->bind_param("is", $Semester, $IDCourse);
+                $stmt->execute();
+                $teacher_name = $stmt->get_result()->fetch_assoc();
+                $stmt->close();
+            }
+        }
+    }
 }
 
 
